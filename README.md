@@ -2,15 +2,61 @@
 
 A new Flutter project.
 
-## Getting Started
+# 📁 Documentation du Projet Flutter
 
-This project is a starting point for a Flutter application.
+Ce projet utilise un système de configurations par environnement (**Dev** & **Prod**) via des fichiers JSON.  
+Cela permet de séparer les URLs d'API et les clés secrètes.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## ⚙️ Configuration des Environnements
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Les fichiers de configuration se trouvent dans le dossier `config/` :
+
+- `config/dev.json` : Utilisé pour le développement local et les tests
+- `config/prod.json` : Utilisé pour la version finale destinée aux utilisateurs
+
+> ⚠️ **Note**  
+> Si vous ajoutez des clés sensibles, assurez-vous que ce dossier est listé dans votre `.gitignore`.
+
+---
+
+## 🚀 Commandes de Lancement
+
+### 🛠 Environnement de Développement (Debug)
+
+Pour lancer l'application en mode debug avec l'API de développement :
+
+```bash
+flutter run --dart-define-from-file=config/dev.json
+```
+### 🌍 Environnement de Production (Release)
+Pour tester les performances réelles avec l'API de production sur un appareil :
+
+```bash
+flutter run --release --dart-define-from-file=config/prod.json
+```
+## 📦 Commandes de Build (Génération des exécutables)
+Utilisez ces commandes pour générer les fichiers à distribuer (APK ou AppBundle).
+
+### 🤖 Android
+Build pour le Développement (APK de test)
+```bash
+flutter build apk --debug --dart-define-from-file=config/dev.json
+```
+### Build pour la Production (Google Play Store)
+```bash
+flutter build appbundle --dart-define-from-file=config/prod.json
+```
+
+## 🍎 iOS
+### Build pour le Développement :
+
+```Bash
+flutter build ios --debug --dart-define-from-file=config/dev.json
+```
+### Build pour la Production (App Store Connect) :
+
+```Bash
+flutter build ipa --dart-define-from-file=config/prod.json
+```

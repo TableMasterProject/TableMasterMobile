@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../../../main.dart';
+
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
@@ -17,6 +19,15 @@ class LoginPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                AppConfig.appName,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: colors.primary,
+                ),
+              ),
+              const SizedBox(height: 20),
               // Icône ou Logo
               Icon(Icons.lock_outline, size: 80, color: colors.primary),
               const SizedBox(height: 20),
