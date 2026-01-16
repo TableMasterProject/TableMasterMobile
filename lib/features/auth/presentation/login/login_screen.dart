@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../../../main.dart';
+import '../../../../main.dart';
+import '../registration_tunnel/registration_stepper_screen.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class LoginScreen extends StatelessWidget {
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +95,28 @@ class LoginPage extends StatelessWidget {
               TextButton(
                 onPressed: () {},
                 child: const Text("Mot de passe oublié ?"),
+              ),
+
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegistrationStepperScreen(),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: colors.primary), // Bordure à la couleur du thème
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text("Créer un compte", style: TextStyle(fontSize: 16)),
+                )
               ),
             ],
           ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'features/login/presentation/LoginPage.dart';
+import 'features/auth/presentation/login/login_screen.dart';
 
 class AppConfig {
   static const String apiUrl = String.fromEnvironment(
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
 
       themeMode: ThemeMode.system,
 
-      home: const LoginPage(),
+      home: const LoginScreen(),
     );
   }
 }
