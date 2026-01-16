@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'core/app_config.dart';
+import 'core/injection.dart';
 import 'features/auth/presentation/login/login_screen.dart';
 
-class AppConfig {
-  static const String apiUrl = String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'https://localhost:8080', // Fallback
-  );
 
-  static const bool isProd = bool.fromEnvironment('IS_PROD');
-  static const String appName = String.fromEnvironment('APP_NAME');
-}
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  setupDependencies();
+
   runApp(const MyApp());
 }
 

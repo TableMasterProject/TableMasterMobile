@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:table_master_mobile/core/models/user_in.dart';
+import 'package:table_master_mobile/features/user/data/models/user_in.dart';
 
 class Step1UserInfoScreen extends StatefulWidget {
   final Function(UserIn user) onNext;

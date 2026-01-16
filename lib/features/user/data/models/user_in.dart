@@ -13,6 +13,17 @@ class UserIn {
     required this.accountType,
   });
 
+  // Conversion pour l'envoi vers ton API ASP.NET
+  Map<String, dynamic> toJson() {
+    return {
+      'Email': email,
+      'Password': password,
+      'FirstName': firstName,
+      'LastName': lastName,
+      'AccountType': accountType,
+    };
+  }
+
   // Méthode copyWith pour UserIn
   UserIn copyWith({
     String? email,

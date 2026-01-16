@@ -9,6 +9,15 @@ class TableEntityIn {
     required this.numberOfSeats,
   });
 
+  // Conversion de l'objet vers JSON pour ton API .NET
+  Map<String, dynamic> toJson() {
+    return {
+      'RestaurantId': restaurantId,
+      'TableNumber': tableNumber,
+      'NumberOfSeats': numberOfSeats,
+    };
+  }
+
   // Méthode copyWith pour TableEntityIn
   TableEntityIn copyWith({
     int? restaurantId,

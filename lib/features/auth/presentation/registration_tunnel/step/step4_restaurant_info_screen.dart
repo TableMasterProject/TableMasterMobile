@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../../core/app_constant.dart';
-import '../../../../../core/models/restaurant_in.dart';
+import '../../../../restaurant/data/models/restaurant_in.dart';
 
 class Step4RestaurantInfoScreen extends StatefulWidget {
   final Function(RestaurantIn data) onNext;

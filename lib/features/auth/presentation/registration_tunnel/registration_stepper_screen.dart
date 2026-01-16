@@ -7,9 +7,9 @@ import 'package:table_master_mobile/features/auth/presentation/registration_tunn
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_error_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_success_screen.dart';
 
-import '../../../../core/models/restaurant_in.dart';
-import '../../../../core/models/table_entity_in.dart';
-import '../../../../core/models/user_in.dart';
+import '../../../restaurant/data/models/restaurant_in.dart';
+import '../../../table/data/models/table_entity_in.dart';
+import '../../../user/data/models/user_in.dart';
 
 class RegistrationStepperScreen extends StatefulWidget {
   const RegistrationStepperScreen({super.key});

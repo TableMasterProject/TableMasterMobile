@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../../../core/models/table_entity_in.dart';
+import '../../../../table/data/models/table_entity_in.dart';
 
 class Step5TableManagementScreen extends StatefulWidget {
   final Function(List<TableEntityIn> tables) onNext;

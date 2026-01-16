@@ -29,6 +29,25 @@ class RestaurantIn {
     required this.isAutoValidateReservation,
   });
 
+  // Conversion pour l'envoi vers ton API ASP.NET
+  Map<String, dynamic> toJson() {
+    return {
+      'UserId': userId,
+      'RestaurantName': restaurantName,
+      'StreetNumber': streetNumber,
+      'StreetName': streetName,
+      'PostalCode': postalCode,
+      'City': city,
+      'Latitude': latitude,
+      'Longitude': longitude,
+      'Phone': phone,
+      'CuisineType': cuisineType,
+      'PaymentMethods': paymentMethods,
+      'Description': description,
+      'IsAutoValidateReservation': isAutoValidateReservation,
+    };
+  }
+
   // La méthode magique
   RestaurantIn copyWith({
     int? userId,
