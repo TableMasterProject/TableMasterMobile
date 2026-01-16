@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class Step2PasswordScreen extends StatefulWidget {
-  final VoidCallback onNext;
+  final Function(String password) onNext;
+  final String password;
 
-  const Step2PasswordScreen({super.key, required this.onNext});
+  const Step2PasswordScreen({super.key, required this.onNext, required this.password});
 
   @override
   State<Step2PasswordScreen> createState() => _Step2PasswordScreenState();
@@ -23,6 +24,8 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
   @override
   void initState() {
     super.initState();
+    _passwordController.text = widget.password;
+    _confirmController.text = widget.password;
     _passwordController.addListener(() {
       setState(() {});
     });
@@ -116,7 +119,7 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
               child: FilledButton(
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
-                    widget.onNext();
+                    widget.onNext(_passwordController.text.trim());
                   }
                 },
                 style: FilledButton.styleFrom(

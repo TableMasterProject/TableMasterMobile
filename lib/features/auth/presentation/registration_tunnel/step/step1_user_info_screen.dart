@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/models/user_in.dart';
 
 class Step1UserInfoScreen extends StatefulWidget {
-  final VoidCallback onNext;
+  final Function(UserIn user) onNext;
 
-  const Step1UserInfoScreen({super.key, required this.onNext});
+  final UserIn user;
+
+  const Step1UserInfoScreen({super.key, required this.onNext, required this.user});
 
   @override
   State<Step1UserInfoScreen> createState() => _Step1UserInfoScreenState();
@@ -12,6 +15,26 @@ class Step1UserInfoScreen extends StatefulWidget {
 class _Step1UserInfoScreenState extends State<Step1UserInfoScreen> {
   // Clé pour gérer la validation du formulaire
   final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _firstNameController.text = widget.user.firstName;
+    _lastNameController.text = widget.user.lastName;
+    _emailController.text = widget.user.email;
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +64,7 @@ class _Step1UserInfoScreenState extends State<Step1UserInfoScreen> {
 
             // Champ Prénom
             TextFormField(
+              controller: _firstNameController,
               decoration: InputDecoration(
                 labelText: "Prénom",
                 prefixIcon: const Icon(Icons.person_outline),
@@ -59,6 +83,7 @@ class _Step1UserInfoScreenState extends State<Step1UserInfoScreen> {
 
             // Champ Nom
             TextFormField(
+              controller: _lastNameController,
               decoration: InputDecoration(
                 labelText: "Nom",
                 prefixIcon: const Icon(Icons.person),
@@ -77,6 +102,7 @@ class _Step1UserInfoScreenState extends State<Step1UserInfoScreen> {
 
             // Champ Email
             TextFormField(
+              controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: "Email",
@@ -107,7 +133,12 @@ class _Step1UserInfoScreenState extends State<Step1UserInfoScreen> {
                 onPressed: () {
                   // On valide le formulaire avant de passer à la suite
                   if (_formKey.currentState!.validate()) {
-                    widget.onNext();
+                    final user = widget.user.copyWith(
+                      email: _emailController.text.trim(),
+                      firstName: _firstNameController.text.trim(),
+                      lastName: _lastNameController.text.trim()
+                    );
+                    widget.onNext(user);
                   }
                 },
                 style: FilledButton.styleFrom(

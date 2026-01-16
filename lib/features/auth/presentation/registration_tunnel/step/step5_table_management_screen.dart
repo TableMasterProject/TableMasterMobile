@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../../../../../core/models/table_entity_in.dart';
 
 class Step5TableManagementScreen extends StatefulWidget {
-  final VoidCallback onNext;
+  final Function(List<TableEntityIn> tables) onNext;
 
   const Step5TableManagementScreen({super.key, required this.onNext});
 
@@ -216,7 +216,7 @@ class _Step5TableManagementScreenState extends State<Step5TableManagementScreen>
                     ),
                   );
                 } else {
-                  widget.onNext();
+                  widget.onNext(_tables);
                 }
               },
               style: FilledButton.styleFrom(

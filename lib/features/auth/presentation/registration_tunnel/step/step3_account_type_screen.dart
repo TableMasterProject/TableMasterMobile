@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class Step3AccountTypeScreen extends StatelessWidget {
   // On change le type pour passer l'info au parent (true = restaurant, false = client)
-  final ValueChanged<bool> onSelectType;
+  final ValueChanged<int> onSelectType;
 
   const Step3AccountTypeScreen({super.key, required this.onSelectType});
 
@@ -32,7 +32,7 @@ class Step3AccountTypeScreen extends StatelessWidget {
             title: "Je suis un Client",
             description: "Je souhaite réserver des tables et consulter les menus.",
             icon: Icons.person_outline,
-            onTap: () => onSelectType(false), // Envoie false
+            onTap: () => onSelectType(0), // Envoie false
           ),
 
           const SizedBox(height: 16),
@@ -43,7 +43,7 @@ class Step3AccountTypeScreen extends StatelessWidget {
             title: "Je suis un Restaurateur",
             description: "Je souhaite gérer mes réservations, mes tables et mon menu.",
             icon: Icons.restaurant,
-            onTap: () => onSelectType(true), // Envoie true
+            onTap: () => onSelectType(1), // Envoie true
           ),
         ],
       ),
