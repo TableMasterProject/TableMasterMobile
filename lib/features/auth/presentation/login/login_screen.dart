@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 import '../../../../core/app_config.dart';
 import '../../../../core/injection.dart';
 import '../../data/models/login_user_in.dart';
+import '../../data/models/login_user_out.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../registration_tunnel/registration_stepper_screen.dart';
 
@@ -38,13 +40,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Appel du repository avec le modèle LoginUserIn
       final credentials = LoginUserIn(email: email, password: password);
-      final result = await _authRepo.login(credentials);
+      LoginUserOut result = await _authRepo.login(credentials);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Bienvenue ${result.user.firstName} !")),
         );
-        // TODO: Rediriger vers l'accueil (ex: Navigator.pushReplacement)
       }
     } catch (e) {
       if (mounted) {

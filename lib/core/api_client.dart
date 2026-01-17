@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'app_config.dart';
 
@@ -22,11 +23,23 @@ class ApiClient {
     _dio.interceptors.add(LogInterceptor(responseBody: true));
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
-          // Exemple : Ajouter un token dynamiquement
-          // options.headers["Authorization"] = "Bearer $token";
-          return handler.next(options);
-        },
+          onRequest: (options, handler) async {
+            const storage = FlutterSecureStorage();
+            // On récupère le token sauvegardé par AuthRepositoryImpl
+            String? token = await storage.read(key: 'access_token');
+
+            if (token != null) {
+              options.headers["Authorization"] = "Bearer $token";
+            }
+            return handler.next(options);
+          },
+          onError: (e, handler) {
+            if (e.response?.statusCode == 401) {
+              // Optionnel : Gérer ici une redirection vers le login
+              // ou un refresh token automatique
+            }
+            return handler.next(e);
+          }
       ),
     );
   }

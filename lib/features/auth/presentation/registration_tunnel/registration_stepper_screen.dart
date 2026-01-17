@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/features/auth/data/models/login_user_out.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step1_user_info_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step2_password_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step3_account_type_screen.dart';
@@ -6,10 +7,17 @@ import 'package:table_master_mobile/features/auth/presentation/registration_tunn
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step5_table_management_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_error_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_success_screen.dart';
+import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
+import 'package:table_master_mobile/features/user/domain/repositories/user_repository.dart';
 
+import '../../../../core/injection.dart';
 import '../../../restaurant/data/models/restaurant_in.dart';
+import '../../../restaurant/data/models/restaurant_out.dart';
+import '../../../restaurant/domain/repositories/restaurant_repository.dart';
 import '../../../table/data/models/table_entity_in.dart';
+import '../../../table/data/models/table_entity_out.dart';
 import '../../../user/data/models/user_in.dart';
+import '../../../user/data/models/user_out.dart';
 
 class RegistrationStepperScreen extends StatefulWidget {
   const RegistrationStepperScreen({super.key});
@@ -24,7 +32,18 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   int totalSteps = 4;
   bool _isRestaurant = false;
   bool _hasError = false;
+  bool _isLoading = false;
   String _errorMessage = "";
+
+  // les repo
+  final userRepo = getIt<IUserRepository>();
+  final restaurantRepo = getIt<IRestaurantRepository>();
+  final tableRepo = getIt<ITableRepository>();
+
+  // dataOut
+  LoginUserOut? loginUserOut;
+  RestaurantOut? restaurantOut;
+  List<TableEntityOut>? tablesOut;
 
   // --- NOS DONNÉES CENTRALISÉES ---
   late UserIn userData;
@@ -51,11 +70,21 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     );
   }
 
-  void _nextStep() {
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  void _nextStep({bool isError = false}) {
+    if (!isError) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      final lastPageIndex = totalSteps - 1;
+
+      _pageController.animateToPage(
+        lastPageIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.fastOutSlowIn,
+      );
+    }
   }
 
   void _finish() {
@@ -101,32 +130,52 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     _submitRestaurantRegistration(); // Appel final
   }
 
-  void _submitUserRegistration() {
-    setState(() => _hasError = false); // Reset avant l'appel
+  void _submitUserRegistration() async {
+    setState(() {
+      _hasError = false;
+      _isLoading = true;
+    });
     try {
-      print("Envoi au serveur le user ...");
-      // Simulation appel API réussi
+      if(loginUserOut == null){
+        print("Envoi au serveur le user ...");
+        loginUserOut = await userRepo.register(userData);
+      }
+      setState(() => _isLoading = false);
       _nextStep();
     } catch (ex) {
       setState(() {
+        _isLoading = false;
         _hasError = true;
-        _errorMessage = "Impossible de créer votre compte utilisateur.";
+        _errorMessage = ex.toString();
       });
-      _nextStep(); // On avance quand même vers la dernière page (qui sera l'erreur)
+      _nextStep(isError: true); // On avance quand même vers la dernière page (qui sera l'erreur)
     }
   }
 
-  void _submitRestaurantRegistration() {
-    setState(() => _hasError = false);
+  void _submitRestaurantRegistration() async {
+    setState(() {
+      _hasError = false;
+      _isLoading = true;
+    });
     try {
-      print("Envoi au serveur le restaurant...");
+      if(restaurantOut == null && loginUserOut != null){
+        restaurantData.userId = loginUserOut!.user.id;
+        restaurantOut = await restaurantRepo.createRestaurant(restaurantData);
+      }
+
+      if (tablesOut == null && restaurantOut != null) {
+        tablesOut = await tableRepo.replaceTables(restaurantOut!.id, tablesData);
+      }
+
+      setState(() => _isLoading = false);
       _nextStep();
     } catch (ex) {
       setState(() {
+        _isLoading = false;
         _hasError = true;
-        _errorMessage = "Une erreur est survenue lors de la configuration du restaurant.";
+        _errorMessage = ex.toString();
       });
-      _nextStep();
+      _nextStep(isError: true);
     }
   }
 
@@ -174,18 +223,18 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     double progress = (_currentStep + 1) / totalSteps;
 
     return PopScope(
-      canPop: false, // On bloque le retour automatique du système
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
+        if (didPop || _isLoading) return; // Bloquer le retour si on charge
         _back();
       },
-      child:Scaffold(
+      child: Scaffold(
         appBar: AppBar(
           elevation: 0,
           backgroundColor: colors.surface,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: _back,
+            onPressed: _isLoading ? null : _back, // Désactiver si chargement
           ),
           title: Text(
             "Étape ${_currentStep + 1} sur $totalSteps",
@@ -200,12 +249,40 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
             ),
           ),
         ),
+        // 2. Utilisation d'un Stack pour superposer le loader
         body: SafeArea(
-          child: PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            onPageChanged: (index) => setState(() => _currentStep = index),
-            children: steps, // On utilise notre liste dynamique
+          child: Stack(
+            children: [
+              PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                onPageChanged: (index) => setState(() => _currentStep = index),
+                children: steps,
+              ),
+
+              // Overlay de chargement
+              if (_isLoading)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text("Traitement en cours...",
+                                style: TextStyle(fontWeight: FontWeight.bold)
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
