@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/features/home/presentation/home_screen.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 import '../../../../core/app_config.dart';
 import '../../../../core/injection.dart';
@@ -43,8 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
       LoginUserOut result = await _authRepo.login(credentials);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Bienvenue ${result.user.firstName} !")),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
         );
       }
     } catch (e) {

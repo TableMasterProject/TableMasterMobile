@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'core/app_config.dart';
+import 'core/app_constant.dart';
 import 'core/injection.dart';
 import 'features/auth/presentation/login/login_screen.dart';
+import 'features/home/presentation/home_screen.dart';
 
 
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   setupDependencies();
 
-  runApp(const MyApp());
+  const storage = FlutterSecureStorage();
+  String? token = await storage.read(key: 'access_token');
+
+  Widget initialScreen = (token != null) ? const HomeScreen() : const LoginScreen();
+
+  runApp(MyApp(initialScreen: initialScreen));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Widget initialScreen;
+  const MyApp({super.key, required this.initialScreen});
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +46,8 @@ class MyApp extends StatelessWidget {
       ),
 
       themeMode: ThemeMode.system,
-
-      home: const LoginScreen(),
+      navigatorKey: navigatorKey,
+      home: initialScreen,
     );
   }
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class AppConstants {
   // Types de cuisine disponibles
   static const List<String> cuisineOptions = [
@@ -20,3 +22,5 @@ class AppConstants {
     "Google Pay",
   ];
 }
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

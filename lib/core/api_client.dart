@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../features/auth/presentation/login/login_screen.dart';
 import 'app_config.dart';
+import 'app_constant.dart';
 
 class ApiClient {
   late Dio _dio;
@@ -33,10 +36,58 @@ class ApiClient {
             }
             return handler.next(options);
           },
-          onError: (e, handler) {
+          onError: (e, handler) async {
             if (e.response?.statusCode == 401) {
-              // Optionnel : Gérer ici une redirection vers le login
-              // ou un refresh token automatique
+              const storage = FlutterSecureStorage();
+              String? refreshToken = await storage.read(key: 'refresh_token');
+              String? accessToken = await storage.read(key: 'access_token');
+
+              if (refreshToken != null && accessToken != null) {
+                try {
+                  // 1. On tente le refresh via une instance Dio propre (pour éviter les boucles)
+                  final refreshDio = Dio(BaseOptions(baseUrl: baseUrl));
+                  final response = await refreshDio.post(
+                    '/Auth/refresh',
+                    data: {
+                      'accessToken': accessToken,
+                      'refreshToken': refreshToken,
+                    },
+                  );
+
+                  // 2. On sauvegarde les nouveaux tokens
+                  final newAccessToken = response.data['token']['accessToken'];
+                  final newRefreshToken = response.data['token']['refreshToken'];
+
+                  await storage.write(key: 'access_token', value: newAccessToken);
+                  await storage.write(key: 'refresh_token', value: newRefreshToken);
+
+                  // 3. On rejoue la requête initiale avec le nouveau token
+                  e.requestOptions.headers["Authorization"] = "Bearer $newAccessToken";
+
+                  // On crée une nouvelle requête avec les mêmes options
+                  final opts = Options(
+                    method: e.requestOptions.method,
+                    headers: e.requestOptions.headers,
+                  );
+
+                  final clonedRequest = await _dio.request(
+                    e.requestOptions.path,
+                    options: opts,
+                    data: e.requestOptions.data,
+                    queryParameters: e.requestOptions.queryParameters,
+                  );
+
+                  return handler.resolve(clonedRequest);
+                } catch (refreshError) {
+                  // Si le refresh échoue (ex: refresh token expiré), on déconnecte
+                  await storage.deleteAll();
+                  _redirectToLogin();
+                }
+              } else {
+                // Pas de tokens dispo, redirection directe
+                await storage.deleteAll();
+                _redirectToLogin();
+              }
             }
             return handler.next(e);
           }
@@ -46,4 +97,11 @@ class ApiClient {
 
   // Getter pour accéder à l'instance Dio dans les DataSources
   Dio get dio => _dio;
+
+  void _redirectToLogin() {
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+    );
+  }
 }
