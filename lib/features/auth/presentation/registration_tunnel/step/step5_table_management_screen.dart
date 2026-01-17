@@ -226,6 +226,20 @@ class _Step5TableManagementScreenState extends State<Step5TableManagementScreen>
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () {
+                widget.onNext([]);
+              },
+              child: Text(
+                "Passer cette étape (vous pourrez y revenir plus tard)",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: colors.secondary, fontSize: 13),
+              ),
+            ),
+          ),
         ],
       ),
     );

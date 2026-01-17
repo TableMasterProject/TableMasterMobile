@@ -163,7 +163,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         restaurantOut = await restaurantRepo.createRestaurant(restaurantData);
       }
 
-      if (tablesOut == null && restaurantOut != null) {
+      if (tablesOut == null && restaurantOut != null && tablesData.isNotEmpty) {
         tablesOut = await tableRepo.replaceTables(restaurantOut!.id, tablesData);
       }
 
