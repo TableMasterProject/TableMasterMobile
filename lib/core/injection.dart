@@ -23,6 +23,9 @@ import '../features/daily_activity/domain/repositories/daily_activity_repository
 import '../features/closed_day_exception/data/datasources/closed_day_exception_datasource.dart';
 import '../features/closed_day_exception/data/repositories/closed_day_exception_repository_impl.dart';
 import '../features/closed_day_exception/domain/repositories/closed_day_exception_repository.dart';
+import '../features/review/data/datasources/review_datasource.dart';
+import '../features/review/data/repositories/review_repository_impl.dart';
+import '../features/review/domain/repositories/review_repository.dart';
 import 'api_client.dart';
 
 final getIt = GetIt.instance;
@@ -114,6 +117,15 @@ void setupDependencies() {
   getIt.registerLazySingleton<IClosedDayExceptionRepository>(
     () =>
         ClosedDayExceptionRepositoryImpl(getIt<ClosedDayExceptionDataSource>()),
+  );
+  // endregion
+
+  // region Review
+  getIt.registerLazySingleton<ReviewDataSource>(
+    () => ReviewDataSource(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<IReviewRepository>(
+    () => ReviewRepositoryImpl(getIt<ReviewDataSource>()),
   );
   // endregion
 }

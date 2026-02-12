@@ -17,6 +17,7 @@ import 'package:table_master_mobile/features/menu/domain/repositories/menu_repos
 import 'package:table_master_mobile/features/menu/presentation/menu_page.dart';
 import 'package:table_master_mobile/features/daily_activity/presentation/hourly_activity_page.dart';
 import 'package:table_master_mobile/features/closed_day_exception/presentation/exceptions_page.dart';
+import 'package:table_master_mobile/features/review/presentation/pages/restaurant_reviews_page.dart';
 
 class RestaurantPage extends StatefulWidget {
   final UserOut user;
@@ -64,6 +65,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
       setState(() => _loading = false);
     }
   }
+
   Future<void> _loadDailyReservations(int restaurantId) async {
     try {
       final today = DateTime.now();
@@ -199,7 +201,8 @@ class _RestaurantPageState extends State<RestaurantPage> {
       onPressed: () => setState(() => _viewIndex = index),
       style: FilledButton.styleFrom(
         backgroundColor: isSelected ? colors.primary : colors.surfaceVariant,
-        foregroundColor: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+        foregroundColor:
+            isSelected ? colors.onPrimary : colors.onSurfaceVariant,
       ),
       child: Text(label),
     );
@@ -751,7 +754,17 @@ class _RestaurantPageState extends State<RestaurantPage> {
             context,
             "Avis du restaurant",
             Icons.reviews,
-            () {},
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => RestaurantReviewsPage(
+                        restaurantId: widget.user.restaurantId!,
+                      ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -798,9 +811,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 13)),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
         ],
       ),
     );

@@ -5,6 +5,7 @@ import 'package:table_master_mobile/features/auth/presentation/registration_tunn
 import 'package:table_master_mobile/features/user/data/models/user_in.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 import 'package:table_master_mobile/features/user/domain/repositories/user_repository.dart';
+import 'package:table_master_mobile/features/review/presentation/pages/my_reviews_page.dart';
 
 class AccountPage extends StatefulWidget {
   final UserOut user;
@@ -83,71 +84,97 @@ class _AccountPageState extends State<AccountPage> {
               ),
               const SizedBox(height: 12),
 
-              _buildSettingsButton(context, "Modifier le profil", Icons.edit, () async {
-                final userIn = UserIn(
-                  email: _currentUser.email,
-                  firstName: _currentUser.firstName,
-                  lastName: _currentUser.lastName,
-                  accountType: _currentUser.accountType,
-                  password: "", // Not used for update
-                );
+              _buildSettingsButton(
+                context,
+                "Modifier le profil",
+                Icons.edit,
+                () async {
+                  final userIn = UserIn(
+                    email: _currentUser.email,
+                    firstName: _currentUser.firstName,
+                    lastName: _currentUser.lastName,
+                    accountType: _currentUser.accountType,
+                    password: "", // Not used for update
+                  );
 
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(title: const Text("Modifier le profil")),
-                      body: Step1UserInfoScreen(
-                        user: userIn,
-                        onNext: (updatedUser) async {
-                          try {
-                            await userRepo.updateProfile(updatedUser);
-                            Navigator.pop(context);
-                            _refreshProfile();
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erreur: $e')),
-                            );
-                          }
-                        },
-                      ),
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => Scaffold(
+                            appBar: AppBar(
+                              title: const Text("Modifier le profil"),
+                            ),
+                            body: Step1UserInfoScreen(
+                              user: userIn,
+                              onNext: (updatedUser) async {
+                                try {
+                                  await userRepo.updateProfile(updatedUser);
+                                  Navigator.pop(context);
+                                  _refreshProfile();
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Erreur: $e')),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
               const SizedBox(height: 10),
 
-              _buildSettingsButton(context, "Changer le mot de passe", Icons.lock, () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(title: const Text("Mot de passe")),
-                      body: ChangePasswordScreen(
-                        onConfirm: (oldPwd, newPwd) async {
-                          try {
-                            final success = await userRepo.changePassword(oldPwd, newPwd);
-                            if (success) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Mot de passe mis à jour !')),
-                              );
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Erreur: $e')),
-                            );
-                          }
-                        },
-                      ),
+              _buildSettingsButton(
+                context,
+                "Changer le mot de passe",
+                Icons.lock,
+                () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) => Scaffold(
+                            appBar: AppBar(title: const Text("Mot de passe")),
+                            body: ChangePasswordScreen(
+                              onConfirm: (oldPwd, newPwd) async {
+                                try {
+                                  final success = await userRepo.changePassword(
+                                    oldPwd,
+                                    newPwd,
+                                  );
+                                  if (success) {
+                                    Navigator.pop(context);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Mot de passe mis à jour !',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Erreur: $e')),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
               const SizedBox(height: 10),
 
               _buildSettingsButton(context, "Mes Avis", Icons.star_outline, () {
-                // TODO: Naviguer vers la page des avis
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyReviewsPage(),
+                  ),
+                );
               }),
 
               const SizedBox(height: 32),
@@ -198,7 +225,12 @@ class _AccountPageState extends State<AccountPage> {
     );
   }
 
-  Widget _buildSettingsButton(BuildContext context, String label, IconData icon, VoidCallback onPressed) {
+  Widget _buildSettingsButton(
+    BuildContext context,
+    String label,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
@@ -285,7 +317,9 @@ class _AccountPageState extends State<AccountPage> {
                 } catch (e) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erreur lors de la suppression: $e')),
+                    SnackBar(
+                      content: Text('Erreur lors de la suppression: $e'),
+                    ),
                   );
                 }
               },
