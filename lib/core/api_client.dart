@@ -55,8 +55,8 @@ class ApiClient {
                   );
 
                   // 2. On sauvegarde les nouveaux tokens
-                  final newAccessToken = response.data['token']['accessToken'];
-                  final newRefreshToken = response.data['token']['refreshToken'];
+                  final newAccessToken = response.data['accessToken'];
+                  final newRefreshToken = response.data['refreshToken'];
 
                   await storage.write(key: 'access_token', value: newAccessToken);
                   await storage.write(key: 'refresh_token', value: newRefreshToken);
@@ -80,12 +80,12 @@ class ApiClient {
                   return handler.resolve(clonedRequest);
                 } catch (refreshError) {
                   // Si le refresh échoue (ex: refresh token expiré), on déconnecte
-                  await storage.deleteAll();
+                  //await storage.deleteAll();
                   _redirectToLogin();
                 }
               } else {
                 // Pas de tokens dispo, redirection directe
-                await storage.deleteAll();
+                //await storage.deleteAll();
                 _redirectToLogin();
               }
             }

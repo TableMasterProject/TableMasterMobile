@@ -5,7 +5,7 @@ import '../../../restaurant/data/models/restaurant_out.dart';
 class UserOut extends UserIn {
   int id;
   DateTime createdAt;
-  RestaurantOut? restaurant;
+  int? restaurantId;
 
   UserOut({
     required super.email,
@@ -15,7 +15,7 @@ class UserOut extends UserIn {
     required super.accountType,
     required this.id,
     required this.createdAt,
-    this.restaurant,
+    this.restaurantId,
   });
 
   // Constructeur pour transformer le JSON du serveur en objet Dart
@@ -30,9 +30,7 @@ class UserOut extends UserIn {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      restaurant: json['restaurant'] != null
-          ? RestaurantOut.fromJson(json['restaurant'])
-          : null,
+      restaurantId: json['restaurantId'] ?? null,
     );
   }
 }

@@ -8,6 +8,7 @@ import 'package:table_master_mobile/features/auth/presentation/registration_tunn
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step5_table_management_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_error_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_success_screen.dart';
+import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
 import 'package:table_master_mobile/features/user/domain/repositories/user_repository.dart';
 
@@ -49,7 +50,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   // --- NOS DONNÉES CENTRALISÉES ---
   late UserIn userData;
   late RestaurantIn restaurantData;
-  List<TableEntityIn> tablesData = [];
+  TableChanges? tableChanges;
 
   @override
   void initState() {
@@ -132,8 +133,8 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     _nextStep();
   }
 
-  void _saveTablesStep(List<TableEntityIn> tables) {
-    tablesData = tables;
+  void _saveTablesStep(TableChanges changes) {
+    tableChanges = changes;
     _submitRestaurantRegistration(); // Appel final
   }
 
@@ -179,11 +180,9 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         restaurantOut = await restaurantRepo.createRestaurant(restaurantData);
       }
 
-      if (tablesOut == null && restaurantOut != null && tablesData.isNotEmpty) {
-        tablesOut = await tableRepo.replaceTables(
-          restaurantOut!.id,
-          tablesData,
-        );
+      if (restaurantOut != null && tableChanges != null && tableChanges!.toAdd.isNotEmpty) {
+        // En création, on a surtout des toAdd
+        await tableRepo.replaceTables(restaurantOut!.id, tableChanges!.toAdd);
       }
 
       setState(() => _isLoading = false);
@@ -233,7 +232,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
           onNext: _saveRestaurantStep,
           restaurantIn: restaurantData,
         ),
-        Step5TableManagementScreen(onNext: _saveTablesStep),
+        Step5TableManagementScreen(onNext: _saveTablesStep, initialTables: null,),
       ],
 
       // AFFICHAGE DYNAMIQUE DU RÉSULTAT FINAL

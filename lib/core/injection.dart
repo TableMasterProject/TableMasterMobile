@@ -8,6 +8,9 @@ import '../features/restaurant/domain/repositories/restaurant_repository.dart';
 import '../features/table/data/datasources/table_datasource.dart';
 import '../features/table/data/repositories/table_repository_impl.dart';
 import '../features/table/domain/repositories/table_repository.dart';
+import '../features/reservation/data/datasources/reservation_datasource.dart';
+import '../features/reservation/data/repositories/reservation_repository_impl.dart';
+import '../features/reservation/domain/repositories/reservation_repository.dart';
 import '../features/user/data/datasources/user_datasource.dart';
 import '../features/user/data/repositories/user_repository_impl.dart';
 import '../features/user/domain/repositories/user_repository.dart';
@@ -22,46 +25,58 @@ void setupDependencies() {
   // region Auth
   // DataSource Auth
   getIt.registerLazySingleton<AuthDataSource>(
-        () => AuthDataSource(getIt<ApiClient>()),
+    () => AuthDataSource(getIt<ApiClient>()),
   );
 
   // Repository Auth
   getIt.registerLazySingleton<IAuthRepository>(
-        () => AuthRepositoryImpl(getIt<AuthDataSource>()),
+    () => AuthRepositoryImpl(getIt<AuthDataSource>()),
   );
   // endregion
 
   // region User
   // DataSource User
   getIt.registerLazySingleton<UserDataSource>(
-        () => UserDataSource(getIt<ApiClient>()),
+    () => UserDataSource(getIt<ApiClient>()),
   );
   // Repository User
   getIt.registerLazySingleton<IUserRepository>(
-        () => UserRepositoryImpl(getIt<UserDataSource>()),
+    () => UserRepositoryImpl(getIt<UserDataSource>()),
   );
   // endregion
 
   // region Restaurant
   // DataSource Restaurant
   getIt.registerLazySingleton<RestaurantDataSource>(
-        () => RestaurantDataSource(getIt<ApiClient>()),
+    () => RestaurantDataSource(getIt<ApiClient>()),
   );
   // Repository Restaurant
   getIt.registerLazySingleton<IRestaurantRepository>(
-        () => RestaurantRepositoryImpl(getIt<RestaurantDataSource>()),
+    () => RestaurantRepositoryImpl(getIt<RestaurantDataSource>()),
   );
   // endregion
 
   // region Table
   // DataSource Table
   getIt.registerLazySingleton<TableDataSource>(
-        () => TableDataSource(getIt<ApiClient>()),
+    () => TableDataSource(getIt<ApiClient>()),
   );
 
   // Repository Table
   getIt.registerLazySingleton<ITableRepository>(
-        () => TableRepositoryImpl(getIt<TableDataSource>()),
+    () => TableRepositoryImpl(getIt<TableDataSource>()),
+  );
+  // endregion
+
+  // region Reservation
+  // DataSource Reservation
+  getIt.registerLazySingleton<ReservationDataSource>(
+    () => ReservationDataSource(getIt<ApiClient>()),
+  );
+
+  // Repository Reservation
+  getIt.registerLazySingleton<IReservationRepository>(
+    () => ReservationRepositoryImpl(getIt<ReservationDataSource>()),
   );
   // endregion
 }
