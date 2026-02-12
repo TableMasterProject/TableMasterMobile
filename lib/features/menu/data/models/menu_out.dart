@@ -23,9 +23,10 @@ class MenuOut extends MenuIn {
       description: json['description'] ?? '',
       // Gestion du type decimal C# vers double Dart
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 }

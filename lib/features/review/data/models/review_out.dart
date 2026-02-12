@@ -1,4 +1,4 @@
-import 'package:table_master_mobile/features/review/review_in.dart';
+import 'package:table_master_mobile/features/review/data/models/review_in.dart';
 
 class ReviewOut extends ReviewIn {
   int id;

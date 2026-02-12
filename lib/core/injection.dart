@@ -14,6 +14,15 @@ import '../features/reservation/domain/repositories/reservation_repository.dart'
 import '../features/user/data/datasources/user_datasource.dart';
 import '../features/user/data/repositories/user_repository_impl.dart';
 import '../features/user/domain/repositories/user_repository.dart';
+import '../features/menu/data/datasources/menu_datasource.dart';
+import '../features/menu/data/repositories/menu_repository_impl.dart';
+import '../features/menu/domain/repositories/menu_repository.dart';
+import '../features/daily_activity/data/datasources/daily_activity_datasource.dart';
+import '../features/daily_activity/data/repositories/daily_activity_repository_impl.dart';
+import '../features/daily_activity/domain/repositories/daily_activity_repository.dart';
+import '../features/closed_day_exception/data/datasources/closed_day_exception_datasource.dart';
+import '../features/closed_day_exception/data/repositories/closed_day_exception_repository_impl.dart';
+import '../features/closed_day_exception/domain/repositories/closed_day_exception_repository.dart';
 import 'api_client.dart';
 
 final getIt = GetIt.instance;
@@ -77,6 +86,34 @@ void setupDependencies() {
   // Repository Reservation
   getIt.registerLazySingleton<IReservationRepository>(
     () => ReservationRepositoryImpl(getIt<ReservationDataSource>()),
+  );
+  // endregion
+
+  // region Menu
+  getIt.registerLazySingleton<MenuDataSource>(
+    () => MenuDataSource(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<IMenuRepository>(
+    () => MenuRepositoryImpl(getIt<MenuDataSource>()),
+  );
+  // endregion
+
+  // region DailyActivity
+  getIt.registerLazySingleton<DailyActivityDataSource>(
+    () => DailyActivityDataSource(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<IDailyActivityRepository>(
+    () => DailyActivityRepositoryImpl(getIt<DailyActivityDataSource>()),
+  );
+  // endregion
+
+  // region ClosedDayException
+  getIt.registerLazySingleton<ClosedDayExceptionDataSource>(
+    () => ClosedDayExceptionDataSource(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<IClosedDayExceptionRepository>(
+    () =>
+        ClosedDayExceptionRepositoryImpl(getIt<ClosedDayExceptionDataSource>()),
   );
   // endregion
 }

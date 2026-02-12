@@ -1,9 +1,9 @@
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
 
-import '../../../closed_day_exception/closed_day_cxception_out.dart';
-import '../../../daily_activity/daily_activity_out.dart';
-import '../../../menu/menu_out.dart';
-import '../../../review/review_out.dart';
+import '../../../closed_day_exception/data/models/closed_day_exception_out.dart';
+import '../../../daily_activity/data/models/daily_activity_out.dart';
+import '../../../menu/data/models/menu_out.dart';
+import '../../../review/data/models/review_out.dart';
 import '../../../table/data/models/table_entity_out.dart';
 
 class RestaurantOut extends RestaurantIn {

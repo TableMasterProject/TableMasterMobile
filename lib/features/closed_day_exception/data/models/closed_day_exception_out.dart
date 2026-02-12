@@ -1,4 +1,4 @@
-import 'closed_day_cxception_in.dart';
+import 'closed_day_exception_in.dart';
 
 class ClosedDayExceptionOut extends ClosedDayExceptionIn {
   int id;
