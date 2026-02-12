@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:table_master_mobile/features/auth/data/models/login_user_out.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step1_user_info_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step2_password_screen.dart';
@@ -17,13 +18,13 @@ import '../../../restaurant/domain/repositories/restaurant_repository.dart';
 import '../../../table/data/models/table_entity_in.dart';
 import '../../../table/data/models/table_entity_out.dart';
 import '../../../user/data/models/user_in.dart';
-import '../../../user/data/models/user_out.dart';
 
 class RegistrationStepperScreen extends StatefulWidget {
   const RegistrationStepperScreen({super.key});
 
   @override
-  State<RegistrationStepperScreen> createState() => _RegistrationStepperScreenState();
+  State<RegistrationStepperScreen> createState() =>
+      _RegistrationStepperScreenState();
 }
 
 class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
@@ -54,7 +55,13 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   void initState() {
     super.initState();
     // Initialisation par défaut
-    userData = UserIn(email: '', password: '', firstName: '', lastName: '', accountType: 0);
+    userData = UserIn(
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      accountType: 0,
+    );
     restaurantData = RestaurantIn(
       userId: 0,
       restaurantName: '',
@@ -136,9 +143,16 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
       _isLoading = true;
     });
     try {
-      if(loginUserOut == null){
+      if (loginUserOut == null) {
         print("Envoi au serveur le user ...");
         loginUserOut = await userRepo.register(userData);
+
+        // Sauvegarder l'utilisateur
+        const storage = FlutterSecureStorage();
+        await storage.write(
+          key: 'user_id',
+          value: loginUserOut!.user.id.toString(),
+        );
       }
       setState(() => _isLoading = false);
       _nextStep();
@@ -148,7 +162,9 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         _hasError = true;
         _errorMessage = ex.toString();
       });
-      _nextStep(isError: true); // On avance quand même vers la dernière page (qui sera l'erreur)
+      _nextStep(
+        isError: true,
+      ); // On avance quand même vers la dernière page (qui sera l'erreur)
     }
   }
 
@@ -158,13 +174,16 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
       _isLoading = true;
     });
     try {
-      if(restaurantOut == null && loginUserOut != null){
+      if (restaurantOut == null && loginUserOut != null) {
         restaurantData.userId = loginUserOut!.user.id;
         restaurantOut = await restaurantRepo.createRestaurant(restaurantData);
       }
 
       if (tablesOut == null && restaurantOut != null && tablesData.isNotEmpty) {
-        tablesOut = await tableRepo.replaceTables(restaurantOut!.id, tablesData);
+        tablesOut = await tableRepo.replaceTables(
+          restaurantOut!.id,
+          tablesData,
+        );
       }
 
       setState(() => _isLoading = false);
@@ -188,15 +207,13 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     _pageController.jumpToPage(0);
   }
 
-  void _back(){
-    if(!_hasError && _currentStep +1 == totalSteps){
+  void _back() {
+    if (!_hasError && _currentStep + 1 == totalSteps) {
       _finish();
-    }
-    else{
+    } else {
       _prevStep();
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -204,18 +221,25 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
 
     // 2. On construit la liste des pages dynamiquement
     final List<Widget> steps = [
-      Step1UserInfoScreen(onNext: _saveUserStep,user: userData,),
-      Step2PasswordScreen(onNext: _savePasswordStep, password: userData.password,),
+      Step1UserInfoScreen(onNext: _saveUserStep, user: userData),
+      Step2PasswordScreen(
+        onNext: _savePasswordStep,
+        password: userData.password,
+      ),
       Step3AccountTypeScreen(onSelectType: _setAccountType),
 
       if (_isRestaurant) ...[
-        Step4RestaurantInfoScreen(onNext: _saveRestaurantStep, restaurantIn: restaurantData,),
+        Step4RestaurantInfoScreen(
+          onNext: _saveRestaurantStep,
+          restaurantIn: restaurantData,
+        ),
         Step5TableManagementScreen(onNext: _saveTablesStep),
       ],
 
       // AFFICHAGE DYNAMIQUE DU RÉSULTAT FINAL
-      _hasError ? Step6ErrorScreen(onRetry: _retry, errorMessage: _errorMessage,
-      ) : Step6SuccessScreen(finish: _finish),
+      _hasError
+          ? Step6ErrorScreen(onRetry: _retry, errorMessage: _errorMessage)
+          : Step6SuccessScreen(finish: _finish),
     ];
 
     // 3. Le nombre total de pages change selon le type de compte
@@ -273,8 +297,9 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
                           children: [
                             CircularProgressIndicator(),
                             SizedBox(height: 16),
-                            Text("Traitement en cours...",
-                                style: TextStyle(fontWeight: FontWeight.bold)
+                            Text(
+                              "Traitement en cours...",
+                              style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),

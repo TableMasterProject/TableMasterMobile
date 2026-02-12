@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:table_master_mobile/features/home/presentation/home_screen.dart';
-import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 import '../../../../core/app_config.dart';
 import '../../../../core/injection.dart';
 import '../../data/models/login_user_in.dart';
@@ -44,15 +44,24 @@ class _LoginScreenState extends State<LoginScreen> {
       LoginUserOut result = await _authRepo.login(credentials);
 
       if (mounted) {
+        // Sauvegarder l'utilisateur
+        const storage = FlutterSecureStorage();
+        await storage.write(key: 'user_id', value: result.user.id.toString());
+
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-              (route) => false,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(user: result.user),
+          ),
+          (route) => false,
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur : ${e.toString()}"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Erreur : ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -74,17 +83,28 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Text(
                 AppConfig.appName,
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colors.primary),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: colors.primary,
+                ),
               ),
               const SizedBox(height: 20),
               Icon(Icons.lock_outline, size: 80, color: colors.primary),
               const SizedBox(height: 20),
               Text(
                 "Bienvenue",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: colors.onSurface),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurface,
+                ),
               ),
               const SizedBox(height: 8),
-              Text("Connectez-vous pour continuer", style: TextStyle(color: colors.onSurfaceVariant)),
+              Text(
+                "Connectez-vous pour continuer",
+                style: TextStyle(color: colors.onSurfaceVariant),
+              ),
               const SizedBox(height: 40),
 
               // Champ Email
@@ -94,7 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: "Email",
                   prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -106,7 +128,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: "Mot de passe",
                   prefixIcon: const Icon(Icons.password_rounded),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -118,16 +142,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: FilledButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text("Se connecter", style: TextStyle(fontSize: 16)),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            "Se connecter",
+                            style: TextStyle(fontSize: 16),
+                          ),
                 ),
               ),
 
               const SizedBox(height: 16),
-              TextButton(onPressed: () {}, child: const Text("Mot de passe oublié ?")),
+              TextButton(
+                onPressed: () {},
+                child: const Text("Mot de passe oublié ?"),
+              ),
               const SizedBox(height: 10),
 
               // Bouton Créer un compte
@@ -136,13 +169,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 55,
                 child: OutlinedButton(
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const RegistrationStepperScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegistrationStepperScreen(),
+                      ),
+                    );
                   },
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: colors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text("Créer un compte", style: TextStyle(fontSize: 16)),
+                  child: const Text(
+                    "Créer un compte",
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ],
