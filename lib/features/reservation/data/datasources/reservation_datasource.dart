@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
 import '../models/reservation_out.dart';
+import '../models/search_reservations.dart';
 
 class ReservationDataSource {
   final ApiClient apiClient;
@@ -11,12 +12,15 @@ class ReservationDataSource {
   Future<List<ReservationOut>> getReservationsByRestaurant(
     int id,
     String reservationDate,
-    int? tableId
+    int? tableId,
   ) async {
     try {
       final response = await apiClient.dio.get(
         '/Reservation/Restaurant/$id',
-        queryParameters: {'reservationDate': reservationDate, 'tableId': tableId},
+        queryParameters: {
+          'reservationDate': reservationDate,
+          'tableId': tableId,
+        },
       );
       final List<dynamic> data = response.data;
       return data.map((json) => ReservationOut.fromJson(json)).toList();
@@ -25,10 +29,11 @@ class ReservationDataSource {
       rethrow;
     }
   }
+
   Future<List<ReservationOut>> getPendingReservationsByRestaurant(
-      int id,
-      int? tableId
-      ) async {
+    int id,
+    int? tableId,
+  ) async {
     try {
       final response = await apiClient.dio.get(
         '/Reservation/Restaurant/$id/Pending',
@@ -72,6 +77,23 @@ class ReservationDataSource {
     try {
       final response = await apiClient.dio.delete('/Reservation/$id');
       return response.data as bool;
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  // GET /api/Reservation/My?Offset=0&PageSize=20
+  Future<List<ReservationOut>> getMyReservations(
+    SearchReservations search,
+  ) async {
+    try {
+      final response = await apiClient.dio.get(
+        '/Reservation/My',
+        queryParameters: search.toJson(),
+      );
+      final List<dynamic> data = response.data;
+      return data.map((json) => ReservationOut.fromJson(json)).toList();
     } on DioException catch (e) {
       _handleError(e);
       rethrow;

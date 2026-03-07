@@ -46,6 +46,11 @@ class RestaurantOut extends RestaurantIn {
     this.menu,
   });
 
+  /// Retourne une représentation textuelle de l'adresse complète.
+  String addressString() {
+    return '$streetNumber $streetName, $postalCode $city';
+  }
+
   factory RestaurantOut.fromJson(Map<String, dynamic> json) {
     return RestaurantOut(
       // Champs hérités de RestaurantIn
@@ -65,29 +70,45 @@ class RestaurantOut extends RestaurantIn {
 
       // Champs spécifiques à RestaurantOut
       id: json['id'] ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
       distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
       averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
       numberOfReviews: json['numberOfReviews'] ?? 0,
 
       // Mapping des listes
-      tables: json['tables'] != null
-          ? List<TableEntityOut>.from(json['tables'].map((x) => TableEntityOut.fromJson(x)))
-          : null,
-      dailyActivitys: json['dailyActivitys'] != null
-          ? List<DailyActivityOut>.from(json['dailyActivitys'].map((x) => DailyActivityOut.fromJson(x)))
-          : null,
-      closedDayExceptions: json['closedDayExceptions'] != null
-          ? List<ClosedDayExceptionOut>.from(json['closedDayExceptions'].map((x) => ClosedDayExceptionOut.fromJson(x)))
-          : null,
-      reviews: json['reviews'] != null
-          ? List<ReviewOut>.from(json['reviews'].map((x) => ReviewOut.fromJson(x)))
-          : null,
-      menu: json['menu'] != null
-          ? List<MenuOut>.from(json['menu'].map((x) => MenuOut.fromJson(x)))
-          : null,
+      tables:
+          json['tables'] != null
+              ? List<TableEntityOut>.from(
+                json['tables'].map((x) => TableEntityOut.fromJson(x)),
+              )
+              : null,
+      dailyActivitys:
+          json['dailyActivitys'] != null
+              ? List<DailyActivityOut>.from(
+                json['dailyActivitys'].map((x) => DailyActivityOut.fromJson(x)),
+              )
+              : null,
+      closedDayExceptions:
+          json['closedDayExceptions'] != null
+              ? List<ClosedDayExceptionOut>.from(
+                json['closedDayExceptions'].map(
+                  (x) => ClosedDayExceptionOut.fromJson(x),
+                ),
+              )
+              : null,
+      reviews:
+          json['reviews'] != null
+              ? List<ReviewOut>.from(
+                json['reviews'].map((x) => ReviewOut.fromJson(x)),
+              )
+              : null,
+      menu:
+          json['menu'] != null
+              ? List<MenuOut>.from(json['menu'].map((x) => MenuOut.fromJson(x)))
+              : null,
     );
   }
 }

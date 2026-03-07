@@ -1,3 +1,4 @@
+import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 
@@ -17,6 +18,7 @@ class ReservationOut {
   // Expanded relations
   UserOut? user;
   TableEntityOut? table;
+  RestaurantOut? restaurant;
 
   ReservationOut({
     required this.id,
@@ -30,6 +32,7 @@ class ReservationOut {
     required this.isValidate,
     this.user,
     this.table,
+    this.restaurant,
   });
 
   factory ReservationOut.fromJson(Map<String, dynamic> json) {
@@ -52,6 +55,7 @@ class ReservationOut {
       user: json['user'] != null ? UserOut.fromJson(json['user']) : null,
       table:
           json['table'] != null ? TableEntityOut.fromJson(json['table']) : null,
+      restaurant : json['restaurant'] != null ? RestaurantOut.fromJson(json['restaurant']) : null,
     );
   }
 }
