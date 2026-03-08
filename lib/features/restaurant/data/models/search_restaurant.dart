@@ -3,6 +3,8 @@ class SearchRestaurant {
   int? pageSize;
   double? latitude;
   double? longitude;
+  double? currentUserLongitude;
+  double? currentUserLatitude;
   String? cuisineType;
   String? paymentMethods;
 
@@ -11,6 +13,8 @@ class SearchRestaurant {
     this.pageSize = 20,
     this.latitude,
     this.longitude,
+    this.currentUserLongitude,
+    this.currentUserLatitude,
     this.cuisineType,
     this.paymentMethods,
   });
@@ -22,6 +26,8 @@ class SearchRestaurant {
     if (pageSize != null) data['PageSize'] = pageSize;
     if (latitude != null) data['Latitude'] = latitude;
     if (longitude != null) data['Longitude'] = longitude;
+    if (currentUserLongitude != null) data['CurrentUserLongitude'] = currentUserLongitude;
+    if (currentUserLatitude != null) data['CurrentUserLatitude'] = currentUserLatitude;
     if (cuisineType != null) data['CuisineType'] = cuisineType;
     if (paymentMethods != null) data['PaymentMethods'] = paymentMethods;
     return data;

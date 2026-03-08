@@ -32,6 +32,9 @@ class _MapsPageState extends State<MapsPage> {
   bool _userMovedMap = false;
   static const double _searchDistanceThreshold = 500; // meters
 
+  bool _isLocationReady = false;
+  String _statusMessage = 'Requesting location permission...';
+
   bool _loading = false;
   String? _error;
   List<RestaurantOut> _restaurants = [];
@@ -49,67 +52,55 @@ class _MapsPageState extends State<MapsPage> {
   @override
   void initState() {
     super.initState();
-    _determinePosition()
-        .then((pos) {
-          setState(() {
-            _mapCenter = LatLng(pos.latitude, pos.longitude);
-            _search.latitude = pos.latitude;
-            _search.longitude = pos.longitude;
-          });
-          _loadRestaurants();
-          _controller?.animateCamera(CameraUpdate.newLatLng(_mapCenter));
-          _startPositionStream();
-        })
-        .catchError((_) {
-          // ignore failures, keep default center
-          _loadRestaurants();
-        });
+    _determinePosition();
   }
 
-  Future<Position> _determinePosition() async {
-    Geolocator.requestPermission();
+  Future<void> _determinePosition() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      return Future.error('Location services disabled');
+      setState(() {
+        _statusMessage =
+            'Location services are disabled. Please enable them in your settings.';
+      });
+      return;
     }
+
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions denied');
-      }
     }
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions permanently denied');
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      setState(() {
+        _statusMessage =
+            'Location permission is required to use the map. Please grant permission in your app settings.';
+      });
+      return;
     }
-    return Geolocator.getCurrentPosition();
+
+    try {
+      final pos = await Geolocator.getCurrentPosition();
+      setState(() {
+        _isLocationReady = true;
+        _mapCenter = LatLng(pos.latitude, pos.longitude);
+        _search.latitude = pos.latitude;
+        _search.longitude = pos.longitude;
+        _search.currentUserLatitude = pos.latitude;
+        _search.currentUserLongitude = pos.longitude;
+      });
+      _loadRestaurants();
+      _controller?.animateCamera(CameraUpdate.newLatLng(_mapCenter));
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'Failed to get location: $e';
+      });
+    }
   }
 
   void _onCameraMove(CameraPosition pos) {
     _mapCenter = pos.target;
     _userMovedMap = true;
-  }
-
-  void _startPositionStream() {
-    // subscribe to continuous location updates and recenter/search
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 10,
-      ),
-    ).listen((pos) {
-      log('location update: $pos');
-      setState(() {
-        _mapCenter = LatLng(pos.latitude, pos.longitude);
-        _search.latitude = pos.latitude;
-        _search.longitude = pos.longitude;
-      });
-      // only recenter map if user hasn't panned manually
-      if (!_userMovedMap) {
-        _controller?.animateCamera(CameraUpdate.newLatLng(_mapCenter));
-        _maybeSearchNewArea();
-      }
-    });
   }
 
   void _onCameraIdle() {
@@ -138,7 +129,6 @@ class _MapsPageState extends State<MapsPage> {
 
     try {
       final list = await _repo.getAllRestaurants(_search);
-      list.sort((a, b) => a.distance.compareTo(b.distance));
       setState(() {
         _restaurants = list;
         _updateMarkers();
@@ -278,7 +268,11 @@ class _MapsPageState extends State<MapsPage> {
             return ListTile(
               title: Text(r.restaurantName),
               subtitle: Text(r.addressString()),
-              trailing: Text('${r.distance.toStringAsFixed(1)} km'),
+              trailing: Text(
+                  r.distanceWithUser >= 1000
+                      ? '${(r.distanceWithUser / 1000).toStringAsFixed(1)} km'
+                      : '${r.distanceWithUser.toStringAsFixed(0)} m'
+              ),
               onTap: () => _openDetail(r),
             );
           },
@@ -293,18 +287,32 @@ class _MapsPageState extends State<MapsPage> {
           filterSection,
           Expanded(
             flex: 2,
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: _mapCenter,
-                zoom: 12,
-              ),
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              onMapCreated: (c) => _controller = c,
-              onCameraMove: _onCameraMove,
-              onCameraIdle: _onCameraIdle,
-              markers: _markers,
-            ),
+            child: _isLocationReady
+                ? GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: _mapCenter,
+                      zoom: 12,
+                    ),
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    onMapCreated: (c) => _controller = c,
+                    onCameraMove: _onCameraMove,
+                    onCameraIdle: _onCameraIdle,
+                    markers: _markers,
+                  )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_statusMessage),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _determinePosition,
+                          child: const Text('Réessayer'),
+                        ),
+                      ],
+                    ),
+                  ),
           ),
           Expanded(flex: 3, child: listSection),
         ],

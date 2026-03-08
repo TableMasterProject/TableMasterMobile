@@ -9,7 +9,8 @@ import '../../../table/data/models/table_entity_out.dart';
 class RestaurantOut extends RestaurantIn {
   int id;
   DateTime createdAt;
-  double distance;
+  double distanceForSearch;
+  double distanceWithUser;
   double averageRating;
   int numberOfReviews;
 
@@ -36,7 +37,8 @@ class RestaurantOut extends RestaurantIn {
     required super.isAutoValidateReservation,
     required this.id,
     required this.createdAt,
-    required this.distance,
+    required this.distanceForSearch,
+    required this.distanceWithUser,
     required this.averageRating,
     required this.numberOfReviews,
     this.tables,
@@ -74,7 +76,8 @@ class RestaurantOut extends RestaurantIn {
           json['createdAt'] != null
               ? DateTime.parse(json['createdAt'])
               : DateTime.now(),
-      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+      distanceForSearch: (json['distanceForSearch'] as num?)?.toDouble() ?? 0.0,
+      distanceWithUser: (json['distanceWithUser'] as num?)?.toDouble() ?? 0.0,
       averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0,
       numberOfReviews: json['numberOfReviews'] ?? 0,
 
