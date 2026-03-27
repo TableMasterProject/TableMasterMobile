@@ -33,7 +33,8 @@ class _MapsPageState extends State<MapsPage> {
   static const double _searchDistanceThreshold = 500; // meters
 
   bool _isLocationReady = false;
-  String _statusMessage = 'Requesting location permission...';
+  bool _isRequestingLocation = false;
+  String _statusMessage = 'Demande d\'autorisation de localisation...';
 
   bool _loading = false;
   String? _error;
@@ -56,33 +57,41 @@ class _MapsPageState extends State<MapsPage> {
   }
 
   Future<void> _determinePosition() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() {
-        _statusMessage =
-            'Location services are disabled. Please enable them in your settings.';
-      });
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      setState(() {
-        _statusMessage =
-            'Location permission is required to use the map. Please grant permission in your app settings.';
-      });
-      return;
-    }
+    setState(() {
+      _isRequestingLocation = true;
+      _statusMessage = 'Récupération de votre position...';
+    });
 
     try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _isRequestingLocation = false;
+          _statusMessage =
+              'Les services de localisation sont désactivés. Veuillez les activer dans vos paramètres.';
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          _isRequestingLocation = false;
+          _statusMessage =
+              'L\'autorisation de localisation est requise pour utiliser la carte.';
+        });
+        return;
+      }
+
       final pos = await Geolocator.getCurrentPosition();
       setState(() {
         _isLocationReady = true;
+        _isRequestingLocation = false;
         _mapCenter = LatLng(pos.latitude, pos.longitude);
         _search.latitude = pos.latitude;
         _search.longitude = pos.longitude;
@@ -93,7 +102,8 @@ class _MapsPageState extends State<MapsPage> {
       _controller?.animateCamera(CameraUpdate.newLatLng(_mapCenter));
     } catch (e) {
       setState(() {
-        _statusMessage = 'Failed to get location: $e';
+        _isRequestingLocation = false;
+        _statusMessage = 'Échec de la récupération de la position : $e';
       });
     }
   }
@@ -304,12 +314,24 @@ class _MapsPageState extends State<MapsPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(_statusMessage),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _determinePosition,
-                          child: const Text('Réessayer'),
-                        ),
+                        if (_isRequestingLocation)
+                          const CircularProgressIndicator()
+                        else ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(_statusMessage, textAlign: TextAlign.center),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _determinePosition,
+                            child: const Text('Réessayer'),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => Geolocator.openAppSettings(),
+                            child: const Text('Ouvrir les paramètres'),
+                          ),
+                        ],
                       ],
                     ),
                   ),

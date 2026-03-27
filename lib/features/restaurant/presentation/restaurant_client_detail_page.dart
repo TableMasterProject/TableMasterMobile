@@ -4,6 +4,8 @@ import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 
+import '../../reservation/presentation/create_reservation_page.dart';
+
 class RestaurantClientDetailPage extends StatefulWidget {
   final RestaurantOut restaurant;
 
@@ -64,7 +66,12 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
               : _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // TODO: implement reservation creation flow
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CreateReservationPage(restaurant: _fullRestaurant ?? widget.restaurant),
+            ),
+          );
         },
         label: const Text('Faire une réservation'),
         icon: const Icon(Icons.event_available),
@@ -219,24 +226,6 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
               );
             }).toList(),
             const SizedBox(height: 24),
-          ],
-
-          // Tables
-          if (restaurant.tables?.isNotEmpty ?? false) ...[
-            Text('Tables disponibles', style: textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children:
-                  restaurant.tables!.map((table) {
-                    return Chip(
-                      label: Text(
-                        'Table ${table.tableNumber} (${table.numberOfSeats}p)',
-                      ),
-                    );
-                  }).toList(),
-            ),
           ],
         ],
       ),

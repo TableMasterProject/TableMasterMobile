@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/app_config.dart';
 import 'core/app_constant.dart';
@@ -7,6 +8,8 @@ import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('fr_FR', null);
 
   setupDependencies();
 
