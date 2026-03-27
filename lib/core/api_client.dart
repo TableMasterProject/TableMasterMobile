@@ -11,6 +11,7 @@ class ApiClient {
 
   // Configuration de base
   static const String baseUrl = AppConfig.apiUrl + "/api";
+  static const String apiVersion = "1.0";
 
   ApiClient() {
     _dio = Dio(
@@ -19,6 +20,10 @@ class ApiClient {
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         responseType: ResponseType.json,
+
+        headers: {
+          'x-api-version': apiVersion,
+        },
       ),
     );
 
@@ -45,7 +50,10 @@ class ApiClient {
               if (refreshToken != null && accessToken != null) {
                 try {
                   // 1. On tente le refresh via une instance Dio propre (pour éviter les boucles)
-                  final refreshDio = Dio(BaseOptions(baseUrl: baseUrl));
+                  final refreshDio = Dio(BaseOptions(
+                    baseUrl: baseUrl,
+                    headers: {'x-api-version': apiVersion},
+                  ));
                   final response = await refreshDio.post(
                     '/Auth/refresh',
                     data: {
