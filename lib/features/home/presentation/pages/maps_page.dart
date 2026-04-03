@@ -11,6 +11,8 @@ import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/restaurant/presentation/restaurant_client_detail_page.dart';
 import 'package:table_master_mobile/core/app_constant.dart';
 
+import '../../../../core/localisation.dart';
+
 class MapsPage extends StatefulWidget {
   const MapsPage({super.key});
 
@@ -25,6 +27,7 @@ class _MapsPageState extends State<MapsPage> {
   String? _selectedCuisine;
   String? _selectedPayment;
 
+  bool _isInitializing = true;
   LatLng _mapCenter = const LatLng(48.8566, 2.3522);
   LatLng? _lastSearchCenter;
   GoogleMapController? _controller;
@@ -32,8 +35,6 @@ class _MapsPageState extends State<MapsPage> {
   bool _userMovedMap = false;
   static const double _searchDistanceThreshold = 500; // meters
 
-  bool _isLocationReady = false;
-  bool _isRequestingLocation = false;
   String _statusMessage = 'Demande d\'autorisation de localisation...';
 
   bool _loading = false;
@@ -53,60 +54,43 @@ class _MapsPageState extends State<MapsPage> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
+    _initLocationAndData();
   }
 
-  Future<void> _determinePosition() async {
-    setState(() {
-      _isRequestingLocation = true;
-      _statusMessage = 'Récupération de votre position...';
-    });
+  Future<void> _initLocationAndData() async {
+    setState(() => _isInitializing = true);
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _isRequestingLocation = false;
-          _statusMessage =
-              'Les services de localisation sont désactivés. Veuillez les activer dans vos paramètres.';
-        });
-        return;
-      }
+      // 1. Demande de permission
+      await Localisation.checkPermission();
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      // 2. Tente de récupérer la position
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 7),
+      );
 
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        setState(() {
-          _isRequestingLocation = false;
-          _statusMessage =
-              'L\'autorisation de localisation est requise pour utiliser la carte.';
-        });
-        return;
-      }
+      _mapCenter = LatLng(pos.latitude, pos.longitude);
+      _search.latitude = pos.latitude;
+      _search.longitude = pos.longitude;
+      _search.currentUserLatitude = pos.latitude;
+      _search.currentUserLongitude = pos.longitude;
 
-      final pos = await Geolocator.getCurrentPosition();
-      setState(() {
-        _isLocationReady = true;
-        _isRequestingLocation = false;
-        _mapCenter = LatLng(pos.latitude, pos.longitude);
-        _search.latitude = pos.latitude;
-        _search.longitude = pos.longitude;
-        _search.currentUserLatitude = pos.latitude;
-        _search.currentUserLongitude = pos.longitude;
-      });
-      _loadRestaurants();
-      _controller?.animateCamera(CameraUpdate.newLatLng(_mapCenter));
     } catch (e) {
-      setState(() {
-        _isRequestingLocation = false;
-        _statusMessage = 'Échec de la récupération de la position : $e';
-      });
+      debugPrint("Localisation non disponible (timeout ou refus), repli sur Paris: $e");
+      // Valeurs par défaut déjà réglées sur Paris
+      _search.latitude = _mapCenter.latitude;
+      _search.longitude = _mapCenter.longitude;
+    }
+
+    // 3. On charge les restaurants AVANT de retirer le loader
+    await _loadRestaurants();
+
+    if (mounted) {
+      setState(() => _isInitializing = false);
     }
   }
+
 
   void _onCameraMove(CameraPosition pos) {
     _mapCenter = pos.target;
@@ -208,7 +192,23 @@ class _MapsPageState extends State<MapsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // filters widget placed above map
+    if (_isInitializing) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Recherche...')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              Text("Recherche des restaurants à proximité...",
+                  style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      );
+    }
+
     Widget filterSection = Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -297,44 +297,18 @@ class _MapsPageState extends State<MapsPage> {
           filterSection,
           Expanded(
             flex: 2,
-            child: _isLocationReady
-                ? GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: _mapCenter,
-                      zoom: 12,
-                    ),
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                    onMapCreated: (c) => _controller = c,
-                    onCameraMove: _onCameraMove,
-                    onCameraIdle: _onCameraIdle,
-                    markers: _markers,
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (_isRequestingLocation)
-                          const CircularProgressIndicator()
-                        else ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(_statusMessage, textAlign: TextAlign.center),
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _determinePosition,
-                            child: const Text('Réessayer'),
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: () => Geolocator.openAppSettings(),
-                            child: const Text('Ouvrir les paramètres'),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _mapCenter,
+                zoom: 12,
+              ),
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+              onMapCreated: (c) => _controller = c,
+              onCameraMove: _onCameraMove,
+              onCameraIdle: _onCameraIdle,
+              markers: _markers,
+            )
           ),
           Expanded(flex: 3, child: listSection),
         ],

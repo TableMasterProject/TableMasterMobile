@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/localisation.dart';
 import '../../reservation/presentation/create_reservation_page.dart';
 
 class RestaurantClientDetailPage extends StatefulWidget {
@@ -22,11 +25,13 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
   RestaurantOut? _fullRestaurant;
   bool _isLoading = true;
   late TabController _tabController;
+  GoogleMapController? _mapController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
+    Localisation.checkPermission();
     _fetchRestaurantDetails();
   }
 
@@ -55,6 +60,21 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
         );
       }
     }
+  }
+
+  Future<void> _openMap() async {
+    final r = _fullRestaurant ?? widget.restaurant;
+    final location = (r.latitude != null && r.longitude != null)
+        ? "${r.latitude},${r.longitude}"
+        : r.addressString();
+    final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}");
+    await launchUrl(url, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _makeCall() async {
+    final phone = _fullRestaurant?.phone ?? widget.restaurant.phone;
+    final url = Uri.parse("tel:$phone");
+    if (await canLaunchUrl(url)) await launchUrl(url);
   }
 
   @override
@@ -88,7 +108,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
       headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
         return <Widget>[
           SliverAppBar(
-            expandedHeight: 250.0,
+            expandedHeight: 500,
             floating: false,
             pinned: true,
             stretch: true,
@@ -104,23 +124,24 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Container(
-                    color: colors.primaryContainer,
-                    child: Icon(
-                      Icons.restaurant_menu,
-                      size: 150,
-                      color: colors.onPrimaryContainer.withOpacity(0.5),
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment(0.0, 0.5),
-                        end: Alignment(0.0, 0.0),
-                        colors: <Color>[Color(0x60000000), Color(0x00000000)],
-                      ),
-                    ),
-                  ),
+                  if (restaurant.latitude != null)
+                    GoogleMap(
+                      initialCameraPosition: CameraPosition(target: LatLng(restaurant!.latitude!, restaurant.longitude!), zoom: 16),
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('res'),
+                          position: LatLng(restaurant.latitude!, restaurant.longitude!),
+                          infoWindow: InfoWindow(title: restaurant.restaurantName, snippet: restaurant.addressString()),
+                        ),
+                      },
+                      myLocationEnabled: true,
+                      myLocationButtonEnabled: true,
+                      mapToolbarEnabled: true,
+                      onMapCreated: (c) => _mapController = c,
+                    )
+                  else
+                    Container(color: colors.primaryContainer, child: Icon(Icons.restaurant, size: 80, color: colors.onPrimaryContainer.withOpacity(0.3))),
+                  const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black38, Colors.transparent, Colors.black87]))),
                 ],
               ),
             ),
@@ -131,10 +152,11 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                 controller: _tabController,
                 labelColor: colors.primary,
                 unselectedLabelColor: colors.onSurfaceVariant,
+                isScrollable: false,
                 tabs: const [
                   Tab(icon: Icon(Icons.info_outline), text: 'À propos'),
                   Tab(icon: Icon(Icons.restaurant_menu), text: 'Menu'),
-                  Tab(icon: Icon(Icons.reviews_outlined), text: 'Avis'),
+                  Tab(icon: Icon(Icons.reviews_outlined), text: 'Avis')
                 ],
               ),
             ),
@@ -147,7 +169,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
         children: [
           _buildAboutTab(context, restaurant),
           _buildMenuTab(context, restaurant),
-          _buildReviewsTab(context, restaurant),
+          _buildReviewsTab(context, restaurant)
         ],
       ),
     );
@@ -180,8 +202,14 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
             Icons.location_on,
             'Adresse',
             restaurant.addressString(),
+            onTap: _openMap,
           ),
-          _buildInfoTile(Icons.phone, 'Téléphone', restaurant.phone),
+          _buildInfoTile(
+            Icons.phone,
+            'Téléphone',
+            restaurant.phone,
+            onTap: _makeCall,
+          ),
           _buildInfoTile(Icons.restaurant, 'Cuisine', restaurant.cuisineType),
           const SizedBox(height: 16),
           const Divider(),
@@ -348,11 +376,13 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String title, String subtitle) {
+  Widget _buildInfoTile(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle),
+      onTap: onTap,
+      trailing: onTap != null ? const Icon(Icons.chevron_right, size: 18) : null,
     );
   }
 }
