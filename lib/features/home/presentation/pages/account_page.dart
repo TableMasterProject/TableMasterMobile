@@ -39,230 +39,259 @@ class _AccountPageState extends State<AccountPage> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final maxWidth = screenWidth * 0.9;
+    final textTheme = Theme.of(context).textTheme;
 
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Column(
-            children: [
-              // Informations utilisateur
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildInfoRow("Prénom", _currentUser.firstName, colors),
-                      const SizedBox(height: 12),
-                      _buildInfoRow("Nom", _currentUser.lastName, colors),
-                      const SizedBox(height: 12),
-                      _buildInfoRow("Email", _currentUser.email, colors),
-                      const SizedBox(height: 12),
-                      _buildInfoRow(
-                        "Type de compte",
-                        _currentUser.accountType == 0 ? "Client" : "Restaurant",
-                        colors,
+    return Scaffold(
+      backgroundColor: colors.surface,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header Section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    colors.primary,
+                    colors.primary.withOpacity(0.8),
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: colors.onPrimary.withOpacity(0.2),
+                    child: Text(
+                      "${_currentUser.firstName[0].toUpperCase()}${_currentUser.lastName[0].toUpperCase()}",
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: colors.onPrimary,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Boutons d'action principaux
-              Text(
-                "Paramètres",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              _buildSettingsButton(
-                context,
-                "Modifier le profil",
-                Icons.edit,
-                () async {
-                  final userIn = UserIn(
-                    email: _currentUser.email,
-                    firstName: _currentUser.firstName,
-                    lastName: _currentUser.lastName,
-                    accountType: _currentUser.accountType,
-                    password: "", // Not used for update
-                  );
-
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => Scaffold(
-                            appBar: AppBar(
-                              title: const Text("Modifier le profil"),
-                            ),
-                            body: Step1UserInfoScreen(
-                              user: userIn,
-                              onNext: (updatedUser) async {
-                                try {
-                                  await userRepo.updateProfile(updatedUser);
-                                  Navigator.pop(context);
-                                  _refreshProfile();
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Erreur: $e')),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-
-              _buildSettingsButton(
-                context,
-                "Changer le mot de passe",
-                Icons.lock,
-                () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (_) => Scaffold(
-                            appBar: AppBar(title: const Text("Mot de passe")),
-                            body: ChangePasswordScreen(
-                              onConfirm: (oldPwd, newPwd) async {
-                                try {
-                                  final success = await userRepo.changePassword(
-                                    oldPwd,
-                                    newPwd,
-                                  );
-                                  if (success) {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Mot de passe mis à jour !',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Erreur: $e')),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "${_currentUser.firstName} ${_currentUser.lastName}",
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: colors.onPrimary,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-
-              _buildSettingsButton(context, "Mes Avis", Icons.star_outline, () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MyReviewsPage(),
                   ),
-                );
-              }),
-
-              const SizedBox(height: 32),
-
-              // Section dangereuse
-              Text(
-                "Gestion compte",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colors.error,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    _showDeleteAccountDialog(context);
-                  },
-                  icon: Icon(Icons.delete_forever, color: colors.error),
-                  label: const Text("Supprimer son compte"),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: colors.error),
+                  const SizedBox(height: 4),
+                  Text(
+                    _currentUser.email,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.onPrimary.withOpacity(0.8),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: colors.onPrimary.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: colors.onPrimary.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      _currentUser.accountType == 0 ? "Compte Client" : "Compte Restaurateur",
+                      style: textTheme.labelMedium?.copyWith(
+                        color: colors.onPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ),
 
-              const SizedBox(height: 32),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle("Paramètres du profil"),
+                  _buildMenuCard([
+                    _buildMenuTile(
+                      icon: Icons.person_outline,
+                      title: "Modifier mes informations",
+                      subtitle: "Nom, prénom et email",
+                      onTap: () => _navigateToEditProfile(context),
+                    ),
+                    _buildMenuTile(
+                      icon: Icons.lock_outline,
+                      title: "Mot de passe",
+                      subtitle: "Sécurisez votre accès",
+                      onTap: () => _navigateToChangePassword(context),
+                    ),
+                  ]),
+                  
+                  const SizedBox(height: 24),
+                  _buildSectionTitle("Activités"),
+                  _buildMenuCard([
+                    _buildMenuTile(
+                      icon: Icons.star_outline,
+                      title: "Mes Avis",
+                      subtitle: "Consulter vos retours d'expérience",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MyReviewsPage()),
+                        );
+                      },
+                    ),
+                  ]),
 
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    _showLogoutDialog(context);
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text("Se déconnecter"),
-                  style: FilledButton.styleFrom(backgroundColor: colors.error),
-                ),
+                  const SizedBox(height: 32),
+                  _buildSectionTitle("Sécurité"),
+                  _buildMenuCard([
+                    _buildMenuTile(
+                      icon: Icons.logout,
+                      title: "Se déconnecter",
+                      titleColor: colors.primary,
+                      onTap: () => _showLogoutDialog(context),
+                    ),
+                    _buildMenuTile(
+                      icon: Icons.delete_forever_outlined,
+                      title: "Supprimer le compte",
+                      titleColor: colors.error,
+                      showDivider: false,
+                      onTap: () => _showDeleteAccountDialog(context),
+                    ),
+                  ]),
+                  const SizedBox(height: 40),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSettingsButton(
-    BuildContext context,
-    String label,
-    IconData icon,
-    VoidCallback onPressed,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon),
-        label: Text(label),
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+          color: Theme.of(context).colorScheme.outline,
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, ColorScheme colors) {
+  Widget _buildMenuCard(List<Widget> children) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildMenuTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+    Color? titleColor,
+    bool showDivider = true,
+  }) {
+    final colors = Theme.of(context).colorScheme;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: colors.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
+        ListTile(
+          leading: Icon(icon, color: titleColor ?? colors.onSurfaceVariant),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: titleColor ?? colors.onSurface,
+            ),
           ),
+          subtitle: subtitle != null ? Text(subtitle) : null,
+          trailing: const Icon(Icons.chevron_right, size: 20),
+          onTap: onTap,
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: colors.onSurface,
+        if (showDivider)
+          Divider(
+            height: 1,
+            indent: 56,
+            endIndent: 16,
+            color: colors.outlineVariant.withOpacity(0.3),
           ),
-        ),
       ],
+    );
+  }
+
+  void _navigateToEditProfile(BuildContext context) async {
+    final userIn = UserIn(
+      email: _currentUser.email,
+      firstName: _currentUser.firstName,
+      lastName: _currentUser.lastName,
+      accountType: _currentUser.accountType,
+      password: "",
+    );
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text("Modifier le profil")),
+          body: Step1UserInfoScreen(
+            user: userIn,
+            onNext: (updatedUser) async {
+              try {
+                await userRepo.updateProfile(updatedUser);
+                Navigator.pop(context);
+                _refreshProfile();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur: $e')),
+                );
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToChangePassword(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text("Mot de passe")),
+          body: ChangePasswordScreen(
+            onConfirm: (oldPwd, newPwd) async {
+              try {
+                final success = await userRepo.changePassword(oldPwd, newPwd);
+                if (success) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Mot de passe mis à jour !')),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur: $e')),
+                );
+              }
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -272,7 +301,8 @@ class _AccountPageState extends State<AccountPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Se déconnecter"),
-          content: const Text("Êtes-vous sûr de vouloir vous déconnecter ?"),
+          content: const Text("Souhaitez-vous vraiment vous déconnecter de votre compte ?"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -299,8 +329,9 @@ class _AccountPageState extends State<AccountPage> {
         return AlertDialog(
           title: const Text("Supprimer le compte"),
           content: const Text(
-            "Êtes-vous sûr de vouloir supprimer votre compte ? Toutes vos données seront perdues et cette action est irréversible.",
+            "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
           ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -317,9 +348,7 @@ class _AccountPageState extends State<AccountPage> {
                 } catch (e) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Erreur lors de la suppression: $e'),
-                    ),
+                    SnackBar(content: Text('Erreur: $e')),
                   );
                 }
               },
