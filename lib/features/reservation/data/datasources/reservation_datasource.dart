@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
+import '../models/reservation_in.dart';
 import '../models/reservation_out.dart';
 import '../models/search_reservations.dart';
 
@@ -8,36 +9,13 @@ class ReservationDataSource {
 
   ReservationDataSource(this.apiClient);
 
-  // GET /api/Reservation/Restaurant/{Id}?reservationDate=YYYY-MM-DD
-  Future<List<ReservationOut>> getReservationsByRestaurant(
-    int id,
-    String reservationDate,
-    int? tableId,
-  ) async {
+  Future<List<ReservationOut>> getReservations(
+      SearchReservations search,
+      ) async {
     try {
       final response = await apiClient.dio.get(
-        '/Reservation/Restaurant/$id',
-        queryParameters: {
-          'reservationDate': reservationDate,
-          'tableId': tableId,
-        },
-      );
-      final List<dynamic> data = response.data;
-      return data.map((json) => ReservationOut.fromJson(json)).toList();
-    } on DioException catch (e) {
-      _handleError(e);
-      rethrow;
-    }
-  }
-
-  Future<List<ReservationOut>> getPendingReservationsByRestaurant(
-    int id,
-    int? tableId,
-  ) async {
-    try {
-      final response = await apiClient.dio.get(
-        '/Reservation/Restaurant/$id/Pending',
-        queryParameters: {'tableId': tableId},
+        '/Reservation',
+        queryParameters: search.toJson(),
       );
       final List<dynamic> data = response.data;
       return data.map((json) => ReservationOut.fromJson(json)).toList();
@@ -59,11 +37,11 @@ class ReservationDataSource {
   }
 
   // GET /api/Reservation/{id}/Validate?IsValidate=true
-  Future<ReservationOut> validateReservation(int id, bool isValidate) async {
+  Future<ReservationOut> updateReservationStatus(int id, ReservationStatus status) async {
     try {
       final response = await apiClient.dio.get(
-        '/Reservation/$id/Validate',
-        queryParameters: {'IsValidate': isValidate},
+        '/Reservation/$id/Status',
+        queryParameters: {'reservationStatus': status.index},
       );
       return ReservationOut.fromJson(response.data);
     } on DioException catch (e) {

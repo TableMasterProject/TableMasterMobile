@@ -6,9 +6,11 @@ import 'package:table_master_mobile/features/reservation/domain/repositories/res
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import 'package:table_master_mobile/features/review/presentation/pages/add_review_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/localisation.dart';
+import '../data/models/reservation_in.dart';
 
 class ReservationDetailPage extends StatefulWidget {
   final ReservationOut reservation;
@@ -57,14 +59,11 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     final r = _fullRestaurant ?? widget.reservation.restaurant;
     if (r == null) return;
 
-    // Utilisation des coordonnées si disponibles pour une précision absolue, sinon l'adresse textuelle.
     final location = (r.latitude != null && r.longitude != null)
         ? "${r.latitude},${r.longitude}"
         : r.addressString();
 
     final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}");
-
-    // L'OS propose automatiquement l'appli de navigation installée (Google Maps, Waze, Apple Maps...)
     await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
@@ -83,11 +82,16 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     final dateFormat = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
     final timeFormat = DateFormat('HH:mm');
 
+    final bool isPast = res.reservationDate.isBefore(DateTime.now());
+    final bool canReview = res.status == ReservationStatus.finie;
+    final bool isEnAttente = res.status == ReservationStatus.enAttente;
+    final bool isValidee = res.status == ReservationStatus.validee;
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 500,
+            expandedHeight: 300,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: Column(
@@ -140,7 +144,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: _buildStatusBadge(res.isValidate)),
+                  Center(child: _buildStatusBadge(res.status)),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -187,7 +191,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
 
                   if (res.specialRequest != null && res.specialRequest!.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    const Text("Votre note", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text("Note spéciale pour le restaurateur", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
@@ -196,7 +200,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                       child: Text(res.specialRequest!, style: const TextStyle(fontStyle: FontStyle.italic)),
                     ),
                   ],
-                  const SizedBox(height: 120),
+                  const SizedBox(height: 160),
                 ],
               ),
             ),
@@ -205,28 +209,108 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
       ),
       bottomSheet: Container(
         padding: const EdgeInsets.all(20),
-        color: Theme.of(context).scaffoldBackgroundColor,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+        ),
         child: SafeArea(
-          child: SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _confirmCancel(context),
-              icon: const Icon(Icons.cancel_outlined),
-              label: const Text("ANNULER LA RÉSERVATION", style: TextStyle(fontWeight: FontWeight.bold)),
-              style: OutlinedButton.styleFrom(foregroundColor: colors.error, side: BorderSide(color: colors.error, width: 2), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (canReview)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddReviewPage(
+                            userId: res.userId,
+                            restaurantId: res.restaurantId,
+                            restaurantName: restau?.restaurantName ?? "le restaurant",
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.star_rate_rounded),
+                    label: const Text("NOTER MON EXPÉRIENCE", style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => isEnAttente ? _confirmDelete(context) : _confirmCancel(context),
+                  icon: Icon(isEnAttente ? Icons.delete_forever_outlined : Icons.cancel_outlined),
+                  label: Text(
+                      isEnAttente ? "SUPPRIMER LA DEMANDE" : "ANNULER LA RÉSERVATION",
+                      style: const TextStyle(fontWeight: FontWeight.bold)
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.error,
+                    side: BorderSide(color: colors.error, width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatusBadge(bool isValidate) {
-    final color = isValidate ? Colors.green : Colors.orange;
+  Widget _buildStatusBadge(ReservationStatus status) {
+    Color color;
+    String label;
+    IconData icon;
+
+    switch (status) {
+      case ReservationStatus.enAttente:
+        color = Colors.orange;
+        label = "EN ATTENTE";
+        icon = Icons.pending_rounded;
+        break;
+      case ReservationStatus.validee:
+        color = Colors.green;
+        label = "CONFIRMÉE";
+        icon = Icons.verified_rounded;
+        break;
+      case ReservationStatus.finie:
+        color = Colors.blue;
+        label = "TERMINÉE";
+        icon = Icons.check_circle_rounded;
+        break;
+      case ReservationStatus.annuleeResto:
+        color = Colors.red;
+        label = "ANNULÉE PAR LE RESTO";
+        icon = Icons.cancel_rounded;
+        break;
+      case ReservationStatus.annuleeClient:
+        color = Colors.red;
+        label = "ANNULÉE PAR VOUS";
+        icon = Icons.person_off_rounded;
+        break;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color)),
-      child: Text(isValidate ? "✓ RÉSERVATION CONFIRMÉE" : "⟳ CONFIRMATION EN ATTENTE", style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 12)),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color, width: 1.5)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 12, letterSpacing: 1.1)),
+        ],
+      ),
     );
   }
 
@@ -249,26 +333,61 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final should = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer la demande ?'),
+        content: const Text('Votre demande de réservation n\'a pas encore été traitée. Souhaitez-vous la retirer définitivement ?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Retour')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true), 
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), 
+            child: const Text('Supprimer définitivement')
+          ),
+        ],
+      ),
+    );
+
+    if (should == true) {
+      try {
+        await _resRepo.deleteReservation(widget.reservation.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande supprimée')));
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      }
+    }
+  }
+
   Future<void> _confirmCancel(BuildContext context) async {
     final should = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Annuler ?'),
-        content: const Text('Souhaitez-vous vraiment annuler votre réservation ?'),
+        title: const Text('Annuler la réservation ?'),
+        content: const Text('Votre réservation est validée. Souhaitez-vous informer le restaurant que vous ne viendrez pas ?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Non')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error), child: const Text('Oui, annuler')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Garder la réservation')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
+            child: const Text('Confirmer l\'annulation')
+          ),
         ],
       ),
     );
     if (should == true) {
       try {
-        await _resRepo.deleteReservation(widget.reservation.id);
-        if (mounted) Navigator.pop(context, true);
-      } catch (e) {
+        await _resRepo.updateReservationStatus(widget.reservation.id, ReservationStatus.annuleeClient);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Réservation annulée')));
+          Navigator.pop(context, true);
         }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }

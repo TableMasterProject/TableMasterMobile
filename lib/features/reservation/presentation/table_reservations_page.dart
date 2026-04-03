@@ -5,6 +5,10 @@ import 'package:table_master_mobile/features/table/data/models/table_entity_out.
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:intl/intl.dart';
 
+import '../data/models/reservation_in.dart';
+import '../data/models/search_reservations.dart';
+import 'widgets/reservation_card.dart';
+
 class TableReservationsPage extends StatefulWidget {
   final int restaurantId;
   final TableEntityOut table;
@@ -23,13 +27,33 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   final _repo = getIt<IReservationRepository>();
   bool _loading = false;
   String? _error;
-  List<ReservationOut> _pending = [];
-  List<ReservationOut> _validated = [];
+  List<ReservationOut> _reservations = [];
+  List<ReservationOut> _summaryReservations = []; // Pour les compteurs badges
+  int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
 
   @override
   void initState() {
     super.initState();
-    _loadReservations();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    await _loadSummary();
+    await _loadReservations();
+  }
+
+  Future<void> _loadSummary() async {
+    try {
+      SearchReservations search = SearchReservations();
+      search.restaurantId = widget.restaurantId;
+      search.tableId = widget.table.id;
+      search.pageSize = 100;
+      search.statuses = [ReservationStatus.enAttente, ReservationStatus.validee];
+      final results = await _repo.getReservations(search);
+      setState(() {
+        _summaryReservations = results;
+      });
+    } catch (e) {}
   }
 
   Future<void> _loadReservations() async {
@@ -38,27 +62,29 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       _error = null;
     });
     try {
-      final today = DateTime.now();
-      final dateStr =
-          "${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
-      
-      final validated = await _repo.getReservationsByRestaurant(
-        widget.restaurantId,
-        dateStr,
-        widget.table.id,
-      );
-      final pending = await _repo.GetPendingReservationsByRestaurant(
-        widget.restaurantId,
-        widget.table.id,
-      );
+      SearchReservations search = SearchReservations();
+      search.restaurantId = widget.restaurantId;
+      search.tableId = widget.table.id;
+      search.pageSize = 50;
 
-      // Tri chronologique
-      validated.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
-      pending.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
+      if (_selectedFilter == 0) {
+        search.statuses = [ReservationStatus.validee];
+        search.minDate = DateTime.now(); 
+      } else if (_selectedFilter == 1) {
+        search.statuses = [ReservationStatus.enAttente];
+      } else {
+        search.statuses = [
+          ReservationStatus.finie,
+          ReservationStatus.annuleeResto,
+          ReservationStatus.annuleeClient
+        ];
+      }
+
+      final results = await _repo.getReservations(search);
+      results.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
 
       setState(() {
-        _pending = pending;
-        _validated = validated;
+        _reservations = results;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -69,158 +95,158 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
     }
   }
 
-  Future<void> _validate(int id, bool isValidate) async {
+  Future<void> _updateStatus(int id, ReservationStatus status) async {
     try {
-      await _repo.validateReservation(id, isValidate);
+      await _repo.updateReservationStatus(id, status);
+      await _loadSummary();
       await _loadReservations();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
-    }
-  }
-
-  Future<void> _delete(int id) async {
-    try {
-      await _repo.deleteReservation(id);
-      await _loadReservations();
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final timeFormat = DateFormat('HH:mm');
-    final dateFormat = DateFormat('dd/MM/yyyy');
-    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-    // Grouping validated reservations by date
-    final Map<String, List<ReservationOut>> grouped = {};
-    for (var r in _validated) {
-      final key = DateFormat('yyyy-MM-dd').format(r.reservationDate.toLocal());
-      if (!grouped.containsKey(key)) {
-        grouped[key] = [];
-      }
-      grouped[key]!.add(r);
-    }
-
-    final sortedDates = grouped.keys.toList()..sort();
+    final pendingTotal = _summaryReservations.where((r) => r.status == ReservationStatus.enAttente).length;
+    final todayTotal = _summaryReservations.where((r) => r.status == ReservationStatus.validee && DateUtils.isSameDay(r.reservationDate, DateTime.now())).length;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Réservations — Table ${widget.table.tableNumber}'),
+        title: Text('Table ${widget.table.tableNumber}'),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text('Erreur: $_error'))
-              : ListView(
-                  padding: const EdgeInsets.all(16.0),
-                  children: [
-                    _buildSectionHeader('En attente', colors),
-                    const SizedBox(height: 8),
-                    if (_pending.isEmpty)
-                      _buildEmptyText('Aucune réservation en attente', colors),
-                    ..._pending.map((r) => _buildReservationCard(r, colors, timeFormat, dateFormat, true)),
-                    
-                    const SizedBox(height: 24),
-                    
-                    ...sortedDates.map((dateKey) {
-                      final isToday = dateKey == todayStr;
-                      final title = isToday ? "Validées - Aujourd'hui" : "Validées - ${dateFormat.format(DateTime.parse(dateKey))}";
-                      final reservations = grouped[dateKey]!;
-                      
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader(title, colors),
-                          const SizedBox(height: 8),
-                          ...reservations.map((r) => _buildReservationCard(r, colors, timeFormat, dateFormat, false)),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    }),
-                    
-                    if (_validated.isEmpty)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeader('Validées', colors),
-                          const SizedBox(height: 8),
-                          _buildEmptyText('Aucune réservation validée', colors),
-                        ],
-                      ),
-                  ],
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: SegmentedButton<int>(
+              segments: [
+                ButtonSegment(
+                  value: 0, 
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Validées'),
+                      if (todayTotal > 0) _buildCountBadge(todayTotal, Colors.blue),
+                    ],
+                  ), 
+                  icon: const Icon(Icons.check_circle_outline)
                 ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, ColorScheme colors) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: colors.onSurface,
+                ButtonSegment(
+                  value: 1, 
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Attente'),
+                      if (pendingTotal > 0) _buildCountBadge(pendingTotal, Colors.orange),
+                    ],
+                  ), 
+                  icon: const Icon(Icons.pending_actions)
+                ),
+                const ButtonSegment(value: 2, label: Text('Historique'), icon: Icon(Icons.history)),
+              ],
+              selected: {_selectedFilter},
+              onSelectionChanged: (Set<int> newSelection) {
+                setState(() {
+                  _selectedFilter = newSelection.first;
+                });
+                _loadReservations();
+              },
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Text('Erreur: $_error'))
+                    : _reservations.isEmpty
+                        ? const Center(child: Text('Aucune réservation trouvée'))
+                        : RefreshIndicator(
+                            onRefresh: _loadAllData,
+                            child: _buildGroupedListView(),
+                          ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEmptyText(String text, ColorScheme colors) {
-    return Text(
-      text,
-      style: TextStyle(color: colors.onSurfaceVariant),
+  Widget _buildCountBadge(int count, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count.toString(),
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
     );
   }
 
-  Widget _buildReservationCard(ReservationOut r, ColorScheme colors, DateFormat timeFormat, DateFormat dateFormat, bool isPending) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(
-          r.user?.firstName ?? r.user?.email ?? 'Client',
-          style: const TextStyle(fontWeight: FontWeight.bold), 
-        ),
-        subtitle: Column(
+  Widget _buildGroupedListView() {
+    final Map<String, List<ReservationOut>> grouped = {};
+    for (var r in _reservations) {
+      final dateStr = DateFormat('yyyy-MM-dd').format(r.reservationDate.toLocal());
+      if (!grouped.containsKey(dateStr)) grouped[dateStr] = [];
+      grouped[dateStr]!.add(r);
+    }
+
+    final sortedKeys = grouped.keys.toList();
+    if (_selectedFilter == 2) {
+      sortedKeys.sort((a, b) => b.compareTo(a)); 
+    } else {
+      sortedKeys.sort((a, b) => a.compareTo(b)); 
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: sortedKeys.length,
+      itemBuilder: (context, index) {
+        final dateStr = sortedKeys[index];
+        final items = grouped[dateStr]!;
+        final displayDate = _getDisplayDate(dateStr);
+
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (isPending)
-              Text('Date : ${dateFormat.format(r.reservationDate.toLocal())}'),
-            Text('Heure : ${timeFormat.format(r.reservationDate.toLocal())}'),
-            Text('Nombre de personnes : ${r.numberOfPeople}'),
-            if (r.specialRequest != null && r.specialRequest!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Demande : ${r.specialRequest}',
-                  style: TextStyle(
-                    color: colors.primary,
-                    fontStyle: FontStyle.italic,
-                  ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              child: Text(
+                displayDate,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                  letterSpacing: 1.1,
                 ),
               ),
+            ),
+            ...items.map((r) => ReservationCard(
+              reservation: r,
+              onStatusUpdate: (newStatus) => _updateStatus(r.id, newStatus),
+            )),
+            const SizedBox(height: 12),
           ],
-        ),
-        trailing: isPending
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.check_circle, color: Colors.green),
-                    onPressed: () => _validate(r.id, true),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.cancel, color: colors.error),
-                    onPressed: () => _delete(r.id),
-                  ),
-                ],
-              )
-            : const Icon(Icons.check_circle, color: Colors.green),
-      ),
+        );
+      },
     );
+  }
+
+  String _getDisplayDate(String dateStr) {
+    final date = DateTime.parse(dateStr);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (date == today) return "AUJOURD'HUI";
+    if (date == tomorrow) return "DEMAIN";
+    if (date == yesterday) return "HIER";
+    
+    return DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date).toUpperCase();
   }
 }

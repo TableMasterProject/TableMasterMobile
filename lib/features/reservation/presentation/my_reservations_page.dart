@@ -4,7 +4,9 @@ import 'package:table_master_mobile/features/reservation/data/models/reservation
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import '../data/models/reservation_in.dart';
 import 'reservation_detail_page.dart';
+import 'widgets/reservation_card.dart';
 
 class MyReservationsPage extends StatefulWidget {
   const MyReservationsPage({super.key});
@@ -15,19 +17,38 @@ class MyReservationsPage extends StatefulWidget {
 
 class _MyReservationsPageState extends State<MyReservationsPage> {
   late IReservationRepository _repository;
-  final SearchReservations _search = SearchReservations(
-    offset: 0,
-    pageSize: 50,
-  );
   List<ReservationOut> _reservations = [];
+  List<ReservationOut> _summaryReservations = []; // Pour les compteurs badges
   bool _isLoading = false;
   String? _error;
+  int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
 
   @override
   void initState() {
     super.initState();
     _repository = getIt<IReservationRepository>();
-    _load();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    await _loadSummary();
+    await _load();
+  }
+
+  Future<void> _loadSummary() async {
+    try {
+      final search = SearchReservations(
+        offset: 0,
+        pageSize: 100,
+        statuses: [ReservationStatus.enAttente, ReservationStatus.validee],
+      );
+      final list = await _repository.getMyReservations(search);
+      setState(() {
+        _summaryReservations = list;
+      });
+    } catch (e) {
+      // ignore
+    }
   }
 
   Future<void> _load() async {
@@ -36,7 +57,34 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
       _error = null;
     });
     try {
-      final list = await _repository.getMyReservations(_search);
+      List<ReservationStatus> statuses;
+      DateTime? minDate;
+
+      if (_selectedFilter == 0) {
+        statuses = [ReservationStatus.validee];
+        minDate = DateTime.now(); // Prochaines réservations
+      } else if (_selectedFilter == 1) {
+        statuses = [ReservationStatus.enAttente];
+      } else {
+        statuses = [
+          ReservationStatus.finie,
+          ReservationStatus.annuleeResto,
+          ReservationStatus.annuleeClient
+        ];
+      }
+
+      final search = SearchReservations(
+        offset: 0,
+        pageSize: 50,
+        statuses: statuses,
+        minDate: minDate,
+      );
+
+      final list = await _repository.getMyReservations(search);
+      
+      // Tri chronologique
+      list.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
+      
       setState(() {
         _reservations = list;
       });
@@ -49,65 +97,161 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd/MM/yyyy');
-    final timeFormat = DateFormat('HH:mm');
+    final colors = Theme.of(context).colorScheme;
+    
+    final pendingTotal = _summaryReservations.where((r) => r.status == ReservationStatus.enAttente).length;
+    final todayTotal = _summaryReservations.where((r) => 
+      r.status == ReservationStatus.validee && 
+      DateUtils.isSameDay(r.reservationDate, DateTime.now())
+    ).length;
 
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Erreur: $_error'),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
-          ],
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: SegmentedButton<int>(
+            segments: [
+              ButtonSegment(
+                value: 0,
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Validées'),
+                    if (todayTotal > 0) _buildCountBadge(todayTotal, Colors.blue),
+                  ],
+                ),
+                icon: const Icon(Icons.check_circle_outline),
+              ),
+              ButtonSegment(
+                value: 1,
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Attente'),
+                    if (pendingTotal > 0) _buildCountBadge(pendingTotal, Colors.orange),
+                  ],
+                ),
+                icon: const Icon(Icons.pending_actions),
+              ),
+              const ButtonSegment(
+                value: 2, 
+                label: Text('Historique'), 
+                icon: Icon(Icons.history)
+              ),
+            ],
+            selected: {_selectedFilter},
+            onSelectionChanged: (Set<int> newSelection) {
+              if (newSelection.first != _selectedFilter) {
+                setState(() {
+                  _selectedFilter = newSelection.first;
+                  _reservations = []; 
+                });
+                _load();
+              }
+            },
+          ),
         ),
-      );
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Erreur: $_error'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
+                        ],
+                      ),
+                    )
+                  : _reservations.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _selectedFilter == 2 ? Icons.history : Icons.event_busy,
+                                size: 64,
+                                color: colors.outline.withOpacity(0.5),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _selectedFilter == 2 
+                                    ? 'Aucun historique de réservation' 
+                                    : 'Aucune réservation trouvée',
+                                style: TextStyle(color: colors.outline),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadAllData,
+                          child: _buildGroupedList(colors),
+                        ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCountBadge(int count, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count.toString(),
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildGroupedList(ColorScheme colors) {
+    final Map<String, List<ReservationOut>> grouped = {};
+    
+    for (var r in _reservations) {
+      final date = r.reservationDate.toLocal();
+      final key = DateFormat('yyyy-MM-dd').format(date);
+      if (!grouped.containsKey(key)) {
+        grouped[key] = [];
+      }
+      grouped[key]!.add(r);
     }
 
-    if (_reservations.isEmpty) {
-      return const Center(child: Text('Vous n\'avez pas de réservations'));
+    final sortedDates = grouped.keys.toList();
+    if (_selectedFilter == 2) {
+      sortedDates.sort((a, b) => b.compareTo(a)); // Plus récent en haut pour l'historique
+    } else {
+      sortedDates.sort((a, b) => a.compareTo(b)); // Plus proche en haut pour les actives
     }
 
-    return RefreshIndicator(
-      onRefresh: _load,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        itemCount: _reservations.length,
-        itemBuilder: (context, index) {
-          final r = _reservations[index];
-          final title = r.restaurant?.restaurantName;
-          final statusIcon =
-              r.isValidate
-                  ? Icon(Icons.check_circle, color: Colors.green)
-                  : Icon(Icons.cancel, color: Colors.red);
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      itemCount: sortedDates.length,
+      itemBuilder: (context, dateIndex) {
+        final dateKey = sortedDates[dateIndex];
+        final dayReservations = grouped[dateKey]!;
+        final displayDate = _getDisplayDate(dateKey);
 
-          return Card(
-            child: ListTile(
-              leading: statusIcon,
-              title: Text(
-                title ?? "Aucun restaurant associé",
-                style: const TextStyle(fontWeight: FontWeight.bold),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+              child: Text(
+                displayDate,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: colors.primary,
+                  letterSpacing: 1.1,
+                ),
               ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Date : ${dateFormat.format(r.reservationDate.toLocal())}',
-                  ),
-                  Text(
-                    'Heure : ${timeFormat.format(r.reservationDate.toLocal())}',
-                  ),
-                  Text('Personnes : ${r.numberOfPeople}'),
-                  if (r.specialRequest != null && r.specialRequest!.isNotEmpty)
-                    Text('Demande : ${r.specialRequest}'),
-                ],
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            ),
+            ...dayReservations.map((r) => GestureDetector(
               onTap: () async {
                 final result = await Navigator.push<bool?>(
                   context,
@@ -116,14 +260,29 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
                   ),
                 );
                 if (result == true) {
-                  // refresh if reservation was cancelled in detail
-                  _load();
+                  _loadAllData();
                 }
               },
-            ),
-          );
-        },
-      ),
+              child: ReservationCard(reservation: r),
+            )),
+            const SizedBox(height: 12),
+          ],
+        );
+      },
     );
+  }
+
+  String _getDisplayDate(String dateKey) {
+    final date = DateTime.parse(dateKey);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    if (date == today) return "AUJOURD'HUI";
+    if (date == tomorrow) return "DEMAIN";
+    if (date == yesterday) return "HIER";
+    
+    return DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date).toUpperCase();
   }
 }

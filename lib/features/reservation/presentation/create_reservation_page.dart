@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
-import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart' hide ReservationStatus;
+import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
@@ -110,8 +111,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   Future<void> _fetchDayReservations() async {
     setState(() => _isLoading = true);
     try {
-      final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-      final res = await _reservationRepo.getReservationsByRestaurant(widget.restaurant.id, dateStr, null);
+      SearchReservations searchReservations = SearchReservations();
+      searchReservations.restaurantId = widget.restaurant.id;
+      searchReservations.minDate = _selectedDate;
+      final res = await _reservationRepo.getReservations(searchReservations);
       setState(() {
         _dayReservations = res;
         _isLoading = false;
@@ -304,6 +307,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         restaurantId: widget.restaurant.id,
         reservationDate: reservationDateTime,
         numberOfPeople: _numberOfPeople,
+        status: ReservationStatus.enAttente,
         specialRequest: _specialRequestController.text,
       );
 

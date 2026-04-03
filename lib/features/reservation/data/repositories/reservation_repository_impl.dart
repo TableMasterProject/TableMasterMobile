@@ -1,5 +1,6 @@
 import '../../domain/repositories/reservation_repository.dart';
 import '../datasources/reservation_datasource.dart';
+import '../models/reservation_in.dart';
 import '../models/reservation_out.dart';
 import '../models/search_reservations.dart';
 
@@ -9,27 +10,10 @@ class ReservationRepositoryImpl implements IReservationRepository {
   ReservationRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<List<ReservationOut>> getReservationsByRestaurant(
-    int id,
-    String reservationDate,
-    int? tableId,
-  ) async {
-    return await remoteDataSource.getReservationsByRestaurant(
-      id,
-      reservationDate,
-      tableId,
-    );
-  }
-
-  @override
-  Future<List<ReservationOut>> GetPendingReservationsByRestaurant(
-    int id,
-    int? tableId,
-  ) async {
-    return await remoteDataSource.getPendingReservationsByRestaurant(
-      id,
-      tableId,
-    );
+  Future<List<ReservationOut>> getReservations(
+      SearchReservations search,
+      ) async {
+    return await remoteDataSource.getReservations(search);
   }
 
   @override
@@ -38,8 +22,8 @@ class ReservationRepositoryImpl implements IReservationRepository {
   }
 
   @override
-  Future<ReservationOut> validateReservation(int id, bool isValidate) async {
-    return await remoteDataSource.validateReservation(id, isValidate);
+  Future<ReservationOut> updateReservationStatus(int id, ReservationStatus reservationStatus) async {
+    return await remoteDataSource.updateReservationStatus(id, reservationStatus);
   }
 
   @override

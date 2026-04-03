@@ -1,11 +1,19 @@
+enum ReservationStatus {
+  enAttente,     // 0
+  validee,       // 1
+  finie,         // 2
+  annuleeResto,  // 3
+  annuleeClient  // 4
+}
+
 class ReservationIn {
   int userId;
   int tableId;
   int restaurantId;
   DateTime reservationDate;
   int numberOfPeople;
+  ReservationStatus status;
   String? specialRequest;
-  bool isValidate;
 
   ReservationIn({
     required this.userId,
@@ -13,8 +21,8 @@ class ReservationIn {
     required this.restaurantId,
     required this.reservationDate,
     required this.numberOfPeople,
+    required this.status,
     this.specialRequest,
-    this.isValidate = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -24,8 +32,8 @@ class ReservationIn {
       'RestaurantId': restaurantId,
       'ReservationDate': reservationDate.toIso8601String(),
       'NumberOfPeople': numberOfPeople,
+      'Status': status.index,
       'SpecialRequest': specialRequest,
-      'IsValidate': isValidate,
     };
   }
 }

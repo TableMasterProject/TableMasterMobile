@@ -1,3 +1,4 @@
+import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
@@ -6,16 +7,18 @@ class ReservationOut {
   int id;
   DateTime createdAt;
 
-  // Fields from ReservationIn
+  // Champs de base
   int userId;
   int tableId;
   int restaurantId;
   DateTime reservationDate;
   int numberOfPeople;
   String? specialRequest;
-  bool isValidate;
 
-  // Expanded relations
+  // Remplacement du bool par l'enum
+  ReservationStatus status;
+
+  // Relations étendues (établies par ton API via des Includes)
   UserOut? user;
   TableEntityOut? table;
   RestaurantOut? restaurant;
@@ -28,8 +31,8 @@ class ReservationOut {
     required this.restaurantId,
     required this.reservationDate,
     required this.numberOfPeople,
+    required this.status,
     this.specialRequest,
-    required this.isValidate,
     this.user,
     this.table,
     this.restaurant,
@@ -38,24 +41,22 @@ class ReservationOut {
   factory ReservationOut.fromJson(Map<String, dynamic> json) {
     return ReservationOut(
       id: json['id'] ?? 0,
-      createdAt:
-          json['createdAt'] != null
-              ? DateTime.parse(json['createdAt'])
-              : DateTime.now(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
       userId: json['userId'] ?? 0,
       tableId: json['tableId'] ?? 0,
       restaurantId: json['restaurantId'] ?? 0,
-      reservationDate:
-          json['reservationDate'] != null
-              ? DateTime.parse(json['reservationDate'])
-              : DateTime.now(),
+      reservationDate: json['reservationDate'] != null
+          ? DateTime.parse(json['reservationDate'])
+          : DateTime.now(),
       numberOfPeople: json['numberOfPeople'] ?? 1,
+      status: ReservationStatus.values[json['status']],
       specialRequest: json['specialRequest'],
-      isValidate: json['isValidate'] ?? false,
+
       user: json['user'] != null ? UserOut.fromJson(json['user']) : null,
-      table:
-          json['table'] != null ? TableEntityOut.fromJson(json['table']) : null,
-      restaurant : json['restaurant'] != null ? RestaurantOut.fromJson(json['restaurant']) : null,
+      table: json['table'] != null ? TableEntityOut.fromJson(json['table']) : null,
+      restaurant: json['restaurant'] != null ? RestaurantOut.fromJson(json['restaurant']) : null,
     );
   }
 }
