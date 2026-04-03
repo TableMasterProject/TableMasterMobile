@@ -57,6 +57,23 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
     }
   }
 
+  String formatTime(String input) {
+    // Si c'est juste un chiffre (ex: "8" ou "08")
+    if (RegExp(r'^\d{1,2}$').hasMatch(input)) {
+      int hour = int.parse(input);
+      if (hour >= 0 && hour <= 23) {
+        return "${hour.toString().padLeft(2, '0')}:00";
+      }
+    }
+
+    // Si c'est déjà au format H:mm ou HH:mm (ex: "8:30" -> "08:30")
+    if (RegExp(r'^\d{1,2}:\d{2}$').hasMatch(input)) {
+      List<String> parts = input.split(':');
+      return "${parts[0].padLeft(2, '0')}:${parts[1]}";
+    }
+    return input; // Retourne tel quel si c'est n'importe quoi (le regex validera après)
+  }
+
   Future<void> _addOrUpdateActivity() async {
     if (_selectedDay == null ||
         _openingController.text.isEmpty ||
@@ -66,10 +83,15 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
       ).showSnackBar(const SnackBar(content: Text('Remplir tous les champs')));
       return;
     }
-    
+    String opening = _openingController.text.trim();
+    String closing = _closingController.text.trim();
+
+    String finalOpening = formatTime(opening);
+    String finalClosing = formatTime(closing);
+
     // Validation basique du format HH:mm
     final timeRegex = RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$');
-    if (!timeRegex.hasMatch(_openingController.text) || !timeRegex.hasMatch(_closingController.text)) {
+    if (!timeRegex.hasMatch(finalOpening) || !timeRegex.hasMatch(finalClosing)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Format d\'heure invalide (HH:mm)')));
@@ -80,17 +102,11 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
       final activity = DailyActivityIn(
         restaurantId: widget.restaurantId,
         dayOfWeek: _selectedDay!,
-        startTime: "${_openingController.text}:00", // Format HH:mm:ss pour l'API
-        endTime: "${_closingController.text}:00",
+        startTime: "${finalOpening}:00", // Format HH:mm:ss pour l'API
+        endTime: "${finalClosing}:00",
       );
 
-      final existingIndex = _activities.indexWhere((a) => a.dayOfWeek == _selectedDay);
-      
-      if (existingIndex != -1) {
-        await _repo.update(_activities[existingIndex].id, activity);
-      } else {
-        await _repo.create(activity);
-      }
+      await _repo.create(activity);
 
       _selectedDay = null;
       _openingController.clear();

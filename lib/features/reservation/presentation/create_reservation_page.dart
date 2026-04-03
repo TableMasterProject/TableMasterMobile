@@ -63,22 +63,31 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       final start = _parseTimeString(activity.startTime);
       final end = _parseTimeString(activity.endTime);
 
+      // On crée des DateTime pour faciliter les calculs de durée
       DateTime current = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, start.hour, start.minute);
       DateTime endTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, end.hour, end.minute);
 
+      // On boucle tant qu'on n'a pas atteint la fin de la plage (ex: 14h30 ou 23h00)
       while (current.isBefore(endTime)) {
         final slot = TimeOfDay(hour: current.hour, minute: current.minute);
+
         if (isToday) {
-          if (current.isAfter(now.add(const Duration(minutes: 30)))) slots.add(slot);
+          // Si c'est aujourd'hui, on ne propose que les créneaux dans au moins 30 min
+          if (current.isAfter(now.add(const Duration(minutes: 30)))) {
+            slots.add(slot);
+          }
         } else {
           slots.add(slot);
         }
         current = current.add(const Duration(minutes: 30));
       }
     }
+
+    // On trie tous les créneaux accumulés (Midi ET Soir) par ordre chronologique
     slots.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+
     setState(() {
-      _availableSlots = slots;
+      _availableSlots = List.from(slots); // On s'assure de copier la liste
       _selectedTime = null;
       _selectedTable = null;
     });
@@ -141,14 +150,14 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
   // Trouve le premier jour où le resto est ouvert pour éviter le crash du picker
   DateTime _getFirstValidDate() {
-    DateTime date = DateTime.now();
+    final today = DateUtils.dateOnly(DateTime.now());
     for (int i = 0; i < 90; i++) {
-      DateTime checkDate = date.add(Duration(days: i));
+      DateTime checkDate = today.add(Duration(days: i));
       if (_isDaySelectable(checkDate)) {
         return checkDate;
       }
     }
-    return date;
+    return today;
   }
 
   @override
@@ -174,13 +183,29 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                   leading: const Icon(Icons.calendar_today),
                   title: Text(_selectedDate == null ? "Choisir une date" : DateFormat('EEEE d MMMM', 'fr_FR').format(_selectedDate!)),
                   onTap: () async {
-                    final initial = _selectedDate ?? _getFirstValidDate();
+                    if (widget.restaurant.dailyActivitys == null || widget.restaurant.dailyActivitys!.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Ce restaurant n'a pas d'horaires configurés."))
+                      );
+                      return;
+                    }
+
+                    final now = DateTime.now();
+                    final firstDate = DateUtils.dateOnly(now);
+                    final lastDate = firstDate.add(const Duration(days: 90));
+
+                    DateTime initial = _selectedDate ?? _getFirstValidDate();
+                    // Sécurité : initialDate doit être entre first et last
+                    if (initial.isBefore(firstDate)) initial = firstDate;
+                    if (initial.isAfter(lastDate)) initial = lastDate;
+
                     final date = await showDatePicker(
                       context: context,
                       initialDate: initial,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 90)),
+                      firstDate: firstDate,
+                      lastDate: lastDate,
                       selectableDayPredicate: _isDaySelectable,
+                      locale: const Locale('fr', 'FR'),
                     );
                     if (date != null) {
                       setState(() {
@@ -196,6 +221,16 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
               if (_selectedDate != null) ...[
                 const SizedBox(height: 20),
+                const Text("Heure de début (blocage 3h)", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<TimeOfDay>(
+                  decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
+                  value: _selectedTime,
+                  hint: const Text("Sélectionnez l'heure"),
+                  items: _availableSlots.map((t) => DropdownMenuItem(value: t, child: Text("${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}"))).toList(),
+                  onChanged: (val) => setState(() { _selectedTime = val; _selectedTable = null; }),
+                ),
+                const SizedBox(height: 20),
                 const Text("Nombre de personnes", style: TextStyle(fontWeight: FontWeight.bold)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -207,15 +242,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                 ),
 
                 const Divider(height: 40),
-                const Text("Heure de début (blocage 3h)", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<TimeOfDay>(
-                  decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
-                  value: _selectedTime,
-                  hint: const Text("Sélectionnez l'heure"),
-                  items: _availableSlots.map((t) => DropdownMenuItem(value: t, child: Text("${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}"))).toList(),
-                  onChanged: (val) => setState(() { _selectedTime = val; _selectedTable = null; }),
-                ),
+
 
                 if (_selectedTime != null) ...[
                   const SizedBox(height: 24),
