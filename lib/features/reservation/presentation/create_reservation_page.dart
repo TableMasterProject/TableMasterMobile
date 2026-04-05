@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart' hide ReservationStatus;
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
@@ -19,6 +21,7 @@ class CreateReservationPage extends StatefulWidget {
 
 class _CreateReservationPageState extends State<CreateReservationPage> {
   final IReservationRepository _reservationRepo = getIt<IReservationRepository>();
+  final SignalRService _signalRService = getIt<SignalRService>();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _specialRequestController = TextEditingController();
 
@@ -30,12 +33,41 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   bool _isLoading = false;
   List<ReservationOut> _dayReservations = [];
   List<TimeOfDay> _availableSlots = [];
+  StreamSubscription? _subUpdate;
+  StreamSubscription? _subDeleted;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSignalR();
+  }
 
   @override
   void dispose() {
+    _subUpdate?.cancel();
+    _subDeleted?.cancel();
+    _signalRService.leaveRestaurantGroup(widget.restaurant.id);
     _scrollController.dispose();
     _specialRequestController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initSignalR() async {
+    await _signalRService.init();
+    await _signalRService.joinRestaurantGroup(widget.restaurant.id);
+
+    // Écoute des mises à jour de statut (validation/annulation)
+    _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
+      if (res.restaurantId == widget.restaurant.id && _selectedDate != null) {
+        if (DateUtils.isSameDay(res.reservationDate, _selectedDate)) {
+          _fetchDayReservations();
+        }
+      }
+    });
+
+    _subDeleted = _signalRService.onReservationDeleted.listen((id) {
+       _fetchDayReservations();
+    });
   }
 
   // --- Logique métier ---
@@ -64,16 +96,13 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       final start = _parseTimeString(activity.startTime);
       final end = _parseTimeString(activity.endTime);
 
-      // On crée des DateTime pour faciliter les calculs de durée
       DateTime current = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, start.hour, start.minute);
       DateTime endTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, end.hour, end.minute);
 
-      // On boucle tant qu'on n'a pas atteint la fin de la plage (ex: 14h30 ou 23h00)
       while (current.isBefore(endTime)) {
         final slot = TimeOfDay(hour: current.hour, minute: current.minute);
 
         if (isToday) {
-          // Si c'est aujourd'hui, on ne propose que les créneaux dans au moins 30 min
           if (current.isAfter(now.add(const Duration(minutes: 30)))) {
             slots.add(slot);
           }
@@ -84,11 +113,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       }
     }
 
-    // On trie tous les créneaux accumulés (Midi ET Soir) par ordre chronologique
     slots.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
 
     setState(() {
-      _availableSlots = List.from(slots); // On s'assure de copier la liste
+      _availableSlots = List.from(slots);
       _selectedTime = null;
       _selectedTable = null;
     });
@@ -109,19 +137,23 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   }
 
   Future<void> _fetchDayReservations() async {
+    if (_selectedDate == null) return;
     setState(() => _isLoading = true);
     try {
       SearchReservations searchReservations = SearchReservations();
       searchReservations.restaurantId = widget.restaurant.id;
       searchReservations.minDate = _selectedDate;
+      searchReservations.maxDate = _selectedDate;
       searchReservations.statuses = [ReservationStatus.validee];
       final res = await _reservationRepo.getReservations(searchReservations);
-      setState(() {
-        _dayReservations = res;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _dayReservations = res;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -129,26 +161,17 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     if (table.numberOfSeats < _numberOfPeople) return "Trop petite";
     if (_selectedTime == null) return "Choisir une heure";
 
-    // Heure demandée par l'utilisateur
     final reqStart = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
-
-    // On définit la durée de sécurité (1h30 = 90 minutes)
     const safetyMargin = Duration(minutes: 90);
 
     bool isBusy = _dayReservations.any((res) {
       if (res.tableId != table.id) return false;
 
       final resStart = res.reservationDate.toLocal();
-
-      // Une table est occupée si l'heure demandée (reqStart) se situe :
-      // ENTRE (Début de l'autre réservation - 1h30)
-      // ET (Début de l'autre réservation + 1h30)
       final conflictStart = resStart.subtract(safetyMargin);
       final conflictEnd = resStart.add(safetyMargin);
 
-      // Si mon créneau tombe dans cette zone de collision
-      return reqStart.isAfter(conflictStart) && reqStart.isBefore(conflictEnd)
-          || reqStart.isAtSameMomentAs(resStart);
+      return (reqStart.isAfter(conflictStart) && reqStart.isBefore(conflictEnd)) || reqStart.isAtSameMomentAs(resStart);
     });
 
     return isBusy ? "Déjà réservée" : "Disponible";
@@ -160,7 +183,6 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     return !_isDayClosedException(day);
   }
 
-  // Trouve le premier jour où le resto est ouvert pour éviter le crash du picker
   DateTime _getFirstValidDate() {
     final today = DateUtils.dateOnly(DateTime.now());
     for (int i = 0; i < 90; i++) {
@@ -189,7 +211,6 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
               Text(widget.restaurant.restaurantName, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 16),
 
-              // DATE
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.calendar_today),
@@ -207,7 +228,6 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                     final lastDate = firstDate.add(const Duration(days: 90));
 
                     DateTime initial = _selectedDate ?? _getFirstValidDate();
-                    // Sécurité : initialDate doit être entre first et last
                     if (initial.isBefore(firstDate)) initial = firstDate;
                     if (initial.isAfter(lastDate)) initial = lastDate;
 
@@ -233,7 +253,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
               if (_selectedDate != null) ...[
                 const SizedBox(height: 20),
-                const Text("Heure de début (blocage 3h)", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Heure de début (blocage 1h30 avant/après)", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<TimeOfDay>(
                   decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
@@ -254,7 +274,6 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                 ),
 
                 const Divider(height: 40),
-
 
                 if (_selectedTime != null) ...[
                   const SizedBox(height: 24),
@@ -311,7 +330,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       );
 
       final reservation = ReservationIn(
-        userId: 1, // À REMPLACER
+        userId: 0, 
         tableId: _selectedTable!.id,
         restaurantId: widget.restaurant.id,
         reservationDate: reservationDateTime,
@@ -327,8 +346,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         Navigator.pop(context);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+      }
     }
   }
 }

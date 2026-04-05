@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
@@ -9,7 +11,9 @@ import 'reservation_detail_page.dart';
 import 'widgets/reservation_card.dart';
 
 class MyReservationsPage extends StatefulWidget {
-  const MyReservationsPage({super.key});
+  final int userId;
+
+  const MyReservationsPage({super.key, required this.userId});
 
   @override
   State<MyReservationsPage> createState() => _MyReservationsPageState();
@@ -17,17 +21,84 @@ class MyReservationsPage extends StatefulWidget {
 
 class _MyReservationsPageState extends State<MyReservationsPage> {
   late IReservationRepository _repository;
+  final _signalRService = getIt<SignalRService>();
   List<ReservationOut> _reservations = [];
-  List<ReservationOut> _summaryReservations = []; // Pour les compteurs badges
+  List<ReservationOut> _summaryReservations = []; 
   bool _isLoading = false;
   String? _error;
   int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
+
+  StreamSubscription? _subCreated;
+  StreamSubscription? _subUpdate;
+  StreamSubscription? _subDeleted;
 
   @override
   void initState() {
     super.initState();
     _repository = getIt<IReservationRepository>();
     _loadAllData();
+    _initSignalR();
+  }
+
+  @override
+  void dispose() {
+    _subCreated?.cancel();
+    _subUpdate?.cancel();
+    _subDeleted?.cancel();
+    _signalRService.leaveUserGroup(widget.userId);
+    super.dispose();
+  }
+
+  Future<void> _initSignalR() async {
+    await _signalRService.init();
+    await _signalRService.joinUserGroup(widget.userId);
+
+    _subCreated = _signalRService.onReservationCreated.listen((res) {
+      if (res.userId == widget.userId) {
+        _loadAllData();
+      }
+    });
+
+    _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
+      if (res.userId == widget.userId) {
+        _loadAllData();
+        _showStatusUpdateSnackBar(res);
+      }
+    });
+
+    _subDeleted = _signalRService.onReservationDeleted.listen((id) {
+       _loadAllData();
+    });
+  }
+
+  void _showStatusUpdateSnackBar(ReservationOut res) {
+    if (!mounted) return;
+    String statusLabel = "";
+    Color color = Colors.blue;
+
+    switch (res.status) {
+      case ReservationStatus.validee: 
+        statusLabel = "validée"; 
+        color = Colors.green; 
+        break;
+      case ReservationStatus.annuleeResto: 
+        statusLabel = "annulée par le restaurant"; 
+        color = Colors.red; 
+        break;
+      case ReservationStatus.finie: 
+        statusLabel = "terminée"; 
+        color = Colors.blue; 
+        break;
+      default: return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Votre réservation chez ${res.restaurant?.restaurantName ?? 'le restaurant'} a été $statusLabel."),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _loadAllData() async {
@@ -43,26 +114,28 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
         statuses: [ReservationStatus.enAttente, ReservationStatus.validee],
       );
       final list = await _repository.getMyReservations(search);
-      setState(() {
-        _summaryReservations = list;
-      });
-    } catch (e) {
-      // ignore
-    }
+      if (mounted) {
+        setState(() {
+          _summaryReservations = list;
+        });
+      }
+    } catch (e) {}
   }
 
   Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
     try {
       List<ReservationStatus> statuses;
       DateTime? minDate;
 
       if (_selectedFilter == 0) {
         statuses = [ReservationStatus.validee];
-        minDate = DateTime.now(); // Prochaines réservations
+        minDate = DateTime.now(); 
       } else if (_selectedFilter == 1) {
         statuses = [ReservationStatus.enAttente];
       } else {
@@ -81,17 +154,17 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
       );
 
       final list = await _repository.getMyReservations(search);
-      
-      // Tri chronologique
       list.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
       
-      setState(() {
-        _reservations = list;
-      });
+      if (mounted) {
+        setState(() {
+          _reservations = list;
+        });
+      }
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -133,19 +206,12 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
                 ),
                 icon: const Icon(Icons.pending_actions),
               ),
-              const ButtonSegment(
-                value: 2, 
-                label: Text('Historique'), 
-                icon: Icon(Icons.history)
-              ),
+              const ButtonSegment(value: 2, label: Text('Historique'), icon: Icon(Icons.history)),
             ],
             selected: {_selectedFilter},
             onSelectionChanged: (Set<int> newSelection) {
               if (newSelection.first != _selectedFilter) {
-                setState(() {
-                  _selectedFilter = newSelection.first;
-                  _reservations = []; 
-                });
+                setState(() => _selectedFilter = newSelection.first);
                 _load();
               }
             },
@@ -155,36 +221,9 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('Erreur: $_error'),
-                          const SizedBox(height: 16),
-                          ElevatedButton(onPressed: _load, child: const Text('Réessayer')),
-                        ],
-                      ),
-                    )
+                  ? Center(child: Text('Erreur: $_error'))
                   : _reservations.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _selectedFilter == 2 ? Icons.history : Icons.event_busy,
-                                size: 64,
-                                color: colors.outline.withOpacity(0.5),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _selectedFilter == 2 
-                                    ? 'Aucun historique de réservation' 
-                                    : 'Aucune réservation trouvée',
-                                style: TextStyle(color: colors.outline),
-                              ),
-                            ],
-                          ),
-                        )
+                      ? const Center(child: Text('Aucune réservation'))
                       : RefreshIndicator(
                           onRefresh: _loadAllData,
                           child: _buildGroupedList(colors),
@@ -198,60 +237,35 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
     return Container(
       margin: const EdgeInsets.only(left: 6),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        count.toString(),
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+      child: Text(count.toString(), style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }
 
   Widget _buildGroupedList(ColorScheme colors) {
     final Map<String, List<ReservationOut>> grouped = {};
-    
     for (var r in _reservations) {
-      final date = r.reservationDate.toLocal();
-      final key = DateFormat('yyyy-MM-dd').format(date);
-      if (!grouped.containsKey(key)) {
-        grouped[key] = [];
-      }
+      final key = DateFormat('yyyy-MM-dd').format(r.reservationDate.toLocal());
+      if (!grouped.containsKey(key)) grouped[key] = [];
       grouped[key]!.add(r);
     }
-
     final sortedDates = grouped.keys.toList();
-    if (_selectedFilter == 2) {
-      sortedDates.sort((a, b) => b.compareTo(a)); // Plus récent en haut pour l'historique
-    } else {
-      sortedDates.sort((a, b) => a.compareTo(b)); // Plus proche en haut pour les actives
-    }
+    if (_selectedFilter == 2) { sortedDates.sort((a, b) => b.compareTo(a)); } 
+    else { sortedDates.sort((a, b) => a.compareTo(b)); }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       itemCount: sortedDates.length,
       itemBuilder: (context, dateIndex) {
         final dateKey = sortedDates[dateIndex];
-        final dayReservations = grouped[dateKey]!;
-        final displayDate = _getDisplayDate(dateKey);
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-              child: Text(
-                displayDate,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: colors.primary,
-                  letterSpacing: 1.1,
-                ),
-              ),
+              child: Text(_getDisplayDate(dateKey), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: colors.primary)),
             ),
-            ...dayReservations.map((r) => GestureDetector(
+            ...grouped[dateKey]!.map((r) => GestureDetector(
               onTap: () async {
                 final result = await Navigator.push<bool?>(
                   context,
@@ -276,13 +290,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
     final date = DateTime.parse(dateKey);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    final yesterday = today.subtract(const Duration(days: 1));
-
     if (date == today) return "AUJOURD'HUI";
-    if (date == tomorrow) return "DEMAIN";
-    if (date == yesterday) return "HIER";
-    
     return DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date).toUpperCase();
   }
 }

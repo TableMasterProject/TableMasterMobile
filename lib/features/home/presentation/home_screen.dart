@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:table_master_mobile/features/auth/presentation/login/login_screen.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
-import 'pages/reservations_page.dart';
+import '../../reservation/presentation/my_reservations_page.dart';
 import 'pages/maps_page.dart';
 import 'pages/account_page.dart';
 import 'pages/restaurant_page.dart';
@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _initializePages() {
     _pages = [
-      const ReservationsPage(),
+      MyReservationsPage(userId: widget.user.id,),
       const MapsPage(),
       AccountPage(user: widget.user, onLogout: _logout),
       if (widget.user.accountType == 1) RestaurantPage(user: widget.user),

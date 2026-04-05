@@ -10,14 +10,16 @@ class SignalRService {
   final _storage = const FlutterSecureStorage();
   
   final _onReservationCreated = StreamController<ReservationOut>.broadcast();
-  final _onReservationValidated = StreamController<ReservationOut>.broadcast();
+  final _onReservationUpdateStatus = StreamController<ReservationOut>.broadcast();
   final _onReservationDeleted = StreamController<int>.broadcast();
 
   Stream<ReservationOut> get onReservationCreated => _onReservationCreated.stream;
-  Stream<ReservationOut> get onReservationValidated => _onReservationValidated.stream;
+  Stream<ReservationOut> get onReservationUpdateStatus => _onReservationUpdateStatus.stream;
   Stream<int> get onReservationDeleted => _onReservationDeleted.stream;
 
   Future<void> init() async {
+    if (_hubConnection != null && _hubConnection!.state == HubConnectionState.Connected) return;
+
     final baseUrl = AppConfig.apiUrl;
     final hubUrl = "$baseUrl/reservationHub";
 
@@ -35,32 +37,22 @@ class SignalRService {
         .withAutomaticReconnect()
         .build();
 
-    _hubConnection?.onclose(({error}) => print("SignalR Connection Closed: $error"));
-    _hubConnection?.onreconnecting(({error}) => print("SignalR Reconnecting: $error"));
-    _hubConnection?.onreconnected(({connectionId}) => print("SignalR Reconnected: $connectionId"));
-
     _hubConnection?.on("ReceiveReservationCreated", (arguments) {
       try {
         if (arguments != null && arguments.isNotEmpty) {
-          print("SignalR ReceiveReservationCreated: Reçu -> ${arguments[0]}");
           final data = jsonDecode(arguments[0] as String);
           _onReservationCreated.add(ReservationOut.fromJson(data));
         }
-      } catch (e) {
-        print("SignalR Error Parsing Created: $e");
-      }
+      } catch (e) { print("SignalR Error: $e"); }
     });
 
-    _hubConnection?.on("ReceiveReservationValidate", (arguments) {
+    _hubConnection?.on("ReceiveReservationUpdateStatus", (arguments) {
       try {
         if (arguments != null && arguments.isNotEmpty) {
-          print("SignalR ReceiveReservationValidate: Reçu -> ${arguments[0]}");
           final data = jsonDecode(arguments[0] as String);
-          _onReservationValidated.add(ReservationOut.fromJson(data));
+          _onReservationUpdateStatus.add(ReservationOut.fromJson(data));
         }
-      } catch (e) {
-        print("SignalR Error Parsing Validate: $e");
-      }
+      } catch (e) { print("SignalR Error: $e"); }
     });
 
     _hubConnection?.on("ReceiveReservationDeleted", (arguments) {
@@ -68,20 +60,16 @@ class SignalRService {
         if (arguments != null && arguments.isNotEmpty) {
           _onReservationDeleted.add(arguments[0] as int);
         }
-      } catch (e) {
-        print("SignalR Error Parsing Deleted: $e");
-      }
+      } catch (e) { print("SignalR Error: $e"); }
     });
 
     try {
       await _hubConnection?.start();
-      print("SignalR Connected");
-    } catch (e) {
-      print("SignalR Connection Error: $e");
-    }
+    } catch (e) { print("SignalR Connection Error: $e"); }
   }
 
   Future<void> joinRestaurantGroup(int restaurantId) async {
+    await init();
     if (_hubConnection?.state == HubConnectionState.Connected) {
       await _hubConnection?.invoke("JoinRestaurantGroup", args: [restaurantId.toString()]);
     }
@@ -93,10 +81,24 @@ class SignalRService {
     }
   }
 
+  // AJOUT : Rejoindre le groupe privé de l'utilisateur
+  Future<void> joinUserGroup(int userId) async {
+    await init();
+    if (_hubConnection?.state == HubConnectionState.Connected) {
+      await _hubConnection?.invoke("JoinUserGroup", args: [userId.toString()]);
+    }
+  }
+
+  Future<void> leaveUserGroup(int userId) async {
+    if (_hubConnection?.state == HubConnectionState.Connected) {
+      await _hubConnection?.invoke("LeaveUserGroup", args: [userId.toString()]);
+    }
+  }
+
   void dispose() {
     _hubConnection?.stop();
     _onReservationCreated.close();
-    _onReservationValidated.close();
+    _onReservationUpdateStatus.close();
     _onReservationDeleted.close();
   }
 }

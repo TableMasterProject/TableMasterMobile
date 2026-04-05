@@ -84,7 +84,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
       }
     });
 
-    _subValidated = _signalRService.onReservationValidated.listen((res) {
+    _subValidated = _signalRService.onReservationUpdateStatus.listen((res) {
       print("onReservationValidated");
       if (res.restaurantId == _restaurant?.id) {
         _refreshData();

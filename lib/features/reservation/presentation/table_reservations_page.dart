@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
@@ -25,16 +27,52 @@ class TableReservationsPage extends StatefulWidget {
 
 class _TableReservationsPageState extends State<TableReservationsPage> {
   final _repo = getIt<IReservationRepository>();
+  final _signalRService = getIt<SignalRService>();
   bool _loading = false;
   String? _error;
   List<ReservationOut> _reservations = [];
   List<ReservationOut> _summaryReservations = []; // Pour les compteurs badges
   int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
 
+  StreamSubscription? _subCreated;
+  StreamSubscription? _subUpdate;
+  StreamSubscription? _subDeleted;
+
   @override
   void initState() {
     super.initState();
     _loadAllData();
+    _initSignalR();
+  }
+
+  @override
+  void dispose() {
+    _subCreated?.cancel();
+    _subUpdate?.cancel();
+    _subDeleted?.cancel();
+    _signalRService.leaveRestaurantGroup(widget.restaurantId);
+    super.dispose();
+  }
+
+  Future<void> _initSignalR() async {
+    await _signalRService.init();
+    await _signalRService.joinRestaurantGroup(widget.restaurantId);
+
+    _subCreated = _signalRService.onReservationCreated.listen((res) {
+      if (res.tableId == widget.table.id) {
+        _loadAllData();
+      }
+    });
+
+    _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
+      if (res.tableId == widget.table.id) {
+        _loadAllData();
+      }
+    });
+
+    _subDeleted = _signalRService.onReservationDeleted.listen((id) {
+       _loadAllData();
+    });
   }
 
   Future<void> _loadAllData() async {
@@ -50,17 +88,21 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       search.pageSize = 100;
       search.statuses = [ReservationStatus.enAttente, ReservationStatus.validee];
       final results = await _repo.getReservations(search);
-      setState(() {
-        _summaryReservations = results;
-      });
+      if (mounted) {
+        setState(() {
+          _summaryReservations = results;
+        });
+      }
     } catch (e) {}
   }
 
   Future<void> _loadReservations() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       SearchReservations search = SearchReservations();
       search.restaurantId = widget.restaurantId;
@@ -83,23 +125,26 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       final results = await _repo.getReservations(search);
       results.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
 
-      setState(() {
-        _reservations = results;
-      });
+      if (mounted) {
+        setState(() {
+          _reservations = results;
+        });
+      }
     } catch (e) {
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _updateStatus(int id, ReservationStatus status) async {
     try {
       await _repo.updateReservationStatus(id, status);
-      await _loadSummary();
-      await _loadReservations();
+      await _loadAllData();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
