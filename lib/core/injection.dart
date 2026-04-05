@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
 import '../features/auth/data/datasources/auth_datasource.dart';
 import '../features/auth/data/repositories/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
@@ -33,6 +34,7 @@ final getIt = GetIt.instance;
 void setupDependencies() {
   // Client HTTP unique
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
+  getIt.registerLazySingleton<SignalRService>(() => SignalRService());
 
   // region Auth
   // DataSource Auth

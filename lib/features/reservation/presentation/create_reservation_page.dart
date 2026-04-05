@@ -114,6 +114,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       SearchReservations searchReservations = SearchReservations();
       searchReservations.restaurantId = widget.restaurant.id;
       searchReservations.minDate = _selectedDate;
+      searchReservations.statuses = [ReservationStatus.validee];
       final res = await _reservationRepo.getReservations(searchReservations);
       setState(() {
         _dayReservations = res;
@@ -128,21 +129,29 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     if (table.numberOfSeats < _numberOfPeople) return "Trop petite";
     if (_selectedTime == null) return "Choisir une heure";
 
+    // Heure demandée par l'utilisateur
     final reqStart = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
-    final reqEnd = reqStart.add(const Duration(hours: 3));
+
+    // On définit la durée de sécurité (1h30 = 90 minutes)
+    const safetyMargin = Duration(minutes: 90);
 
     bool isBusy = _dayReservations.any((res) {
       if (res.tableId != table.id) return false;
 
-      // Conversion pour s'assurer qu'on compare en local
       final resStart = res.reservationDate.toLocal();
-      final resEnd = resStart.add(const Duration(hours: 3));
 
-      // Algorithme de chevauchement : (Debut1 < Fin2) ET (Fin1 > Debut2)
-      return reqStart.isBefore(resEnd) && reqEnd.isAfter(resStart);
+      // Une table est occupée si l'heure demandée (reqStart) se situe :
+      // ENTRE (Début de l'autre réservation - 1h30)
+      // ET (Début de l'autre réservation + 1h30)
+      final conflictStart = resStart.subtract(safetyMargin);
+      final conflictEnd = resStart.add(safetyMargin);
+
+      // Si mon créneau tombe dans cette zone de collision
+      return reqStart.isAfter(conflictStart) && reqStart.isBefore(conflictEnd)
+          || reqStart.isAtSameMomentAs(resStart);
     });
 
-    return isBusy ? "Réservée" : "Disponible";
+    return isBusy ? "Déjà réservée" : "Disponible";
   }
 
   bool _isDaySelectable(DateTime day) {

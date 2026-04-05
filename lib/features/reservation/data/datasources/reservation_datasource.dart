@@ -39,7 +39,7 @@ class ReservationDataSource {
   // GET /api/Reservation/{id}/Validate?IsValidate=true
   Future<ReservationOut> updateReservationStatus(int id, ReservationStatus status) async {
     try {
-      final response = await apiClient.dio.get(
+      final response = await apiClient.dio.put(
         '/Reservation/$id/Status',
         queryParameters: {'reservationStatus': status.index},
       );

@@ -86,6 +86,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     final bool canReview = res.status == ReservationStatus.finie;
     final bool isEnAttente = res.status == ReservationStatus.enAttente;
     final bool isValidee = res.status == ReservationStatus.validee;
+    final bool isCancel = res.status == ReservationStatus.annuleeResto || res.status == ReservationStatus.annuleeClient;
 
     return Scaffold(
       body: CustomScrollView(
@@ -207,7 +208,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
           ),
         ],
       ),
-      bottomSheet: Container(
+      bottomSheet: (isCancel)? null : Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
@@ -242,24 +243,24 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                   ),
                 ),
               const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => isEnAttente ? _confirmDelete(context) : _confirmCancel(context),
-                  icon: Icon(isEnAttente ? Icons.delete_forever_outlined : Icons.cancel_outlined),
-                  label: Text(
-                      isEnAttente ? "SUPPRIMER LA DEMANDE" : "ANNULER LA RÉSERVATION",
-                      style: const TextStyle(fontWeight: FontWeight.bold)
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colors.error,
-                    side: BorderSide(color: colors.error, width: 2),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              if(isEnAttente || isValidee)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => isEnAttente ? _confirmDelete(context) : _confirmCancel(context),
+                    icon: Icon(isEnAttente ? Icons.delete_forever_outlined : Icons.cancel_outlined),
+                    label: Text(
+                        isEnAttente ? "SUPPRIMER LA DEMANDE" : "ANNULER LA RÉSERVATION",
+                        style: const TextStyle(fontWeight: FontWeight.bold)
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colors.error,
+                      side: BorderSide(color: colors.error, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ),
-              ),
-
             ],
           ),
         ),

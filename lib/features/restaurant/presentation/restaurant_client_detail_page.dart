@@ -30,7 +30,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     Localisation.checkPermission();
     _fetchRestaurantDetails();
   }

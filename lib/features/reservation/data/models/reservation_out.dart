@@ -39,24 +39,34 @@ class ReservationOut {
   });
 
   factory ReservationOut.fromJson(Map<String, dynamic> json) {
-    return ReservationOut(
-      id: json['id'] ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      userId: json['userId'] ?? 0,
-      tableId: json['tableId'] ?? 0,
-      restaurantId: json['restaurantId'] ?? 0,
-      reservationDate: json['reservationDate'] != null
-          ? DateTime.parse(json['reservationDate'])
-          : DateTime.now(),
-      numberOfPeople: json['numberOfPeople'] ?? 1,
-      status: ReservationStatus.values[json['status']],
-      specialRequest: json['specialRequest'],
+    // Normalisation des clés pour gérer le PascalCase venant du C#
+    final id = json['id'] ?? json['Id'] ?? 0;
+    final createdAtStr = json['createdAt'] ?? json['CreatedAt'];
+    final userId = json['userId'] ?? json['UserId'] ?? 0;
+    final tableId = json['tableId'] ?? json['TableId'] ?? 0;
+    final restaurantId = json['restaurantId'] ?? json['RestaurantId'] ?? 0;
+    final reservationDateStr = json['reservationDate'] ?? json['ReservationDate'];
+    final numberOfPeople = json['numberOfPeople'] ?? json['NumberOfPeople'] ?? 1;
+    final statusInt = json['status'] ?? json['Status'] ?? 0;
+    final specialRequest = json['specialRequest'] ?? json['SpecialRequest'];
 
-      user: json['user'] != null ? UserOut.fromJson(json['user']) : null,
-      table: json['table'] != null ? TableEntityOut.fromJson(json['table']) : null,
-      restaurant: json['restaurant'] != null ? RestaurantOut.fromJson(json['restaurant']) : null,
+    final userJson = json['user'] ?? json['User'];
+    final tableJson = json['table'] ?? json['Table'];
+    final restaurantJson = json['restaurant'] ?? json['Restaurant'];
+
+    return ReservationOut(
+      id: id,
+      createdAt: createdAtStr != null ? DateTime.parse(createdAtStr) : DateTime.now(),
+      userId: userId,
+      tableId: tableId,
+      restaurantId: restaurantId,
+      reservationDate: reservationDateStr != null ? DateTime.parse(reservationDateStr) : DateTime.now(),
+      numberOfPeople: numberOfPeople,
+      status: ReservationStatus.values[statusInt],
+      specialRequest: specialRequest,
+      user: userJson != null ? UserOut.fromJson(userJson) : null,
+      table: tableJson != null ? TableEntityOut.fromJson(tableJson) : null,
+      restaurant: restaurantJson != null ? RestaurantOut.fromJson(restaurantJson) : null,
     );
   }
 }
