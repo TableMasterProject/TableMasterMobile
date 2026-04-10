@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:table_master_mobile/features/home/presentation/home_screen.dart';
 import '../../../../core/app_config.dart';
 import '../../../../core/injection.dart';
@@ -16,15 +15,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // 1. Contrôleurs pour récupérer le texte
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // 2. Gestion de l'état
   bool _isLoading = false;
   final _authRepo = getIt<IAuthRepository>();
 
-  // 3. Fonction de connexion
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -39,15 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Appel du repository avec le modèle LoginUserIn
       final credentials = LoginUserIn(email: email, password: password);
+      // Le repository gère maintenant la sauvegarde des tokens, du user_id et du token FCM
       LoginUserOut result = await _authRepo.login(credentials);
 
       if (mounted) {
-        // Sauvegarder l'utilisateur
-        const storage = FlutterSecureStorage();
-        await storage.write(key: 'user_id', value: result.user.id.toString());
-
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (context) => HomeScreen(user: result.user),
@@ -107,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Champ Email
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -121,7 +112,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Champ Password
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -135,7 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Bouton Login
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -163,7 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 10),
 
-              // Bouton Créer un compte
               SizedBox(
                 width: double.infinity,
                 height: 55,

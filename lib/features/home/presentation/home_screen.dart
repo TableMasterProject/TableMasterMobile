@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:table_master_mobile/features/auth/presentation/login/login_screen.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
+import '../../auth/domain/repositories/auth_repository.dart';
 import '../../reservation/presentation/my_reservations_page.dart';
+import '../../../core/injection.dart';
 import 'pages/maps_page.dart';
 import 'pages/account_page.dart';
 import 'pages/restaurant_page.dart';
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   late List<Widget> _pages;
+  final _authRepo = getIt<IAuthRepository>();
 
   @override
   void initState() {
@@ -36,10 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
-    const storage = FlutterSecureStorage();
-    // On vide les tokens en local
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
+    // On appelle le logout du repository qui gère la suppression
+    // du token FCM sur le serveur et le nettoyage local
+    await _authRepo.logout();
 
     if (mounted) {
       // Redirection vers le login et nettoyage de la pile de navigation
@@ -59,11 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
-    // Déterminer si c'est un restaurant
     final isRestaurant = widget.user.accountType == 1;
 
-    // Titres des pages selon l'index
     final pageTitles = [
       "Mes Réservations",
       "Trouver des Restaurants",
@@ -105,25 +103,25 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onBottomNavTapped,
         type: BottomNavigationBarType.fixed,
         items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.event_note_outlined),
-            activeIcon: const Icon(Icons.event_note),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.event_note_outlined),
+            activeIcon: Icon(Icons.event_note),
             label: 'Réservations',
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.location_on_outlined),
-            activeIcon: const Icon(Icons.location_on),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.location_on_outlined),
+            activeIcon: Icon(Icons.location_on),
             label: 'Restaurants',
           ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
-            activeIcon: const Icon(Icons.person),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: 'Mon Compte',
           ),
           if (isRestaurant)
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.restaurant_outlined),
-              activeIcon: const Icon(Icons.restaurant),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.restaurant_outlined),
+              activeIcon: Icon(Icons.restaurant),
               label: 'Mon Restaurant',
             ),
         ],

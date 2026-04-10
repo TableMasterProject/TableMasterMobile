@@ -1,62 +1,83 @@
-# table_master_mobile
+# 📁 TableMaster Mobile - Guide de configuration
 
-A new Flutter project.
+Ce projet est une application Flutter utilisant Firebase pour les notifications et un système de configuration par environnement.
 
-# 📁 Documentation du Projet Flutter
+---
 
-Ce projet utilise un système de configurations par environnement (**Dev** & **Prod**) via des fichiers JSON.  
-Cela permet de séparer les URLs d'API et les clés secrètes.
+## 🔥 Configuration Firebase
+
+Pour lier l'application à Firebase (ou mettre à jour la configuration), suivez ces étapes :
+
+### 1. Prérequis
+Assurez-vous d'avoir installé le **Firebase CLI** et d'être connecté :
+```bash
+npm install -g firebase-tools
+firebase login
+```
+
+### 2. Installation de FlutterFire CLI
+Si ce n'est pas déjà fait, installez l'outil de configuration FlutterFire :
+```bash
+dart pub global activate flutterfire_cli
+```
+*Note : Assurez-vous que le chemin des exécutables Dart est dans votre PATH.*
+
+### 3. Commande de Liaison (Lien Firebase)
+Pour générer ou mettre à jour le fichier `lib/firebase_options.dart` :
+```bash
+flutterfire configure
+```
+Sélectionnez votre projet Firebase et les plateformes souhaitées (android, ios, web).
 
 ---
 
 ## ⚙️ Configuration des Environnements
 
-Les fichiers de configuration se trouvent dans le dossier `config/` :
+L'application utilise des fichiers JSON dans le dossier `config/` pour gérer les variables selon l'environnement :
 
-- `config/dev.json` : Utilisé pour le développement local et les tests
-- `config/prod.json` : Utilisé pour la version finale destinée aux utilisateurs
-
-> ⚠️ **Note**  
-> Si vous ajoutez des clés sensibles, assurez-vous que ce dossier est listé dans votre `.gitignore`.
+- `config/dev.json` : Développement local / API de test.
+- `config/android-emulate-dev.json` : Spécifique pour l'émulateur Android (pointe souvent vers 10.0.2.2).
+- `config/prod.json` : Configuration de production.
 
 ---
 
 ## 🚀 Commandes de Lancement
 
-### 🛠 Environnement de Développement (Debug)
-
-Pour lancer l'application en mode debug avec l'API de développement :
-
+### 🛠 Développement (Debug)
 ```bash
+# Avec config dev standard
 flutter run --dart-define-from-file=config/dev.json
-```
-### 🌍 Environnement de Production (Release)
-Pour tester les performances réelles avec l'API de production sur un appareil :
 
+# Pour l'émulateur Android
+flutter run --dart-define-from-file=config/android-emulate-dev.json
+```
+
+### 🌍 Production
 ```bash
 flutter run --release --dart-define-from-file=config/prod.json
 ```
-## 📦 Commandes de Build (Génération des exécutables)
-Utilisez ces commandes pour générer les fichiers à distribuer (APK ou AppBundle).
+
+---
+
+## 📦 Génération des builds (Release)
 
 ### 🤖 Android
-Build pour le Développement (APK de test)
 ```bash
-flutter build apk --debug --dart-define-from-file=config/dev.json
-```
-### Build pour la Production (Google Play Store)
-```bash
+# Générer l'APK
+flutter build apk --dart-define-from-file=config/prod.json
+
+# Générer l'App Bundle (Play Store)
 flutter build appbundle --dart-define-from-file=config/prod.json
 ```
 
-## 🍎 iOS
-### Build pour le Développement :
-
-```Bash
-flutter build ios --debug --dart-define-from-file=config/dev.json
-```
-### Build pour la Production (App Store Connect) :
-
-```Bash
+### 🍎 iOS
+```bash
 flutter build ipa --dart-define-from-file=config/prod.json
 ```
+
+---
+
+## 🛠 Maintenance du projet
+
+- **Nettoyage :** `flutter clean`
+- **Récupérer les dépendances :** `flutter pub get`

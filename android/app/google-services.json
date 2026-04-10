@@ -1,1 +1,29 @@
-{"installed":{"client_id":"217738707730-ppb081uop2k7tegbq5br6ttc7ht09pdb.apps.googleusercontent.com","project_id":"tablemaster-448913","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs"}}
+{
+  "project_info": {
+    "project_number": "739801589159",
+    "project_id": "tablemaster-6e5d1",
+    "storage_bucket": "tablemaster-6e5d1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:739801589159:android:51dd96a4c059c3d9f60282",
+        "android_client_info": {
+          "package_name": "com.table_master_mobile.table_master_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKp1_Xth8SyNlZeMG-7C_zYxsFm92t0ls"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
