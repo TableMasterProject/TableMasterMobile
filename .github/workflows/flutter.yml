@@ -24,40 +24,34 @@ jobs:
         channel: 'stable'
     
     - name: Get dependencies
-      working-directory: ./TableMasterMobile
       run: flutter pub get
     
     - name: Run Flutter Analyze
-      working-directory: ./TableMasterMobile
       run: flutter analyze
     
     - name: Run Flutter Format Check
-      working-directory: ./TableMasterMobile
       run: dart format --set-exit-if-changed .
       continue-on-error: true
     
     - name: Build Web
-      working-directory: ./TableMasterMobile
       run: flutter build web --release
     
     - name: Upload Web Build
       uses: actions/upload-artifact@v4
       with:
         name: flutter-web-build
-        path: ./TableMasterMobile/build/web/
+        path: ./build/web/
     
     - name: Build APK
-      working-directory: ./TableMasterMobile
       run: flutter build apk --release
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: flutter-apk
-        path: ./TableMasterMobile/build/app/outputs/flutter-apk/app-release.apk
+        path: ./build/app/outputs/flutter-apk/app-release.apk
     
     - name: Build AAB (Android App Bundle)
-      working-directory: ./TableMasterMobile
       run: flutter build appbundle --release
       continue-on-error: true
     
@@ -65,11 +59,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: flutter-aab
-        path: ./TableMasterMobile/build/app/outputs/bundle/release/
+        path: ./build/app/outputs/bundle/release/
       continue-on-error: true
     
     - name: Build Linux Desktop
-      working-directory: ./TableMasterMobile
       run: flutter build linux --release
       continue-on-error: true
     
@@ -77,5 +70,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: flutter-linux-build
-        path: ./TableMasterMobile/build/linux/
+        path: ./build/linux/
       continue-on-error: true
