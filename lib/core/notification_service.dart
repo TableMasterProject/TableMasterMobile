@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -25,6 +25,10 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 Future<void> _initializeLocalNotifications() async {
+  if (kIsWeb) {
+    return;
+  }
+
   const AndroidInitializationSettings androidInitializationSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -38,7 +42,7 @@ Future<void> _initializeLocalNotifications() async {
 
   await _localNotificationsPlugin.initialize(settings: initializationSettings);
 
-  if (Platform.isAndroid) {
+  if (defaultTargetPlatform == TargetPlatform.android) {
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       _notificationChannelId,
       _notificationChannelName,
@@ -55,6 +59,10 @@ Future<void> _initializeLocalNotifications() async {
 }
 
 Future<void> _showLocalNotification(RemoteMessage message) async {
+  if (kIsWeb) {
+    return;
+  }
+
   final notification = message.notification;
   if (notification == null && message.data.isEmpty) {
     return;
@@ -167,16 +175,9 @@ class NotificationService {
 
   Future<void> _registerDeviceToken(String token) async {
     try {
-      final platform =
-          Platform.isAndroid
-              ? 'android'
-              : Platform.isIOS
-              ? 'ios'
-              : 'unknown';
-
       await _apiClient.dio.post(
         '/DeviceToken',
-        data: {'deviceToken': token, 'devicePlatform': platform},
+        data: {'deviceToken': token, 'devicePlatform': _devicePlatform},
       );
     } on DioError catch (error) {
       print(
@@ -192,10 +193,28 @@ class NotificationService {
     if (token == null) return;
 
     try {
-      await _apiClient.dio.delete('/DeviceToken', queryParameters: {'deviceToken': token});
+      await _apiClient.dio.delete(
+        '/DeviceToken',
+        queryParameters: {'deviceToken': token},
+      );
       await _storage.delete(key: 'fcm_token');
     } catch (error) {
       print('Erreur suppression token FCM: $error');
     }
+  }
+
+  String get _devicePlatform {
+    if (kIsWeb) {
+      return 'web';
+    }
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'android',
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.linux => 'linux',
+      TargetPlatform.macOS => 'macos',
+      TargetPlatform.windows => 'windows',
+      TargetPlatform.fuchsia => 'unknown',
+    };
   }
 }
