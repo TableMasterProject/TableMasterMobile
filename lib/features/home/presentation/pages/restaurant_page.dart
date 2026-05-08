@@ -19,6 +19,8 @@ import 'package:table_master_mobile/features/menu/presentation/menu_page.dart';
 import 'package:table_master_mobile/features/daily_activity/presentation/hourly_activity_page.dart';
 import 'package:table_master_mobile/features/closed_day_exception/presentation/exceptions_page.dart';
 import 'package:table_master_mobile/features/review/presentation/pages/restaurant_reviews_page.dart';
+import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
+import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 
 import '../../../reservation/data/models/reservation_in.dart';
 import '../../../reservation/data/models/search_reservations.dart';
@@ -225,11 +227,131 @@ class _RestaurantPageState extends State<RestaurantPage> {
     }
   }
 
+  Future<void> _saveRestaurantSettings(BuildContext settingsContext, RestaurantIn restaurant) async {
+    if (_restaurant == null) return;
+
+    _showSavingDialog(settingsContext);
+    try {
+      await repo.updateRestaurant(_restaurant!.id, restaurant);
+      await _reloadRestaurantDetails();
+
+      if (!mounted) return;
+      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
+      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Informations du restaurant mises à jour.")),
+      );
+    } catch (e) {
+      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
+      if (settingsContext.mounted) {
+        ScaffoldMessenger.of(settingsContext).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveTableSettings(BuildContext settingsContext, TableChanges changes) async {
+    if (_restaurant == null) return;
+
+    final restaurantId = _restaurant!.id;
+    _showSavingDialog(settingsContext);
+    try {
+      for (final table in changes.toAdd) {
+        await _tableRepo.addTable(restaurantId, table.copyWith(restaurantId: restaurantId));
+      }
+
+      for (final table in changes.toUpdate) {
+        await _tableRepo.editTable(table.id, table.copyWith(restaurantId: restaurantId));
+      }
+
+      for (final table in changes.toDelete) {
+        await _tableRepo.removeTable(table.id);
+      }
+
+      await _reloadRestaurantDetails();
+
+      if (!mounted) return;
+      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
+      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tables mises à jour.")),
+      );
+    } catch (e) {
+      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
+      if (settingsContext.mounted) {
+        ScaffoldMessenger.of(settingsContext).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _reloadRestaurantDetails() async {
+    if (_restaurant == null) return;
+
+    final restaurant = await repo.getRestaurantDetails(_restaurant!.id);
+    if (mounted) {
+      setState(() => _restaurant = restaurant);
+    }
+  }
+
+  void _showSavingDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    "Sauvegarde en cours...",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openCreateRestaurantFlow() async {
+    final createdRestaurant = await Navigator.push<RestaurantOut>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => _RestaurantCreationStepperPage(
+          user: widget.user,
+          restaurantRepo: repo,
+          tableRepo: _tableRepo,
+        ),
+      ),
+    );
+
+    if (createdRestaurant == null || !mounted) return;
+
+    widget.user.restaurantId = createdRestaurant.id;
+    setState(() => _restaurant = createdRestaurant);
+    await _reloadRestaurantDetails();
+    await _loadSummary(createdRestaurant.id);
+    await _loadDailyReservations(createdRestaurant.id);
+    await _loadMenu(createdRestaurant.id);
+    await _initSignalR();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    if (widget.user.restaurantId == null) {
+    if (widget.user.restaurantId == null && _restaurant == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -237,6 +359,14 @@ class _RestaurantPageState extends State<RestaurantPage> {
             Icon(Icons.restaurant_outlined, size: 80, color: colors.primary),
             const SizedBox(height: 20),
             Text("Aucun restaurant associé", style: TextStyle(fontSize: 18, color: colors.onSurfaceVariant)),
+            if (widget.user.accountType == 1) ...[
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _openCreateRestaurantFlow,
+                icon: const Icon(Icons.add_business_outlined),
+                label: const Text("Créer son restaurant"),
+              ),
+            ],
           ],
         ),
       );
@@ -561,14 +691,36 @@ class _RestaurantPageState extends State<RestaurantPage> {
           Icons.storefront_outlined,
           "Informations du restaurant",
           "Nom, adresse, type de cuisine...",
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => Step4RestaurantInfoScreen(onNext: (data) {}, restaurantIn: restaurant))),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (settingsContext) => _buildSettingsPage(
+                title: "Informations du restaurant",
+                child: Step4RestaurantInfoScreen(
+                  onNext: (data) => _saveRestaurantSettings(settingsContext, data),
+                  restaurantIn: restaurant,
+                ),
+              ),
+            ),
+          ),
         ),
         _buildSettingTile(
           context,
           Icons.table_bar_outlined,
           "Gestion des tables",
           "Ajouter ou modifier vos tables",
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => Step5TableManagementScreen(onNext: (changes) {}, initialTables: restaurant.tables))),
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (settingsContext) => _buildSettingsPage(
+                title: "Gestion des tables",
+                child: Step5TableManagementScreen(
+                  onNext: (changes) => _saveTableSettings(settingsContext, changes),
+                  initialTables: restaurant.tables,
+                ),
+              ),
+            ),
+          ),
         ),
         _buildSettingTile(
           context,
@@ -590,14 +742,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
           "Avis clients",
           "Consulter les notes et commentaires",
           () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantReviewsPage(restaurantId: restaurant.id))),
-        ),
-        const SizedBox(height: 32),
-        const Divider(),
-        ListTile(
-          title: const Text("Déconnexion"),
-          leading: const Icon(Icons.logout, color: Colors.red),
-          onTap: () {}, // implémenter déconnexion
-        ),
+        )
       ],
     );
   }
@@ -617,6 +762,195 @@ class _RestaurantPageState extends State<RestaurantPage> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
         trailing: const Icon(Icons.chevron_right, size: 20),
+      ),
+    );
+  }
+
+  Widget _buildSettingsPage({required String title, required Widget child}) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: colors.surface,
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SafeArea(child: child),
+    );
+  }
+}
+
+class _RestaurantCreationStepperPage extends StatefulWidget {
+  final UserOut user;
+  final IRestaurantRepository restaurantRepo;
+  final ITableRepository tableRepo;
+
+  const _RestaurantCreationStepperPage({
+    required this.user,
+    required this.restaurantRepo,
+    required this.tableRepo,
+  });
+
+  @override
+  State<_RestaurantCreationStepperPage> createState() => _RestaurantCreationStepperPageState();
+}
+
+class _RestaurantCreationStepperPageState extends State<_RestaurantCreationStepperPage> {
+  final PageController _pageController = PageController();
+  late RestaurantIn _restaurantData;
+  int _currentStep = 0;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restaurantData = RestaurantIn(
+      userId: widget.user.id,
+      restaurantName: '',
+      streetNumber: '',
+      streetName: '',
+      postalCode: '',
+      city: '',
+      phone: '',
+      cuisineType: '',
+      paymentMethods: '',
+      description: '',
+      isAutoValidateReservation: false,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _saveRestaurantStep(RestaurantIn restaurant) {
+    _restaurantData = restaurant.copyWith(userId: widget.user.id);
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Future<void> _saveTablesStep(TableChanges changes) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final createdRestaurant = await widget.restaurantRepo.createRestaurant(
+        _restaurantData.copyWith(userId: widget.user.id),
+      );
+
+      if (changes.toAdd.isNotEmpty) {
+        final tables = changes.toAdd
+            .map((table) => table.copyWith(restaurantId: createdRestaurant.id))
+            .toList();
+        await widget.tableRepo.replaceTables(createdRestaurant.id, tables);
+      }
+
+      final restaurant = await widget.restaurantRepo.getRestaurantDetails(createdRestaurant.id);
+
+      if (!mounted) return;
+      Navigator.pop(context, restaurant);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
+  }
+
+  void _back() {
+    if (_isLoading) return;
+    if (_currentStep == 0) {
+      Navigator.pop(context);
+    } else {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final progress = (_currentStep + 1) / 2;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _back();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: colors.surface,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _isLoading ? null : _back,
+          ),
+          title: Text(
+            "Restaurant - étape ${_currentStep + 1} sur 2",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(6.0),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: colors.surfaceVariant,
+              valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+            ),
+          ),
+        ),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                onPageChanged: (index) => setState(() => _currentStep = index),
+                children: [
+                  Step4RestaurantInfoScreen(
+                    onNext: _saveRestaurantStep,
+                    restaurantIn: _restaurantData,
+                  ),
+                  Step5TableManagementScreen(
+                    onNext: _saveTablesStep,
+                    initialTables: null,
+                  ),
+                ],
+              ),
+              if (_isLoading)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text(
+                              "Création en cours...",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
