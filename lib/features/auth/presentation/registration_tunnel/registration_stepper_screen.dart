@@ -13,6 +13,7 @@ import 'package:table_master_mobile/features/table/domain/repositories/table_rep
 import 'package:table_master_mobile/features/user/domain/repositories/user_repository.dart';
 
 import '../../../../core/injection.dart';
+import '../../../../core/logging/app_logger.dart';
 import '../../../restaurant/data/models/restaurant_in.dart';
 import '../../../restaurant/data/models/restaurant_out.dart';
 import '../../../restaurant/domain/repositories/restaurant_repository.dart';
@@ -145,7 +146,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     });
     try {
       if (loginUserOut == null) {
-        print("Envoi au serveur le user ...");
+        AppLogger.debug("Envoi au serveur le user");
         loginUserOut = await userRepo.register(userData);
 
         // Sauvegarder l'utilisateur

@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../features/auth/presentation/login/login_screen.dart';
 import 'app_config.dart';
-import 'app_constant.dart';
+import 'logging/app_logger.dart';
+import 'session/session_manager.dart';
 
 class ApiClient {
   late Dio _dio;
@@ -89,12 +88,13 @@ class ApiClient {
                 } catch (refreshError) {
                   // Si le refresh échoue (ex: refresh token expiré), on déconnecte
                   //await storage.deleteAll();
-                  _redirectToLogin();
+                  AppLogger.debug("Échec du refresh token", refreshError);
+                  SessionManager.redirectToLogin();
                 }
               } else {
                 // Pas de tokens dispo, redirection directe
                 //await storage.deleteAll();
-                _redirectToLogin();
+                SessionManager.redirectToLogin();
               }
             }
             return handler.next(e);
@@ -106,10 +106,4 @@ class ApiClient {
   // Getter pour accéder à l'instance Dio dans les DataSources
   Dio get dio => _dio;
 
-  void _redirectToLogin() {
-    navigatorKey.currentState?.pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
-    );
-  }
 }

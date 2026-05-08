@@ -1,4 +1,5 @@
 import 'package:table_master_mobile/core/notification_service.dart';
+import 'package:table_master_mobile/core/logging/app_logger.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_datasource.dart';
 import '../models/login_user_in.dart';
@@ -26,7 +27,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       await notificationService.registerTokenForCurrentUser();
     } catch (e) {
-      print("Erreur lors de l'enregistrement du token de notification: $e");
+      AppLogger.debug("Erreur lors de l'enregistrement du token de notification", e);
     }
 
     return result;
@@ -45,7 +46,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     try {
       await notificationService.unregisterDeviceToken();
     } catch (e) {
-      print("Erreur lors de la suppression du token de notification: $e");
+      AppLogger.debug("Erreur lors de la suppression du token de notification", e);
     }
 
     // 2. Supprime les jetons et l'ID utilisateur du téléphone

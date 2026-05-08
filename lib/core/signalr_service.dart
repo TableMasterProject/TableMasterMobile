@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 import 'app_config.dart';
+import 'logging/app_logger.dart';
 import '../features/reservation/data/models/reservation_out.dart';
 
 class SignalRService {
@@ -43,7 +44,9 @@ class SignalRService {
           final data = jsonDecode(arguments[0] as String);
           _onReservationCreated.add(ReservationOut.fromJson(data));
         }
-      } catch (e) { print("SignalR Error: $e"); }
+      } catch (e) {
+        AppLogger.debug("Erreur SignalR", e);
+      }
     });
 
     _hubConnection?.on("ReceiveReservationUpdateStatus", (arguments) {
@@ -52,7 +55,9 @@ class SignalRService {
           final data = jsonDecode(arguments[0] as String);
           _onReservationUpdateStatus.add(ReservationOut.fromJson(data));
         }
-      } catch (e) { print("SignalR Error: $e"); }
+      } catch (e) {
+        AppLogger.debug("Erreur SignalR", e);
+      }
     });
 
     _hubConnection?.on("ReceiveReservationDeleted", (arguments) {
@@ -60,12 +65,16 @@ class SignalRService {
         if (arguments != null && arguments.isNotEmpty) {
           _onReservationDeleted.add(arguments[0] as int);
         }
-      } catch (e) { print("SignalR Error: $e"); }
+      } catch (e) {
+        AppLogger.debug("Erreur SignalR", e);
+      }
     });
 
     try {
       await _hubConnection?.start();
-    } catch (e) { print("SignalR Connection Error: $e"); }
+    } catch (e) {
+      AppLogger.debug("Erreur connexion SignalR", e);
+    }
   }
 
   Future<void> joinRestaurantGroup(int restaurantId) async {

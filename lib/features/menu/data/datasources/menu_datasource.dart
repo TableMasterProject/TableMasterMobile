@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
+import '../../../../core/errors/app_exception.dart';
 import '../models/menu_in.dart';
 import '../models/menu_out.dart';
 
@@ -45,10 +46,6 @@ class MenuDataSource {
   }
 
   void _handleError(DioException e) {
-    if (e.response != null) {
-      throw Exception(e.response?.data.toString() ?? "Erreur serveur");
-    } else {
-      throw Exception("Connexion au serveur impossible");
-    }
+    throw AppException.fromDio(e);
   }
 }

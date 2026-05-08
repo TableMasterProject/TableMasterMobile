@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
+import '../../../../core/errors/app_exception.dart';
 import '../models/table_entity_in.dart';
 import '../models/table_entity_out.dart';
 
@@ -75,10 +76,6 @@ class TableDataSource {
   }
 
   void _handleError(DioException e) {
-    if (e.response != null) {
-      throw Exception(e.response?.data.toString() ?? "Erreur serveur");
-    } else {
-      throw Exception("Erreur de connexion");
-    }
+    throw AppException.fromDio(e);
   }
 }

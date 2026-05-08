@@ -1,30 +1,31 @@
-import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:table_master_mobile/core/signalr_service.dart';
-import 'package:table_master_mobile/features/user/data/models/user_out.dart';
-import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
-import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
-import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
-import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import 'package:table_master_mobile/core/navigation/app_navigation.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
+import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step4_restaurant_info_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step5_table_management_screen.dart';
-import 'package:table_master_mobile/features/reservation/presentation/table_reservations_page.dart';
-import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
+import 'package:table_master_mobile/features/closed_day_exception/presentation/exceptions_page.dart';
+import 'package:table_master_mobile/features/daily_activity/presentation/hourly_activity_page.dart';
 import 'package:table_master_mobile/features/menu/data/models/menu_out.dart';
 import 'package:table_master_mobile/features/menu/domain/repositories/menu_repository.dart';
 import 'package:table_master_mobile/features/menu/presentation/menu_page.dart';
-import 'package:table_master_mobile/features/daily_activity/presentation/hourly_activity_page.dart';
-import 'package:table_master_mobile/features/closed_day_exception/presentation/exceptions_page.dart';
-import 'package:table_master_mobile/features/review/presentation/pages/restaurant_reviews_page.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
+import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
+import 'package:table_master_mobile/features/reservation/presentation/table_reservations_page.dart';
+import 'package:table_master_mobile/features/reservation/presentation/widgets/reservation_card.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
+import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
+import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
+import 'package:table_master_mobile/features/restaurant/presentation/controllers/restaurant_controller.dart';
+import 'package:table_master_mobile/features/restaurant/presentation/restaurant_setup_flow.dart';
+import 'package:table_master_mobile/features/review/presentation/pages/restaurant_reviews_page.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
-
-import '../../../reservation/data/models/reservation_in.dart';
-import '../../../reservation/data/models/search_reservations.dart';
-import '../../../reservation/presentation/widgets/reservation_card.dart';
+import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
+import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
+import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 
 class RestaurantPage extends StatefulWidget {
   final UserOut user;
@@ -36,400 +37,272 @@ class RestaurantPage extends StatefulWidget {
 }
 
 class _RestaurantPageState extends State<RestaurantPage> {
-  int _viewIndex = 0; // 0 = tables, 1 = réservations, 2 = menu, 3 = paramètres
-  RestaurantOut? _restaurant;
-  bool _loading = false;
-  String? _error;
-  List<ReservationOut> _reservations = [];
-  List<ReservationOut> _summaryReservations = []; // Pour les compteurs badges
-  List<MenuOut> _menuItems = [];
-  int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
-
-  final repo = getIt<IRestaurantRepository>();
-  final _reservationRepo = getIt<IReservationRepository>();
-  final _tableRepo = getIt<ITableRepository>();
-  final _menuRepo = getIt<IMenuRepository>();
-  final _signalRService = getIt<SignalRService>();
-  final _audioPlayer = AudioPlayer();
-
-  StreamSubscription? _subCreated;
-  StreamSubscription? _subValidated;
-  StreamSubscription? _subDeleted;
+  late final RestaurantController _controller;
 
   @override
   void initState() {
     super.initState();
-    _loadRestaurantIfNeeded().then((_) => _initSignalR());
+    _controller = RestaurantController(
+      restaurantRepository: getIt<IRestaurantRepository>(),
+      reservationRepository: getIt<IReservationRepository>(),
+      tableRepository: getIt<ITableRepository>(),
+      menuRepository: getIt<IMenuRepository>(),
+      signalRService: getIt<SignalRService>(),
+    )..onNewReservation = _showNewReservationSnackBar;
+
+    _controller.loadForUser(widget.user);
   }
 
   @override
   void dispose() {
-    _subCreated?.cancel();
-    _subValidated?.cancel();
-    _subDeleted?.cancel();
-    if (_restaurant != null) {
-      _signalRService.leaveRestaurantGroup(_restaurant!.id);
-    }
-    _audioPlayer.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  Future<void> _initSignalR() async {
-    if (_restaurant == null) return;
-
-    _subCreated = _signalRService.onReservationCreated.listen((res) {
-      print("onReservationCreated");
-      if (res.restaurantId == _restaurant?.id) {
-        _playSound();
-        _refreshData();
-        _showNotificationSnackBar("Nouvelle demande de réservation !");
-      }
-    });
-
-    _subValidated = _signalRService.onReservationUpdateStatus.listen((res) {
-      print("onReservationValidated");
-      if (res.restaurantId == _restaurant?.id) {
-        _refreshData();
-      }
-    });
-
-    _subDeleted = _signalRService.onReservationDeleted.listen((id) {
-      _refreshData();
-    });
-
-    await _signalRService.init();
-    await _signalRService.joinRestaurantGroup(_restaurant!.id);
-  }
-
-  void _playSound() async {
-    try {
-      await _audioPlayer.play(AssetSource('sounds/notification.mp3'));
-    } catch (e) {
-      print("Erreur lecture son: $e");
-    }
-  }
-
-  void _showNotificationSnackBar(String message) {
+  void _showNewReservationSnackBar() {
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: const Text("Nouvelle demande de réservation !"),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: "Voir",
           textColor: Colors.white,
           onPressed: () {
-            setState(() {
-              _viewIndex = 1; // Go to reservations view
-              _selectedFilter = 1; // Show pending
-            });
-            _loadDailyReservations(_restaurant!.id);
+            _controller.selectView(1);
+            _controller.selectReservationFilter(1);
           },
         ),
       ),
     );
   }
 
-  Future<void> _refreshData() async {
-    if (_restaurant != null) {
-      await _loadSummary(_restaurant!.id);
-      await _loadDailyReservations(_restaurant!.id);
-    }
-  }
-
-  Future<void> _loadRestaurantIfNeeded() async {
-    final rid = widget.user.restaurantId;
-    if (rid == null) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final r = await repo.getRestaurantDetails(rid);
-      setState(() => _restaurant = r);
-      await _loadSummary(r.id);
-      await _loadDailyReservations(r.id);
-      await _loadMenu(r.id);
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _loadSummary(int restaurantId) async {
-    try {
-      SearchReservations search = SearchReservations();
-      search.restaurantId = restaurantId;
-      search.pageSize = 100;
-      search.statuses = [ReservationStatus.enAttente, ReservationStatus.validee];
-      final results = await _reservationRepo.getReservations(search);
-      if (mounted) {
-        setState(() {
-          _summaryReservations = results;
-        });
-      }
-    } catch (e) {}
-  }
-
-  Future<void> _loadDailyReservations(int restaurantId) async {
-    try {
-      SearchReservations search = SearchReservations();
-      search.restaurantId = restaurantId;
-      search.pageSize = 50;
-
-      if (_selectedFilter == 0) {
-        search.statuses = [ReservationStatus.validee];
-        search.minDate = DateTime.now();
-      } else if (_selectedFilter == 1) {
-        search.statuses = [ReservationStatus.enAttente];
-      } else {
-        search.statuses = [
-          ReservationStatus.finie,
-          ReservationStatus.annuleeResto,
-          ReservationStatus.annuleeClient
-        ];
-      }
-
-      final results = await _reservationRepo.getReservations(search);
-      results.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
-
-      if (mounted) {
-        setState(() {
-          _reservations = results;
-        });
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  Future<void> _loadMenu(int restaurantId) async {
-    try {
-      final menu = await _menuRepo.getByRestaurant(restaurantId);
-      if (mounted) {
-        setState(() => _menuItems = menu);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  Future<void> _updateStatus(int id, ReservationStatus status) async {
-    try {
-      await _reservationRepo.updateReservationStatus(id, status);
-      await _refreshData();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
-      }
-    }
-  }
-
-  Future<void> _saveRestaurantSettings(BuildContext settingsContext, RestaurantIn restaurant) async {
-    if (_restaurant == null) return;
-
-    _showSavingDialog(settingsContext);
-    try {
-      await repo.updateRestaurant(_restaurant!.id, restaurant);
-      await _reloadRestaurantDetails();
-
-      if (!mounted) return;
-      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
-      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Informations du restaurant mises à jour.")),
-      );
-    } catch (e) {
-      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
-      if (settingsContext.mounted) {
-        ScaffoldMessenger.of(settingsContext).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _saveTableSettings(BuildContext settingsContext, TableChanges changes) async {
-    if (_restaurant == null) return;
-
-    final restaurantId = _restaurant!.id;
-    _showSavingDialog(settingsContext);
-    try {
-      for (final table in changes.toAdd) {
-        await _tableRepo.addTable(restaurantId, table.copyWith(restaurantId: restaurantId));
-      }
-
-      for (final table in changes.toUpdate) {
-        await _tableRepo.editTable(table.id, table.copyWith(restaurantId: restaurantId));
-      }
-
-      for (final table in changes.toDelete) {
-        await _tableRepo.removeTable(table.id);
-      }
-
-      await _reloadRestaurantDetails();
-
-      if (!mounted) return;
-      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
-      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tables mises à jour.")),
-      );
-    } catch (e) {
-      if (settingsContext.mounted) Navigator.of(settingsContext).pop();
-      if (settingsContext.mounted) {
-        ScaffoldMessenger.of(settingsContext).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _reloadRestaurantDetails() async {
-    if (_restaurant == null) return;
-
-    final restaurant = await repo.getRestaurantDetails(_restaurant!.id);
-    if (mounted) {
-      setState(() => _restaurant = restaurant);
-    }
-  }
-
-  void _showSavingDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const PopScope(
-        canPop: false,
-        child: Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    "Sauvegarde en cours...",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _openCreateRestaurantFlow() async {
-    final createdRestaurant = await Navigator.push<RestaurantOut>(
+    final createdRestaurant = await AppNavigation.push<RestaurantOut>(
       context,
-      MaterialPageRoute(
-        builder: (_) => _RestaurantCreationStepperPage(
-          user: widget.user,
-          restaurantRepo: repo,
-          tableRepo: _tableRepo,
-        ),
+      RestaurantSetupFlow(
+        user: widget.user,
+        restaurantRepository: getIt<IRestaurantRepository>(),
+        tableRepository: getIt<ITableRepository>(),
       ),
     );
 
     if (createdRestaurant == null || !mounted) return;
 
-    widget.user.restaurantId = createdRestaurant.id;
-    setState(() => _restaurant = createdRestaurant);
-    await _reloadRestaurantDetails();
-    await _loadSummary(createdRestaurant.id);
-    await _loadDailyReservations(createdRestaurant.id);
-    await _loadMenu(createdRestaurant.id);
-    await _initSignalR();
+    await _controller.attachCreatedRestaurant(widget.user, createdRestaurant);
+  }
+
+  Future<void> _openRestaurantInfo(RestaurantOut restaurant) async {
+    await AppNavigation.push<void>(
+      context,
+      _SettingsStepPage(
+        title: "Informations du restaurant",
+        child: Step4RestaurantInfoScreen(
+          restaurantIn: restaurant,
+          onNext: (data) => _saveRestaurantSettings(data),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openTableManagement(RestaurantOut restaurant) async {
+    await AppNavigation.push<void>(
+      context,
+      _SettingsStepPage(
+        title: "Gestion des tables",
+        child: Step5TableManagementScreen(
+          initialTables: restaurant.tables,
+          onNext: (changes) => _saveTableSettings(changes),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveRestaurantSettings(RestaurantIn restaurant) async {
+    AppSavingDialog.show(context);
+    try {
+      await _controller.saveRestaurantSettings(restaurant);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Informations du restaurant mises à jour.")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
+  }
+
+  Future<void> _saveTableSettings(TableChanges changes) async {
+    AppSavingDialog.show(context);
+    try {
+      await _controller.saveTableSettings(changes);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tables mises à jour.")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        if (widget.user.restaurantId == null && _controller.restaurant == null) {
+          return AppEmptyState(
+            icon: Icons.restaurant_outlined,
+            message: "Aucun restaurant associé",
+            action: widget.user.accountType == 1
+                ? FilledButton.icon(
+                    onPressed: _openCreateRestaurantFlow,
+                    icon: const Icon(Icons.add_business_outlined),
+                    label: const Text("Créer son restaurant"),
+                  )
+                : null,
+          );
+        }
 
-    if (widget.user.restaurantId == null && _restaurant == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.restaurant_outlined, size: 80, color: colors.primary),
-            const SizedBox(height: 20),
-            Text("Aucun restaurant associé", style: TextStyle(fontSize: 18, color: colors.onSurfaceVariant)),
-            if (widget.user.accountType == 1) ...[
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _openCreateRestaurantFlow,
-                icon: const Icon(Icons.add_business_outlined),
-                label: const Text("Créer son restaurant"),
-              ),
-            ],
-          ],
-        ),
-      );
-    }
+        if (_controller.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    if (_loading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) return Center(child: Text('Erreur: $_error'));
-    if (_restaurant == null) return const Center(child: Text('Aucun détail de restaurant disponible'));
+        if (_controller.error != null) {
+          return AppErrorState(
+            message: "Erreur: ${_controller.error}",
+            onRetry: () => _controller.loadForUser(widget.user),
+          );
+        }
 
-    final restaurant = _restaurant!;
+        final restaurant = _controller.restaurant;
+        if (restaurant == null) {
+          return const AppEmptyState(
+            icon: Icons.restaurant_outlined,
+            message: "Aucun détail de restaurant disponible",
+          );
+        }
 
-    Widget body;
-    switch (_viewIndex) {
-      case 1:
-        body = _buildReservationsView(colors);
-        break;
-      case 2:
-        body = _buildMenuView(colors);
-        break;
-      case 3:
-        body = _buildSettingsView(context, colors, restaurant);
-        break;
-      default:
-        body = _buildTablesView(colors, restaurant);
-    }
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildTabButton("Tables", 0, colors),
-                const SizedBox(width: 8),
-                _buildTabButton("Réservations", 1, colors),
-                const SizedBox(width: 8),
-                _buildTabButton("Menu", 2, colors),
-                const SizedBox(width: 8),
-                _buildTabButton("Paramètres", 3, colors),
-              ],
+        final body = switch (_controller.viewIndex) {
+          1 => _ReservationsView(
+              reservations: _controller.reservations,
+              summaryReservations: _controller.summaryReservations,
+              selectedFilter: _controller.selectedFilter,
+              onFilterChanged: _controller.selectReservationFilter,
+              onStatusUpdate: _controller.updateReservationStatus,
             ),
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(child: body),
-      ],
+          2 => _MenuView(
+              restaurantId: restaurant.id,
+              menuItems: _controller.menuItems,
+              onMenuChanged: () => _controller.loadMenu(restaurant.id),
+            ),
+          3 => _SettingsView(
+              restaurant: restaurant,
+              onOpenInfo: () => _openRestaurantInfo(restaurant),
+              onOpenTables: () => _openTableManagement(restaurant),
+            ),
+          _ => _TablesView(
+              restaurant: restaurant,
+              summaryReservations: _controller.summaryReservations,
+              onTableChanged: _controller.refreshReservationData,
+            ),
+        };
+
+        return Column(
+          children: [
+            _RestaurantTabs(
+              selectedIndex: _controller.viewIndex,
+              pendingCount: _controller.summaryReservations
+                  .where((r) => r.status == ReservationStatus.enAttente)
+                  .length,
+              onChanged: _controller.selectView,
+            ),
+            const Divider(height: 1),
+            Expanded(child: body),
+          ],
+        );
+      },
     );
   }
+}
 
-  Widget _buildTabButton(String label, int index, ColorScheme colors) {
-    final isSelected = _viewIndex == index;
-    int badgeCount = 0;
-    if (index == 1) {
-      badgeCount = _summaryReservations.where((r) => r.status == ReservationStatus.enAttente).length;
-    }
+class _RestaurantTabs extends StatelessWidget {
+  final int selectedIndex;
+  final int pendingCount;
+  final ValueChanged<int> onChanged;
+
+  const _RestaurantTabs({
+    required this.selectedIndex,
+    required this.pendingCount,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _TabButton(label: "Tables", index: 0, selectedIndex: selectedIndex, onChanged: onChanged),
+            const SizedBox(width: 8),
+            _TabButton(
+              label: "Réservations",
+              index: 1,
+              selectedIndex: selectedIndex,
+              badgeCount: pendingCount,
+              onChanged: onChanged,
+            ),
+            const SizedBox(width: 8),
+            _TabButton(label: "Menu", index: 2, selectedIndex: selectedIndex, onChanged: onChanged),
+            const SizedBox(width: 8),
+            _TabButton(label: "Paramètres", index: 3, selectedIndex: selectedIndex, onChanged: onChanged),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TabButton extends StatelessWidget {
+  final String label;
+  final int index;
+  final int selectedIndex;
+  final int badgeCount;
+  final ValueChanged<int> onChanged;
+
+  const _TabButton({
+    required this.label,
+    required this.index,
+    required this.selectedIndex,
+    required this.onChanged,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final isSelected = selectedIndex == index;
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
         FilledButton(
-          onPressed: () => setState(() => _viewIndex = index),
+          onPressed: () => onChanged(index),
           style: FilledButton.styleFrom(
             backgroundColor: isSelected ? colors.primary : colors.surfaceVariant,
             foregroundColor: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
@@ -442,11 +315,15 @@ class _RestaurantPageState extends State<RestaurantPage> {
             top: -5,
             child: Container(
               padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
               child: Text(
                 '$badgeCount',
-                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -454,9 +331,23 @@ class _RestaurantPageState extends State<RestaurantPage> {
       ],
     );
   }
+}
 
-  Widget _buildTablesView(ColorScheme colors, RestaurantOut restaurant) {
-    final tables = restaurant.tables ?? [];
+class _TablesView extends StatelessWidget {
+  final RestaurantOut restaurant;
+  final List<ReservationOut> summaryReservations;
+  final Future<void> Function() onTableChanged;
+
+  const _TablesView({
+    required this.restaurant,
+    required this.summaryReservations,
+    required this.onTableChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final tables = restaurant.tables ?? <TableEntityOut>[];
     final now = DateTime.now();
 
     return Padding(
@@ -464,70 +355,108 @@ class _RestaurantPageState extends State<RestaurantPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Gestion des Tables", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface)),
+          Text(
+            "Gestion des tables",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface),
+          ),
           const SizedBox(height: 12),
           Expanded(
-            child: ListView.separated(
-              itemCount: tables.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final t = tables[index];
+            child: tables.isEmpty
+                ? const AppEmptyState(
+                    icon: Icons.table_bar_outlined,
+                    message: "Aucune table configurée",
+                  )
+                : ListView.separated(
+                    itemCount: tables.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final table = tables[index];
+                      final tableReservations = summaryReservations
+                          .where((reservation) => reservation.tableId == table.id)
+                          .toList();
+                      final pendingCount = tableReservations
+                          .where((reservation) => reservation.status == ReservationStatus.enAttente)
+                          .length;
+                      final todayCount = tableReservations
+                          .where(
+                            (reservation) =>
+                                reservation.status == ReservationStatus.validee &&
+                                DateUtils.isSameDay(reservation.reservationDate, now),
+                          )
+                          .length;
 
-                // Calcul des compteurs basés sur summaryReservations (tous statuts actifs)
-                final tableRes = _summaryReservations.where((r) => r.tableId == t.id).toList();
-
-                final pendingCount = tableRes.where((r) => r.status == ReservationStatus.enAttente).length;
-                final todayCount = tableRes.where((r) =>
-                  r.status == ReservationStatus.validee &&
-                  DateUtils.isSameDay(r.reservationDate, now)
-                ).length;
-
-                return Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: CircleAvatar(
-                      backgroundColor: colors.primaryContainer,
-                      child: Text(t.tableNumber.toString(), style: TextStyle(color: colors.onPrimaryContainer, fontWeight: FontWeight.bold)),
-                    ),
-                    title: Text("Table ${t.tableNumber}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text("${t.numberOfSeats} places disponibles"),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (todayCount > 0)
-                          _buildTableBadge(todayCount.toString(), Colors.blue, Icons.event),
-                        if (pendingCount > 0)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: _buildTableBadge(pendingCount.toString(), Colors.orange, Icons.pending_actions),
+                      return Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          leading: CircleAvatar(
+                            backgroundColor: colors.primaryContainer,
+                            child: Text(
+                              table.tableNumber.toString(),
+                              style: TextStyle(
+                                color: colors.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.chevron_right, size: 20),
-                      ],
-                    ),
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => TableReservationsPage(restaurantId: restaurant.id, table: t)),
+                          title: Text(
+                            "Table ${table.tableNumber}",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text("${table.numberOfSeats} places disponibles"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (todayCount > 0)
+                                _TableBadge(text: todayCount.toString(), color: Colors.blue, icon: Icons.event),
+                              if (pendingCount > 0)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: _TableBadge(
+                                    text: pendingCount.toString(),
+                                    color: Colors.orange,
+                                    icon: Icons.pending_actions,
+                                  ),
+                                ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.chevron_right, size: 20),
+                            ],
+                          ),
+                          onTap: () async {
+                            await AppNavigation.push<void>(
+                              context,
+                              TableReservationsPage(restaurantId: restaurant.id, table: table),
+                            );
+                            await onTableChanged();
+                          },
+                        ),
                       );
-                      _refreshData();
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildTableBadge(String text, Color color, IconData icon) {
+class _TableBadge extends StatelessWidget {
+  final String text;
+  final Color color;
+  final IconData icon;
+
+  const _TableBadge({
+    required this.text,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -540,14 +469,37 @@ class _RestaurantPageState extends State<RestaurantPage> {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+          Text(
+            text,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildReservationsView(ColorScheme colors) {
-    final pendingTotal = _summaryReservations.where((r) => r.status == ReservationStatus.enAttente).length;
+class _ReservationsView extends StatelessWidget {
+  final List<ReservationOut> reservations;
+  final List<ReservationOut> summaryReservations;
+  final int selectedFilter;
+  final ValueChanged<int> onFilterChanged;
+  final Future<void> Function(int id, ReservationStatus status) onStatusUpdate;
+
+  const _ReservationsView({
+    required this.reservations,
+    required this.summaryReservations,
+    required this.selectedFilter,
+    required this.onFilterChanged,
+    required this.onStatusUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final pendingTotal = summaryReservations
+        .where((reservation) => reservation.status == ReservationStatus.enAttente)
+        .length;
 
     return Column(
       children: [
@@ -555,36 +507,39 @@ class _RestaurantPageState extends State<RestaurantPage> {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              _buildFilterChip("Validées", 0, colors),
+              _FilterChip(label: "Validées", index: 0, selectedFilter: selectedFilter, onChanged: onFilterChanged),
               const SizedBox(width: 8),
-              _buildFilterChip("En attente ($pendingTotal)", 1, colors),
+              _FilterChip(
+                label: "En attente ($pendingTotal)",
+                index: 1,
+                selectedFilter: selectedFilter,
+                onChanged: onFilterChanged,
+              ),
               const SizedBox(width: 8),
-              _buildFilterChip("Historique", 2, colors),
+              _FilterChip(label: "Historique", index: 2, selectedFilter: selectedFilter, onChanged: onFilterChanged),
             ],
           ),
         ),
         Expanded(
-          child: _reservations.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.event_busy, size: 48, color: colors.outline),
-                      const SizedBox(height: 16),
-                      Text("Aucune réservation", style: TextStyle(color: colors.onSurfaceVariant)),
-                    ],
+          child: reservations.isEmpty
+              ? AppEmptyState(
+                  icon: Icons.event_busy,
+                  message: "Aucune réservation",
+                  action: Text(
+                    "Les réservations apparaîtront ici.",
+                    style: TextStyle(color: colors.onSurfaceVariant),
                   ),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _reservations.length,
+                  itemCount: reservations.length,
                   itemBuilder: (context, index) {
-                    final res = _reservations[index];
+                    final reservation = reservations[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: ReservationCard(
-                        reservation: res,
-                        onStatusUpdate: (newStatus) => _updateStatus(res.id, newStatus),
+                        reservation: reservation,
+                        onStatusUpdate: (newStatus) => onStatusUpdate(reservation.id, newStatus),
                       ),
                     );
                   },
@@ -593,22 +548,48 @@ class _RestaurantPageState extends State<RestaurantPage> {
       ],
     );
   }
+}
 
-  Widget _buildFilterChip(String label, int index, ColorScheme colors) {
-    final isSelected = _selectedFilter == index;
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final int index;
+  final int selectedFilter;
+  final ValueChanged<int> onChanged;
+
+  const _FilterChip({
+    required this.label,
+    required this.index,
+    required this.selectedFilter,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ChoiceChip(
       label: Text(label),
-      selected: isSelected,
-      onSelected: (val) {
-        if (val) {
-          setState(() => _selectedFilter = index);
-          _loadDailyReservations(_restaurant!.id);
-        }
+      selected: selectedFilter == index,
+      onSelected: (selected) {
+        if (selected) onChanged(index);
       },
     );
   }
+}
 
-  Widget _buildMenuView(ColorScheme colors) {
+class _MenuView extends StatelessWidget {
+  final int restaurantId;
+  final List<MenuOut> menuItems;
+  final Future<void> Function() onMenuChanged;
+
+  const _MenuView({
+    required this.restaurantId,
+    required this.menuItems,
+    required this.onMenuChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -616,11 +597,14 @@ class _RestaurantPageState extends State<RestaurantPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Votre Menu", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface)),
+              Text(
+                "Votre menu",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface),
+              ),
               IconButton.filledTonal(
                 onPressed: () async {
-                  await Navigator.push(context, MaterialPageRoute(builder: (_) => MenuPage(restaurantId: _restaurant!.id)));
-                  _loadMenu(_restaurant!.id);
+                  await AppNavigation.push<void>(context, MenuPage(restaurantId: restaurantId));
+                  await onMenuChanged();
                 },
                 icon: const Icon(Icons.edit),
               ),
@@ -628,8 +612,11 @@ class _RestaurantPageState extends State<RestaurantPage> {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: _menuItems.isEmpty
-                ? const Center(child: Text("Aucun plat ajouté au menu"))
+            child: menuItems.isEmpty
+                ? const AppEmptyState(
+                    icon: Icons.restaurant_menu,
+                    message: "Aucun plat ajouté au menu",
+                  )
                 : GridView.builder(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
@@ -637,9 +624,9 @@ class _RestaurantPageState extends State<RestaurantPage> {
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
-                    itemCount: _menuItems.length,
+                    itemCount: menuItems.length,
                     itemBuilder: (context, index) {
-                      final item = _menuItems[index];
+                      final item = menuItems[index];
                       return Card(
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -664,8 +651,16 @@ class _RestaurantPageState extends State<RestaurantPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(item.itemName, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  Text("${item.price.toStringAsFixed(2)} €", style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    item.itemName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    "${item.price.toStringAsFixed(2)} €",
+                                    style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
+                                  ),
                                 ],
                               ),
                             ),
@@ -679,94 +674,88 @@ class _RestaurantPageState extends State<RestaurantPage> {
       ),
     );
   }
+}
 
-  Widget _buildSettingsView(BuildContext context, ColorScheme colors, RestaurantOut restaurant) {
+class _SettingsView extends StatelessWidget {
+  final RestaurantOut restaurant;
+  final VoidCallback onOpenInfo;
+  final VoidCallback onOpenTables;
+
+  const _SettingsView({
+    required this.restaurant,
+    required this.onOpenInfo,
+    required this.onOpenTables,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text("Paramètres du restaurant", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface)),
+        Text(
+          "Paramètres du restaurant",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
         const SizedBox(height: 24),
-        _buildSettingTile(
-          context,
-          Icons.storefront_outlined,
-          "Informations du restaurant",
-          "Nom, adresse, type de cuisine...",
-          () => Navigator.push(
+        AppSettingTile(
+          icon: Icons.storefront_outlined,
+          title: "Informations du restaurant",
+          subtitle: "Nom, adresse, type de cuisine...",
+          onTap: onOpenInfo,
+        ),
+        AppSettingTile(
+          icon: Icons.table_bar_outlined,
+          title: "Gestion des tables",
+          subtitle: "Ajouter ou modifier vos tables",
+          onTap: onOpenTables,
+        ),
+        AppSettingTile(
+          icon: Icons.access_time_outlined,
+          title: "Horaires d'ouverture",
+          subtitle: "Gérer vos créneaux quotidiens",
+          onTap: () => AppNavigation.push<void>(
             context,
-            MaterialPageRoute(
-              builder: (settingsContext) => _buildSettingsPage(
-                title: "Informations du restaurant",
-                child: Step4RestaurantInfoScreen(
-                  onNext: (data) => _saveRestaurantSettings(settingsContext, data),
-                  restaurantIn: restaurant,
-                ),
-              ),
-            ),
+            HourlyActivityPage(restaurantId: restaurant.id),
           ),
         ),
-        _buildSettingTile(
-          context,
-          Icons.table_bar_outlined,
-          "Gestion des tables",
-          "Ajouter ou modifier vos tables",
-          () => Navigator.push(
+        AppSettingTile(
+          icon: Icons.calendar_today_outlined,
+          title: "Fermetures exceptionnelles",
+          subtitle: "Gérer les jours fériés et vacances",
+          onTap: () => AppNavigation.push<void>(
             context,
-            MaterialPageRoute(
-              builder: (settingsContext) => _buildSettingsPage(
-                title: "Gestion des tables",
-                child: Step5TableManagementScreen(
-                  onNext: (changes) => _saveTableSettings(settingsContext, changes),
-                  initialTables: restaurant.tables,
-                ),
-              ),
-            ),
+            ExceptionsPage(restaurantId: restaurant.id),
           ),
         ),
-        _buildSettingTile(
-          context,
-          Icons.access_time_outlined,
-          "Horaires d'ouverture",
-          "Gérer vos créneaux quotidiens",
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => HourlyActivityPage(restaurantId: restaurant.id))),
+        AppSettingTile(
+          icon: Icons.star_outline_rounded,
+          title: "Avis clients",
+          subtitle: "Consulter les notes et commentaires",
+          onTap: () => AppNavigation.push<void>(
+            context,
+            RestaurantReviewsPage(restaurantId: restaurant.id),
+          ),
         ),
-        _buildSettingTile(
-          context,
-          Icons.calendar_today_outlined,
-          "Fermetures exceptionnelles",
-          "Gérer les jours fériés et vacances",
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => ExceptionsPage(restaurantId: restaurant.id))),
-        ),
-        _buildSettingTile(
-          context,
-          Icons.star_outline_rounded,
-          "Avis clients",
-          "Consulter les notes et commentaires",
-          () => Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantReviewsPage(restaurantId: restaurant.id))),
-        )
       ],
     );
   }
+}
 
-  Widget _buildSettingTile(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) {
-    final colors = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Icon(icon, color: colors.primary),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant)),
-        trailing: const Icon(Icons.chevron_right, size: 20),
-      ),
-    );
-  }
+class _SettingsStepPage extends StatelessWidget {
+  final String title;
+  final Widget child;
 
-  Widget _buildSettingsPage({required String title, required Widget child}) {
+  const _SettingsStepPage({
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -779,179 +768,6 @@ class _RestaurantPageState extends State<RestaurantPage> {
         ),
       ),
       body: SafeArea(child: child),
-    );
-  }
-}
-
-class _RestaurantCreationStepperPage extends StatefulWidget {
-  final UserOut user;
-  final IRestaurantRepository restaurantRepo;
-  final ITableRepository tableRepo;
-
-  const _RestaurantCreationStepperPage({
-    required this.user,
-    required this.restaurantRepo,
-    required this.tableRepo,
-  });
-
-  @override
-  State<_RestaurantCreationStepperPage> createState() => _RestaurantCreationStepperPageState();
-}
-
-class _RestaurantCreationStepperPageState extends State<_RestaurantCreationStepperPage> {
-  final PageController _pageController = PageController();
-  late RestaurantIn _restaurantData;
-  int _currentStep = 0;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _restaurantData = RestaurantIn(
-      userId: widget.user.id,
-      restaurantName: '',
-      streetNumber: '',
-      streetName: '',
-      postalCode: '',
-      city: '',
-      phone: '',
-      cuisineType: '',
-      paymentMethods: '',
-      description: '',
-      isAutoValidateReservation: false,
-    );
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  void _saveRestaurantStep(RestaurantIn restaurant) {
-    _restaurantData = restaurant.copyWith(userId: widget.user.id);
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  Future<void> _saveTablesStep(TableChanges changes) async {
-    setState(() => _isLoading = true);
-
-    try {
-      final createdRestaurant = await widget.restaurantRepo.createRestaurant(
-        _restaurantData.copyWith(userId: widget.user.id),
-      );
-
-      if (changes.toAdd.isNotEmpty) {
-        final tables = changes.toAdd
-            .map((table) => table.copyWith(restaurantId: createdRestaurant.id))
-            .toList();
-        await widget.tableRepo.replaceTables(createdRestaurant.id, tables);
-      }
-
-      final restaurant = await widget.restaurantRepo.getRestaurantDetails(createdRestaurant.id);
-
-      if (!mounted) return;
-      Navigator.pop(context, restaurant);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
-    }
-  }
-
-  void _back() {
-    if (_isLoading) return;
-    if (_currentStep == 0) {
-      Navigator.pop(context);
-    } else {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final progress = (_currentStep + 1) / 2;
-
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        _back();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: colors.surface,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _isLoading ? null : _back,
-          ),
-          title: Text(
-            "Restaurant - étape ${_currentStep + 1} sur 2",
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(6.0),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: colors.surfaceVariant,
-              valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-            ),
-          ),
-        ),
-        body: SafeArea(
-          child: Stack(
-            children: [
-              PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) => setState(() => _currentStep = index),
-                children: [
-                  Step4RestaurantInfoScreen(
-                    onNext: _saveRestaurantStep,
-                    restaurantIn: _restaurantData,
-                  ),
-                  Step5TableManagementScreen(
-                    onNext: _saveTablesStep,
-                    initialTables: null,
-                  ),
-                ],
-              ),
-              if (_isLoading)
-                Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: const Center(
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text(
-                              "Création en cours...",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

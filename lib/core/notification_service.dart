@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api_client.dart';
+import 'logging/app_logger.dart';
 
 const String _notificationChannelId = 'table_master_channel';
 const String _notificationChannelName = 'Table Master';
@@ -128,7 +129,7 @@ class NotificationService {
       badge: true,
       sound: true,
     );
-    print('Notification authorization status: ${settings.authorizationStatus}');
+    AppLogger.debug('Notification authorization status: ${settings.authorizationStatus}');
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -136,13 +137,13 @@ class NotificationService {
   }
 
   Future<void> _handleOpenedMessage(RemoteMessage message) async {
-    print('Notification ouverte par l’utilisateur: ${message.data}');
+    AppLogger.debug('Notification ouverte par l’utilisateur: ${message.data}');
   }
 
   Future<void> _handleInitialMessage() async {
     final message = await FirebaseMessaging.instance.getInitialMessage();
     if (message != null) {
-      print(
+      AppLogger.debug(
         'L’application a été ouverte depuis une notification terminée: ${message.data}',
       );
     }
@@ -180,11 +181,12 @@ class NotificationService {
         data: {'deviceToken': token, 'devicePlatform': _devicePlatform},
       );
     } on DioError catch (error) {
-      print(
-        'Erreur enregistrement token FCM: ${error.response?.data ?? error.message}',
+      AppLogger.debug(
+        'Erreur enregistrement token FCM',
+        error.response?.data ?? error.message,
       );
     } catch (error) {
-      print('Erreur enregistrement token FCM: $error');
+      AppLogger.debug('Erreur enregistrement token FCM', error);
     }
   }
 
@@ -199,7 +201,7 @@ class NotificationService {
       );
       await _storage.delete(key: 'fcm_token');
     } catch (error) {
-      print('Erreur suppression token FCM: $error');
+      AppLogger.debug('Erreur suppression token FCM', error);
     }
   }
 

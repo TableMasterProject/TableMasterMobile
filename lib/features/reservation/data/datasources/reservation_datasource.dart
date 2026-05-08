@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
+import '../../../../core/errors/app_exception.dart';
 import '../models/reservation_in.dart';
 import '../models/reservation_out.dart';
 import '../models/search_reservations.dart';
@@ -79,10 +80,6 @@ class ReservationDataSource {
   }
 
   void _handleError(DioException e) {
-    if (e.response != null) {
-      throw Exception(e.response?.data.toString() ?? "Erreur serveur");
-    } else {
-      throw Exception("Connexion au serveur impossible");
-    }
+    throw AppException.fromDio(e);
   }
 }
