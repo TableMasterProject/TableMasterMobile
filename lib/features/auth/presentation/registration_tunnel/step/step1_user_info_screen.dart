@@ -6,7 +6,11 @@ class Step1UserInfoScreen extends StatefulWidget {
 
   final UserIn user;
 
-  const Step1UserInfoScreen({super.key, required this.onNext, required this.user});
+  const Step1UserInfoScreen({
+    super.key,
+    required this.onNext,
+    required this.user,
+  });
 
   @override
   State<Step1UserInfoScreen> createState() => _Step1UserInfoScreenState();
@@ -136,7 +140,7 @@ class _Step1UserInfoScreenState extends State<Step1UserInfoScreen> {
                     final user = widget.user.copyWith(
                       email: _emailController.text.trim(),
                       firstName: _firstNameController.text.trim(),
-                      lastName: _lastNameController.text.trim()
+                      lastName: _lastNameController.text.trim(),
                     );
                     widget.onNext(user);
                   }

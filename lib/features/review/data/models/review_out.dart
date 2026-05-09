@@ -20,9 +20,10 @@ class ReviewOut extends ReviewIn {
       restaurantId: json['restaurantId'] ?? 0,
       rating: json['rating'] ?? 0,
       comment: json['comment'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 }

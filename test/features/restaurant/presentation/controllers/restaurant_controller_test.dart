@@ -23,70 +23,82 @@ import 'package:table_master_mobile/features/table/domain/repositories/table_rep
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 
 void main() {
-  test('saveRestaurantSettings met à jour le restaurant via le repository', () async {
-    final restaurantRepo = _FakeRestaurantRepository();
-    final controller = _buildController(restaurantRepo: restaurantRepo)
-      ..restaurant = _restaurant(id: 10);
+  test(
+    'saveRestaurantSettings met à jour le restaurant via le repository',
+    () async {
+      final restaurantRepo = _FakeRestaurantRepository();
+      final controller = _buildController(restaurantRepo: restaurantRepo)
+        ..restaurant = _restaurant(id: 10);
 
-    final updated = _restaurantIn(name: 'Nouveau nom');
-    await controller.saveRestaurantSettings(updated);
+      final updated = _restaurantIn(name: 'Nouveau nom');
+      await controller.saveRestaurantSettings(updated);
 
-    expect(restaurantRepo.updatedRestaurantId, 10);
-    expect(restaurantRepo.updatedRestaurant?.restaurantName, 'Nouveau nom');
-    expect(controller.restaurant?.restaurantName, 'Restaurant 10');
-  });
+      expect(restaurantRepo.updatedRestaurantId, 10);
+      expect(restaurantRepo.updatedRestaurant?.restaurantName, 'Nouveau nom');
+      expect(controller.restaurant?.restaurantName, 'Restaurant 10');
+    },
+  );
 
-  test('saveTableSettings applique les ajouts modifications suppressions', () async {
-    final tableRepo = _FakeTableRepository();
-    final controller = _buildController(tableRepo: tableRepo)..restaurant = _restaurant(id: 7);
+  test(
+    'saveTableSettings applique les ajouts modifications suppressions',
+    () async {
+      final tableRepo = _FakeTableRepository();
+      final controller = _buildController(tableRepo: tableRepo)
+        ..restaurant = _restaurant(id: 7);
 
-    await controller.saveTableSettings(
-      TableChanges(
-        toAdd: [TableEntityIn(restaurantId: 0, tableNumber: 3, numberOfSeats: 2)],
-        toUpdate: [
-          TableEntityOut(
-            id: 22,
-            restaurantId: 7,
-            tableNumber: 4,
-            numberOfSeats: 6,
-            createdAt: DateTime(2024),
-          ),
-        ],
-        toDelete: [
-          TableEntityOut(
-            id: 23,
-            restaurantId: 7,
-            tableNumber: 5,
-            numberOfSeats: 2,
-            createdAt: DateTime(2024),
-          ),
-        ],
-      ),
-    );
+      await controller.saveTableSettings(
+        TableChanges(
+          toAdd: [
+            TableEntityIn(restaurantId: 0, tableNumber: 3, numberOfSeats: 2),
+          ],
+          toUpdate: [
+            TableEntityOut(
+              id: 22,
+              restaurantId: 7,
+              tableNumber: 4,
+              numberOfSeats: 6,
+              createdAt: DateTime(2024),
+            ),
+          ],
+          toDelete: [
+            TableEntityOut(
+              id: 23,
+              restaurantId: 7,
+              tableNumber: 5,
+              numberOfSeats: 2,
+              createdAt: DateTime(2024),
+            ),
+          ],
+        ),
+      );
 
-    expect(tableRepo.added.single.restaurantId, 7);
-    expect(tableRepo.updatedIds.single, 22);
-    expect(tableRepo.removedIds.single, 23);
-  });
+      expect(tableRepo.added.single.restaurantId, 7);
+      expect(tableRepo.updatedIds.single, 22);
+      expect(tableRepo.removedIds.single, 23);
+    },
+  );
 
-  test('attachCreatedRestaurant met à jour UserOut.restaurantId et recharge les données', () async {
-    final user = UserOut(
-      id: 5,
-      email: 'resto@test.fr',
-      password: '',
-      firstName: 'Resto',
-      lastName: 'Owner',
-      accountType: 1,
-      createdAt: DateTime(2024),
-    );
-    final controller = _buildController();
+  test(
+    'attachCreatedRestaurant met à jour UserOut.restaurantId et recharge les données',
+    () async {
+      final user = UserOut(
+        id: 5,
+        email: 'resto@test.fr',
+        password: '',
+        firstName: 'Resto',
+        lastName: 'Owner',
+        accountType: 1,
+        createdAt: DateTime(2024),
+      );
+      final controller = _buildController();
 
-    await controller.attachCreatedRestaurant(user, _restaurant(id: 42));
+      await controller.attachCreatedRestaurant(user, _restaurant(id: 42));
 
-    expect(user.restaurantId, 42);
-    expect(controller.restaurant?.id, 42);
-    expect(controller.menuItems, isEmpty);
-  });
+      expect(user.restaurantId, 42);
+      expect(controller.restaurant?.id, 42);
+      expect(controller.menuItems, isEmpty);
+    },
+  );
 }
 
 RestaurantController _buildController({
@@ -111,7 +123,10 @@ class _FakeRoomRepository implements IRoomRepository {
   final List<int> savedLayoutRoomIds = [];
 
   @override
-  Future<RestaurantRoomOut> addRoom(int restaurantId, RestaurantRoomIn room) async {
+  Future<RestaurantRoomOut> addRoom(
+    int restaurantId,
+    RestaurantRoomIn room,
+  ) async {
     return RestaurantRoomOut(
       id: 1,
       restaurantId: restaurantId,
@@ -135,13 +150,17 @@ class _FakeRoomRepository implements IRoomRepository {
   }
 
   @override
-  Future<List<RestaurantRoomOut>> getRestaurantRooms(int restaurantId) async => [];
+  Future<List<RestaurantRoomOut>> getRestaurantRooms(int restaurantId) async =>
+      [];
 
   @override
   Future<bool> removeRoom(int roomId) async => true;
 
   @override
-  Future<RestaurantRoomLayoutOut> saveLayout(int roomId, RestaurantRoomLayoutIn layout) async {
+  Future<RestaurantRoomLayoutOut> saveLayout(
+    int roomId,
+    RestaurantRoomLayoutIn layout,
+  ) async {
     savedLayoutRoomIds.add(roomId);
     return RestaurantRoomLayoutOut(
       room: RestaurantRoomOut(
@@ -210,13 +229,19 @@ class _FakeRestaurantRepository implements IRestaurantRepository {
   Future<bool> deleteRestaurant(int id) async => true;
 
   @override
-  Future<List<RestaurantOut>> getAllRestaurants(SearchRestaurant search) async => [];
+  Future<List<RestaurantOut>> getAllRestaurants(
+    SearchRestaurant search,
+  ) async => [];
 
   @override
-  Future<RestaurantOut> getRestaurantDetails(int id) async => _restaurant(id: id);
+  Future<RestaurantOut> getRestaurantDetails(int id) async =>
+      _restaurant(id: id);
 
   @override
-  Future<RestaurantOut> updateRestaurant(int id, RestaurantIn restaurant) async {
+  Future<RestaurantOut> updateRestaurant(
+    int id,
+    RestaurantIn restaurant,
+  ) async {
     updatedRestaurantId = id;
     updatedRestaurant = restaurant;
     return _restaurant(id: id);
@@ -233,10 +258,14 @@ class _FakeReservationRepository implements IReservationRepository {
   Future<bool> deleteReservation(int id) async => true;
 
   @override
-  Future<List<ReservationOut>> getMyReservations(SearchReservations search) async => [];
+  Future<List<ReservationOut>> getMyReservations(
+    SearchReservations search,
+  ) async => [];
 
   @override
-  Future<List<ReservationOut>> getReservations(SearchReservations search) async => [];
+  Future<List<ReservationOut>> getReservations(
+    SearchReservations search,
+  ) async => [];
 
   @override
   Future<ReservationOut> updateReservationStatus(
@@ -286,7 +315,8 @@ class _FakeTableRepository implements ITableRepository {
   }
 
   @override
-  Future<List<TableEntityOut>> getRestaurantTables(int restaurantId) async => [];
+  Future<List<TableEntityOut>> getRestaurantTables(int restaurantId) async =>
+      [];
 
   @override
   Future<bool> removeTable(int id) async {

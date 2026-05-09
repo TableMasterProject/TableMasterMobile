@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _initializePages() {
     _pages = [
-      MyReservationsPage(userId: widget.user.id,),
+      MyReservationsPage(userId: widget.user.id),
       const MapsPage(),
       AccountPage(user: widget.user, onLogout: _logout),
       if (widget.user.accountType == 1) RestaurantPage(user: widget.user),

@@ -32,9 +32,10 @@ class TableEntityOut extends TableEntityIn {
       width: (json['width'] as num?)?.toDouble() ?? 0.16,
       height: (json['height'] as num?)?.toDouble() ?? 0.12,
       rotationDegrees: (json['rotationDegrees'] as num?)?.toDouble() ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 

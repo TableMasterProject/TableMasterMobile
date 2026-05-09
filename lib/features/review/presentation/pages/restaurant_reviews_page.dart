@@ -43,7 +43,7 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
 
       final reviews = await _reviewRepository.getByRestaurant(
         widget.restaurantId,
-        _search
+        _search,
       );
       setState(() {
         _reviews = reviews;
@@ -255,9 +255,7 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
               ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Aucun avis pour ce restaurant'),
-                  ],
+                  children: [const Text('Aucun avis pour ce restaurant')],
                 ),
               )
               : ListView.builder(

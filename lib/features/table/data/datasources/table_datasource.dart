@@ -12,7 +12,9 @@ class TableDataSource {
   // GET: api/Table/Restaurant/{restaurantId}
   Future<List<TableEntityOut>> getTablesByRestaurant(int restaurantId) async {
     try {
-      final response = await apiClient.dio.get('/Table/Restaurant/$restaurantId');
+      final response = await apiClient.dio.get(
+        '/Table/Restaurant/$restaurantId',
+      );
       final List<dynamic> data = response.data;
       return data.map((json) => TableEntityOut.fromJson(json)).toList();
     } on DioException catch (e) {
@@ -22,7 +24,10 @@ class TableDataSource {
   }
 
   // POST: api/Table/Restaurant/{restaurantId}
-  Future<TableEntityOut> createTable(int restaurantId, TableEntityIn table) async {
+  Future<TableEntityOut> createTable(
+    int restaurantId,
+    TableEntityIn table,
+  ) async {
     try {
       final response = await apiClient.dio.post(
         '/Table/Restaurant/$restaurantId',
@@ -60,7 +65,10 @@ class TableDataSource {
     }
   }
 
-  Future<List<TableEntityOut>> replaceTables(int restaurantId, List<TableEntityIn> tables) async {
+  Future<List<TableEntityOut>> replaceTables(
+    int restaurantId,
+    List<TableEntityIn> tables,
+  ) async {
     try {
       final response = await apiClient.dio.post(
         '/Table/Restaurant/$restaurantId/Bulk',
@@ -72,7 +80,6 @@ class TableDataSource {
       _handleError(e);
       rethrow;
     }
-
   }
 
   void _handleError(DioException e) {

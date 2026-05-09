@@ -17,16 +17,19 @@ class ClosedDayExceptionOut extends ClosedDayExceptionIn {
     return ClosedDayExceptionOut(
       id: json['id'] ?? 0,
       restaurantId: json['restaurantId'] ?? 0,
-      exceptionDateBegin: json['exceptionDateBegin'] != null
-          ? DateTime.parse(json['exceptionDateBegin'])
-          : DateTime.now(),
-      exceptionDateEnd: json['exceptionDateEnd'] != null
-          ? DateTime.parse(json['exceptionDateEnd'])
-          : DateTime.now(),
+      exceptionDateBegin:
+          json['exceptionDateBegin'] != null
+              ? DateTime.parse(json['exceptionDateBegin'])
+              : DateTime.now(),
+      exceptionDateEnd:
+          json['exceptionDateEnd'] != null
+              ? DateTime.parse(json['exceptionDateEnd'])
+              : DateTime.now(),
       reason: json['reason'] ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 }

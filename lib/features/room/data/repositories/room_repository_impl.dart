@@ -30,7 +30,10 @@ class RoomRepositoryImpl implements IRoomRepository {
   }
 
   @override
-  Future<RestaurantRoomLayoutOut> saveLayout(int roomId, RestaurantRoomLayoutIn layout) {
+  Future<RestaurantRoomLayoutOut> saveLayout(
+    int roomId,
+    RestaurantRoomLayoutIn layout,
+  ) {
     return remoteDataSource.saveLayout(roomId, layout);
   }
 }

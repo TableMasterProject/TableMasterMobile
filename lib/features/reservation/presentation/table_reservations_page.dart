@@ -71,7 +71,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
     });
 
     _subDeleted = _signalRService.onReservationDeleted.listen((id) {
-       _loadAllData();
+      _loadAllData();
     });
   }
 
@@ -86,7 +86,10 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       search.restaurantId = widget.restaurantId;
       search.tableId = widget.table.id;
       search.pageSize = 100;
-      search.statuses = [ReservationStatus.enAttente, ReservationStatus.validee];
+      search.statuses = [
+        ReservationStatus.enAttente,
+        ReservationStatus.validee,
+      ];
       final results = await _repo.getReservations(search);
       if (mounted) {
         setState(() {
@@ -113,14 +116,14 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
 
       if (_selectedFilter == 0) {
         search.statuses = [ReservationStatus.validee];
-        search.minDate = DateTime.now(); 
+        search.minDate = DateTime.now();
       } else if (_selectedFilter == 1) {
         search.statuses = [ReservationStatus.enAttente];
       } else {
         search.statuses = [
           ReservationStatus.finie,
           ReservationStatus.annuleeResto,
-          ReservationStatus.annuleeClient
+          ReservationStatus.annuleeClient,
         ];
       }
 
@@ -149,20 +152,30 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       await _loadAllData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final pendingTotal = _summaryReservations.where((r) => r.status == ReservationStatus.enAttente).length;
-    final todayTotal = _summaryReservations.where((r) => r.status == ReservationStatus.validee && DateUtils.isSameDay(r.reservationDate, DateTime.now())).length;
+    final pendingTotal =
+        _summaryReservations
+            .where((r) => r.status == ReservationStatus.enAttente)
+            .length;
+    final todayTotal =
+        _summaryReservations
+            .where(
+              (r) =>
+                  r.status == ReservationStatus.validee &&
+                  DateUtils.isSameDay(r.reservationDate, DateTime.now()),
+            )
+            .length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Table ${widget.table.tableNumber}'),
-      ),
+      appBar: AppBar(title: Text('Table ${widget.table.tableNumber}')),
       body: Column(
         children: [
           Padding(
@@ -170,28 +183,34 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
             child: SegmentedButton<int>(
               segments: [
                 ButtonSegment(
-                  value: 0, 
+                  value: 0,
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text('Validées'),
-                      if (todayTotal > 0) _buildCountBadge(todayTotal, Colors.blue),
+                      if (todayTotal > 0)
+                        _buildCountBadge(todayTotal, Colors.blue),
                     ],
-                  ), 
-                  icon: const Icon(Icons.check_circle_outline)
+                  ),
+                  icon: const Icon(Icons.check_circle_outline),
                 ),
                 ButtonSegment(
-                  value: 1, 
+                  value: 1,
                   label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text('Attente'),
-                      if (pendingTotal > 0) _buildCountBadge(pendingTotal, Colors.orange),
+                      if (pendingTotal > 0)
+                        _buildCountBadge(pendingTotal, Colors.orange),
                     ],
-                  ), 
-                  icon: const Icon(Icons.pending_actions)
+                  ),
+                  icon: const Icon(Icons.pending_actions),
                 ),
-                const ButtonSegment(value: 2, label: Text('Historique'), icon: Icon(Icons.history)),
+                const ButtonSegment(
+                  value: 2,
+                  label: Text('Historique'),
+                  icon: Icon(Icons.history),
+                ),
               ],
               selected: {_selectedFilter},
               onSelectionChanged: (Set<int> newSelection) {
@@ -203,16 +222,17 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
             ),
           ),
           Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
+            child:
+                _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _error != null
                     ? Center(child: Text('Erreur: $_error'))
                     : _reservations.isEmpty
-                        ? const Center(child: Text('Aucune réservation trouvée'))
-                        : RefreshIndicator(
-                            onRefresh: _loadAllData,
-                            child: _buildGroupedListView(),
-                          ),
+                    ? const Center(child: Text('Aucune réservation trouvée'))
+                    : RefreshIndicator(
+                      onRefresh: _loadAllData,
+                      child: _buildGroupedListView(),
+                    ),
           ),
         ],
       ),
@@ -229,7 +249,11 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       ),
       child: Text(
         count.toString(),
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -237,16 +261,18 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   Widget _buildGroupedListView() {
     final Map<String, List<ReservationOut>> grouped = {};
     for (var r in _reservations) {
-      final dateStr = DateFormat('yyyy-MM-dd').format(r.reservationDate.toLocal());
+      final dateStr = DateFormat(
+        'yyyy-MM-dd',
+      ).format(r.reservationDate.toLocal());
       if (!grouped.containsKey(dateStr)) grouped[dateStr] = [];
       grouped[dateStr]!.add(r);
     }
 
     final sortedKeys = grouped.keys.toList();
     if (_selectedFilter == 2) {
-      sortedKeys.sort((a, b) => b.compareTo(a)); 
+      sortedKeys.sort((a, b) => b.compareTo(a));
     } else {
-      sortedKeys.sort((a, b) => a.compareTo(b)); 
+      sortedKeys.sort((a, b) => a.compareTo(b));
     }
 
     return ListView.builder(
@@ -272,10 +298,12 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
                 ),
               ),
             ),
-            ...items.map((r) => ReservationCard(
-              reservation: r,
-              onStatusUpdate: (newStatus) => _updateStatus(r.id, newStatus),
-            )),
+            ...items.map(
+              (r) => ReservationCard(
+                reservation: r,
+                onStatusUpdate: (newStatus) => _updateStatus(r.id, newStatus),
+              ),
+            ),
             const SizedBox(height: 12),
           ],
         );
@@ -293,7 +321,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
     if (date == today) return "AUJOURD'HUI";
     if (date == tomorrow) return "DEMAIN";
     if (date == yesterday) return "HIER";
-    
+
     return DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date).toUpperCase();
   }
 }

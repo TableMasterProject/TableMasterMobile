@@ -10,7 +10,10 @@ class ReviewRepositoryImpl implements IReviewRepository {
   ReviewRepositoryImpl(this.dataSource);
 
   @override
-  Future<List<ReviewOut>> getByRestaurant(int restaurantId, SearchReviews search) {
+  Future<List<ReviewOut>> getByRestaurant(
+    int restaurantId,
+    SearchReviews search,
+  ) {
     return dataSource.getByRestaurant(restaurantId, search);
   }
 

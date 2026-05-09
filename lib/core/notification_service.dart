@@ -129,7 +129,9 @@ class NotificationService {
       badge: true,
       sound: true,
     );
-    AppLogger.debug('Notification authorization status: ${settings.authorizationStatus}');
+    AppLogger.debug(
+      'Notification authorization status: ${settings.authorizationStatus}',
+    );
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {

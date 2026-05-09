@@ -5,9 +5,6 @@ class LoginUserIn {
   LoginUserIn({required this.email, required this.password});
 
   Map<String, dynamic> toJson() {
-    return {
-      'Email': email,
-      'Password': password,
-    };
+    return {'Email': email, 'Password': password};
   }
 }

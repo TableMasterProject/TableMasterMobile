@@ -38,7 +38,8 @@ class _AddReviewPageState extends State<AddReviewPage> {
         userId: widget.userId,
         restaurantId: widget.restaurantId,
         rating: _rating,
-        comment: _commentController.text.isEmpty ? null : _commentController.text,
+        comment:
+            _commentController.text.isEmpty ? null : _commentController.text,
       );
       await _reviewRepo.addReview(review);
       if (mounted) {
@@ -49,9 +50,9 @@ class _AddReviewPageState extends State<AddReviewPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -69,7 +70,9 @@ class _AddReviewPageState extends State<AddReviewPage> {
           children: [
             Text(
               widget.restaurantName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -78,7 +81,7 @@ class _AddReviewPageState extends State<AddReviewPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            
+
             // Star Rating
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -98,7 +101,7 @@ class _AddReviewPageState extends State<AddReviewPage> {
               '$_rating / 5',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            
+
             const SizedBox(height: 40),
             TextField(
               controller: _commentController,
@@ -106,11 +109,13 @@ class _AddReviewPageState extends State<AddReviewPage> {
               decoration: InputDecoration(
                 labelText: 'Votre commentaire (facultatif)',
                 hintText: 'Racontez-nous votre expérience...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 alignLabelWithHint: true,
               ),
             ),
-            
+
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
@@ -118,11 +123,27 @@ class _AddReviewPageState extends State<AddReviewPage> {
                 onPressed: _isSubmitting ? null : _submitReview,
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: _isSubmitting
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Publier mon avis', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child:
+                    _isSubmitting
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text(
+                          'Publier mon avis',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
               ),
             ),
           ],

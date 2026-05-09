@@ -13,9 +13,10 @@ class AppException implements Exception {
     }
 
     final data = response.data;
-    final message = data == null || data.toString().trim().isEmpty
-        ? "Erreur serveur"
-        : data.toString();
+    final message =
+        data == null || data.toString().trim().isEmpty
+            ? "Erreur serveur"
+            : data.toString();
 
     return AppException(message, statusCode: response.statusCode);
   }

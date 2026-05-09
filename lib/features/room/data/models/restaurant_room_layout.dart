@@ -36,9 +36,10 @@ class RestaurantRoomLayoutOut {
   factory RestaurantRoomLayoutOut.fromJson(Map<String, dynamic> json) {
     return RestaurantRoomLayoutOut(
       room: RestaurantRoomOut.fromJson(json['room'] ?? json['Room']),
-      tables: (json['tables'] as List? ?? [])
-          .map((table) => TableEntityOut.fromJson(table))
-          .toList(),
+      tables:
+          (json['tables'] as List? ?? [])
+              .map((table) => TableEntityOut.fromJson(table))
+              .toList(),
     );
   }
 }

@@ -7,10 +7,15 @@ class Step4RestaurantInfoScreen extends StatefulWidget {
   final Function(RestaurantIn data) onNext;
   final RestaurantIn restaurantIn;
 
-  const Step4RestaurantInfoScreen({super.key, required this.onNext, required this.restaurantIn});
+  const Step4RestaurantInfoScreen({
+    super.key,
+    required this.onNext,
+    required this.restaurantIn,
+  });
 
   @override
-  State<Step4RestaurantInfoScreen> createState() => _Step4RestaurantInfoScreenState();
+  State<Step4RestaurantInfoScreen> createState() =>
+      _Step4RestaurantInfoScreenState();
 }
 
 class _Step4RestaurantInfoScreenState extends State<Step4RestaurantInfoScreen> {
@@ -63,23 +68,44 @@ class _Step4RestaurantInfoScreenState extends State<Step4RestaurantInfoScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return SingleChildScrollView( // Assure le scroll si le clavier ou le contenu dépasse
+    return SingleChildScrollView(
+      // Assure le scroll si le clavier ou le contenu dépasse
       padding: const EdgeInsets.all(24.0),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Votre Restaurant", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colors.onSurface)),
+            Text(
+              "Votre Restaurant",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text("Complétez les détails de votre établissement.", style: TextStyle(color: colors.onSurfaceVariant)),
+            Text(
+              "Complétez les détails de votre établissement.",
+              style: TextStyle(color: colors.onSurfaceVariant),
+            ),
             const SizedBox(height: 32),
 
             // Nom
             TextFormField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: "Nom du restaurant", prefixIcon: const Icon(Icons.restaurant), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-              validator: (value) => (value == null || value.isEmpty) ? "Nom obligatoire" : null,
+              decoration: InputDecoration(
+                labelText: "Nom du restaurant",
+                prefixIcon: const Icon(Icons.restaurant),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              validator:
+                  (value) =>
+                      (value == null || value.isEmpty)
+                          ? "Nom obligatoire"
+                          : null,
             ),
             const SizedBox(height: 16),
 
@@ -87,8 +113,18 @@ class _Step4RestaurantInfoScreenState extends State<Step4RestaurantInfoScreen> {
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              decoration: InputDecoration(labelText: "Téléphone", prefixIcon: const Icon(Icons.phone), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-              validator: (value) => (value == null || value.isEmpty) ? "Téléphone obligatoire" : null,
+              decoration: InputDecoration(
+                labelText: "Téléphone",
+                prefixIcon: const Icon(Icons.phone),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              validator:
+                  (value) =>
+                      (value == null || value.isEmpty)
+                          ? "Téléphone obligatoire"
+                          : null,
             ),
             const SizedBox(height: 16),
 
@@ -96,9 +132,40 @@ class _Step4RestaurantInfoScreenState extends State<Step4RestaurantInfoScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 2, child: TextFormField(controller: _streetNumController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: "N°", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (value) => (value == null || value.isEmpty) ? "Requis" : null)),
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _streetNumController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "N°",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator:
+                        (value) =>
+                            (value == null || value.isEmpty) ? "Requis" : null,
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(flex: 5, child: TextFormField(controller: _streetNameController, decoration: InputDecoration(labelText: "Nom de la rue", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (value) => (value == null || value.isEmpty) ? "Rue obligatoire" : null)),
+                Expanded(
+                  flex: 5,
+                  child: TextFormField(
+                    controller: _streetNameController,
+                    decoration: InputDecoration(
+                      labelText: "Nom de la rue",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator:
+                        (value) =>
+                            (value == null || value.isEmpty)
+                                ? "Rue obligatoire"
+                                : null,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -107,46 +174,102 @@ class _Step4RestaurantInfoScreenState extends State<Step4RestaurantInfoScreen> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 2, child: TextFormField(controller: _zipController, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], decoration: InputDecoration(labelText: "CP", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (value) => (value == null || value.length < 5) ? "Invalide" : null)),
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _zipController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: InputDecoration(
+                      labelText: "CP",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator:
+                        (value) =>
+                            (value == null || value.length < 5)
+                                ? "Invalide"
+                                : null,
+                  ),
+                ),
                 const SizedBox(width: 12),
-                Expanded(flex: 3, child: TextFormField(controller: _cityController, decoration: InputDecoration(labelText: "Ville", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))), validator: (value) => (value == null || value.isEmpty) ? "Ville obligatoire" : null)),
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    controller: _cityController,
+                    decoration: InputDecoration(
+                      labelText: "Ville",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator:
+                        (value) =>
+                            (value == null || value.isEmpty)
+                                ? "Ville obligatoire"
+                                : null,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
             // Type de cuisine (Choix multiples)
-            Text("Type de cuisine", style: TextStyle(fontWeight: FontWeight.bold, color: colors.primary)),
+            Text(
+              "Type de cuisine",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colors.primary,
+              ),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: AppConstants.cuisineOptions.map((type) {
-                final isSelected = _selectedCuisines.contains(type);
-                return FilterChip(
-                  label: Text(type),
-                  selected: isSelected,
-                  onSelected: (bool selected) {
-                    setState(() { selected ? _selectedCuisines.add(type) : _selectedCuisines.remove(type); });
-                  },
-                );
-              }).toList(),
+              children:
+                  AppConstants.cuisineOptions.map((type) {
+                    final isSelected = _selectedCuisines.contains(type);
+                    return FilterChip(
+                      label: Text(type),
+                      selected: isSelected,
+                      onSelected: (bool selected) {
+                        setState(() {
+                          selected
+                              ? _selectedCuisines.add(type)
+                              : _selectedCuisines.remove(type);
+                        });
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 24),
 
             // Méthodes de paiement
-            Text("Méthodes de paiement", style: TextStyle(fontWeight: FontWeight.bold, color: colors.primary)),
+            Text(
+              "Méthodes de paiement",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colors.primary,
+              ),
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: AppConstants.paymentOptions.map((method) {
-                final isSelected = _selectedPayments.contains(method);
-                return FilterChip(
-                  label: Text(method),
-                  selected: isSelected,
-                  onSelected: (bool selected) {
-                    setState(() { selected ? _selectedPayments.add(method) : _selectedPayments.remove(method); });
-                  },
-                );
-              }).toList(),
+              children:
+                  AppConstants.paymentOptions.map((method) {
+                    final isSelected = _selectedPayments.contains(method);
+                    return FilterChip(
+                      label: Text(method),
+                      selected: isSelected,
+                      onSelected: (bool selected) {
+                        setState(() {
+                          selected
+                              ? _selectedPayments.add(method)
+                              : _selectedPayments.remove(method);
+                        });
+                      },
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 24),
 
@@ -154,14 +277,22 @@ class _Step4RestaurantInfoScreenState extends State<Step4RestaurantInfoScreen> {
             TextFormField(
               controller: _descriptionController,
               maxLines: 4,
-              decoration: InputDecoration(labelText: "Description", hintText: "Présentez votre restaurant en quelques mots...", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+              decoration: InputDecoration(
+                labelText: "Description",
+                hintText: "Présentez votre restaurant en quelques mots...",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
             const SizedBox(height: 16),
 
             // Auto-validation
             SwitchListTile(
               title: const Text("Validation automatique"),
-              subtitle: const Text("Accepter les réservations sans confirmation manuelle"),
+              subtitle: const Text(
+                "Accepter les réservations sans confirmation manuelle",
+              ),
               value: _isAutoValidate,
               onChanged: (val) => setState(() => _isAutoValidate = val),
             ),

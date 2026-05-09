@@ -19,7 +19,10 @@ class TableRepositoryImpl implements ITableRepository {
   }
 
   @override
-  Future<List<TableEntityOut>> replaceTables(int restaurantId, List<TableEntityIn> tables) async {
+  Future<List<TableEntityOut>> replaceTables(
+    int restaurantId,
+    List<TableEntityIn> tables,
+  ) async {
     return await remoteDataSource.replaceTables(restaurantId, tables);
   }
 

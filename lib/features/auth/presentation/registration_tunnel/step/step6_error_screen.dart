@@ -4,17 +4,14 @@ class Step6ErrorScreen extends StatefulWidget {
   final VoidCallback onRetry;
   final String? errorMessage;
 
-  const Step6ErrorScreen({
-    super.key,
-    required this.onRetry,
-    this.errorMessage,
-  });
+  const Step6ErrorScreen({super.key, required this.onRetry, this.errorMessage});
 
   @override
   State<Step6ErrorScreen> createState() => _Step6ErrorScreenState();
 }
 
-class _Step6ErrorScreenState extends State<Step6ErrorScreen> with SingleTickerProviderStateMixin {
+class _Step6ErrorScreenState extends State<Step6ErrorScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _shakeController;
 
   @override
@@ -50,7 +47,10 @@ class _Step6ErrorScreenState extends State<Step6ErrorScreen> with SingleTickerPr
           AnimatedBuilder(
             animation: _shakeController,
             builder: (context, child) {
-              final sineValue = (1.0 - _shakeController.value) * 10 * (0.5 - _shakeController.value).abs();
+              final sineValue =
+                  (1.0 - _shakeController.value) *
+                  10 *
+                  (0.5 - _shakeController.value).abs();
               return Transform.translate(
                 offset: Offset(sineValue * 5, 0),
                 child: child,

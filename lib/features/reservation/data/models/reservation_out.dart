@@ -45,8 +45,10 @@ class ReservationOut {
     final userId = json['userId'] ?? json['UserId'] ?? 0;
     final tableId = json['tableId'] ?? json['TableId'] ?? 0;
     final restaurantId = json['restaurantId'] ?? json['RestaurantId'] ?? 0;
-    final reservationDateStr = json['reservationDate'] ?? json['ReservationDate'];
-    final numberOfPeople = json['numberOfPeople'] ?? json['NumberOfPeople'] ?? 1;
+    final reservationDateStr =
+        json['reservationDate'] ?? json['ReservationDate'];
+    final numberOfPeople =
+        json['numberOfPeople'] ?? json['NumberOfPeople'] ?? 1;
     final statusInt = json['status'] ?? json['Status'] ?? 0;
     final specialRequest = json['specialRequest'] ?? json['SpecialRequest'];
 
@@ -56,17 +58,24 @@ class ReservationOut {
 
     return ReservationOut(
       id: id,
-      createdAt: createdAtStr != null ? DateTime.parse(createdAtStr) : DateTime.now(),
+      createdAt:
+          createdAtStr != null ? DateTime.parse(createdAtStr) : DateTime.now(),
       userId: userId,
       tableId: tableId,
       restaurantId: restaurantId,
-      reservationDate: reservationDateStr != null ? DateTime.parse(reservationDateStr) : DateTime.now(),
+      reservationDate:
+          reservationDateStr != null
+              ? DateTime.parse(reservationDateStr)
+              : DateTime.now(),
       numberOfPeople: numberOfPeople,
       status: ReservationStatus.values[statusInt],
       specialRequest: specialRequest,
       user: userJson != null ? UserOut.fromJson(userJson) : null,
       table: tableJson != null ? TableEntityOut.fromJson(tableJson) : null,
-      restaurant: restaurantJson != null ? RestaurantOut.fromJson(restaurantJson) : null,
+      restaurant:
+          restaurantJson != null
+              ? RestaurantOut.fromJson(restaurantJson)
+              : null,
     );
   }
 }

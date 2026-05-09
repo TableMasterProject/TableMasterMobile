@@ -25,7 +25,10 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
   }
 
   @override
-  Future<RestaurantOut> updateRestaurant(int id, RestaurantIn restaurant) async {
+  Future<RestaurantOut> updateRestaurant(
+    int id,
+    RestaurantIn restaurant,
+  ) async {
     return await remoteDataSource.updateRestaurant(id, restaurant);
   }
 

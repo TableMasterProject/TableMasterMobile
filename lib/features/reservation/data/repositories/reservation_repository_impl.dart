@@ -11,8 +11,8 @@ class ReservationRepositoryImpl implements IReservationRepository {
 
   @override
   Future<List<ReservationOut>> getReservations(
-      SearchReservations search,
-      ) async {
+    SearchReservations search,
+  ) async {
     return await remoteDataSource.getReservations(search);
   }
 
@@ -22,8 +22,14 @@ class ReservationRepositoryImpl implements IReservationRepository {
   }
 
   @override
-  Future<ReservationOut> updateReservationStatus(int id, ReservationStatus reservationStatus) async {
-    return await remoteDataSource.updateReservationStatus(id, reservationStatus);
+  Future<ReservationOut> updateReservationStatus(
+    int id,
+    ReservationStatus reservationStatus,
+  ) async {
+    return await remoteDataSource.updateReservationStatus(
+      id,
+      reservationStatus,
+    );
   }
 
   @override

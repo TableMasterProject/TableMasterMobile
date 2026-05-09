@@ -40,7 +40,9 @@ class _ExceptionsPageState extends State<ExceptionsPage> {
     try {
       final exceptions = await _repo.getByRestaurant(widget.restaurantId);
       // Tri par date de début (plus proche en haut)
-      exceptions.sort((a, b) => a.exceptionDateBegin.compareTo(b.exceptionDateBegin));
+      exceptions.sort(
+        (a, b) => a.exceptionDateBegin.compareTo(b.exceptionDateBegin),
+      );
       setState(() => _exceptions = exceptions);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -56,9 +58,10 @@ class _ExceptionsPageState extends State<ExceptionsPage> {
       context: context,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 730)),
-      initialDateRange: (_startDate != null && _endDate != null)
-          ? DateTimeRange(start: _startDate!, end: _endDate!)
-          : null,
+      initialDateRange:
+          (_startDate != null && _endDate != null)
+              ? DateTimeRange(start: _startDate!, end: _endDate!)
+              : null,
     );
     if (picked != null) {
       setState(() {
@@ -70,9 +73,9 @@ class _ExceptionsPageState extends State<ExceptionsPage> {
 
   Future<void> _addException() async {
     if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sélectionner une plage de dates')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sélectionner une plage de dates')),
+      );
       return;
     }
     if (_reasonController.text.isEmpty) {
@@ -90,18 +93,18 @@ class _ExceptionsPageState extends State<ExceptionsPage> {
         reason: _reasonController.text.trim(),
       );
       await _repo.create(exception);
-      
+
       setState(() {
         _startDate = null;
         _endDate = null;
         _reasonController.clear();
       });
-      
+
       await _loadExceptions();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Fermeture exceptionnelle ajoutée')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fermeture exceptionnelle ajoutée')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -195,7 +198,10 @@ class _ExceptionsPageState extends State<ExceptionsPage> {
                   ),
                   const Divider(),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
                     child: Text(
                       "Fermetures prévues",
                       style: TextStyle(
@@ -219,21 +225,28 @@ class _ExceptionsPageState extends State<ExceptionsPage> {
                             : ListView.separated(
                               itemCount: _exceptions.length,
                               padding: const EdgeInsets.only(bottom: 16),
-                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              separatorBuilder:
+                                  (_, __) => const Divider(height: 1),
                               itemBuilder: (context, index) {
                                 final e = _exceptions[index];
-                                final isExpired = e.exceptionDateEnd.isBefore(DateTime.now());
-                                
+                                final isExpired = e.exceptionDateEnd.isBefore(
+                                  DateTime.now(),
+                                );
+
                                 return ListTile(
                                   leading: Icon(
-                                    Icons.event_busy, 
-                                    color: isExpired ? Colors.grey : colors.error,
+                                    Icons.event_busy,
+                                    color:
+                                        isExpired ? Colors.grey : colors.error,
                                   ),
                                   title: Text(
                                     e.reason,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      decoration: isExpired ? TextDecoration.lineThrough : null,
+                                      decoration:
+                                          isExpired
+                                              ? TextDecoration.lineThrough
+                                              : null,
                                     ),
                                   ),
                                   subtitle: Text(

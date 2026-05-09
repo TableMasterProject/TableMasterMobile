@@ -90,14 +90,21 @@ class _AccountPageState extends State<AccountPage> {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.onPrimary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.onPrimary.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: colors.onPrimary.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Text(
-                      _currentUser.accountType == 0 ? "Compte Client" : "Compte Restaurateur",
+                      _currentUser.accountType == 0
+                          ? "Compte Client"
+                          : "Compte Restaurateur",
                       style: textTheme.labelMedium?.copyWith(
                         color: colors.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -128,7 +135,7 @@ class _AccountPageState extends State<AccountPage> {
                       onTap: () => _navigateToChangePassword(context),
                     ),
                   ]),
-                  
+
                   const SizedBox(height: 24),
                   _buildSectionTitle("Activités"),
                   _buildMenuCard([
@@ -139,7 +146,9 @@ class _AccountPageState extends State<AccountPage> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const MyReviewsPage()),
+                          MaterialPageRoute(
+                            builder: (context) => const MyReviewsPage(),
+                          ),
                         );
                       },
                     ),
@@ -192,7 +201,11 @@ class _AccountPageState extends State<AccountPage> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
+        side: BorderSide(
+          color: Theme.of(
+            context,
+          ).colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
       ),
       color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: Column(children: children),
@@ -246,25 +259,26 @@ class _AccountPageState extends State<AccountPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text("Modifier le profil")),
-          body: Step1UserInfoScreen(
-            user: userIn,
-            onNext: (updatedUser) async {
-              try {
-                await userRepo.updateProfile(updatedUser);
-                if (!context.mounted) return;
-                Navigator.pop(context);
-                _refreshProfile();
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: $e')),
-                );
-              }
-            },
-          ),
-        ),
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(title: const Text("Modifier le profil")),
+              body: Step1UserInfoScreen(
+                user: userIn,
+                onNext: (updatedUser) async {
+                  try {
+                    await userRepo.updateProfile(updatedUser);
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                    _refreshProfile();
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                  }
+                },
+              ),
+            ),
       ),
     );
   }
@@ -273,28 +287,34 @@ class _AccountPageState extends State<AccountPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: const Text("Mot de passe")),
-          body: ChangePasswordScreen(
-            onConfirm: (oldPwd, newPwd) async {
-              try {
-                final success = await userRepo.changePassword(oldPwd, newPwd);
-                if (!context.mounted) return;
-                if (success) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Mot de passe mis à jour !')),
-                  );
-                }
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: $e')),
-                );
-              }
-            },
-          ),
-        ),
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(title: const Text("Mot de passe")),
+              body: ChangePasswordScreen(
+                onConfirm: (oldPwd, newPwd) async {
+                  try {
+                    final success = await userRepo.changePassword(
+                      oldPwd,
+                      newPwd,
+                    );
+                    if (!context.mounted) return;
+                    if (success) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Mot de passe mis à jour !'),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                  }
+                },
+              ),
+            ),
       ),
     );
   }
@@ -305,8 +325,12 @@ class _AccountPageState extends State<AccountPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text("Se déconnecter"),
-          content: const Text("Souhaitez-vous vraiment vous déconnecter de votre compte ?"),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: const Text(
+            "Souhaitez-vous vraiment vous déconnecter de votre compte ?",
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -335,7 +359,9 @@ class _AccountPageState extends State<AccountPage> {
           content: const Text(
             "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
@@ -353,9 +379,9 @@ class _AccountPageState extends State<AccountPage> {
                 } catch (e) {
                   if (!dialogContext.mounted) return;
                   Navigator.pop(dialogContext);
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    SnackBar(content: Text('Erreur: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    dialogContext,
+                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
                 }
               },
               style: FilledButton.styleFrom(backgroundColor: colors.error),

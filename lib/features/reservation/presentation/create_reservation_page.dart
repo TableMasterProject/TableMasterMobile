@@ -23,10 +23,12 @@ class CreateReservationPage extends StatefulWidget {
 }
 
 class _CreateReservationPageState extends State<CreateReservationPage> {
-  final IReservationRepository _reservationRepo = getIt<IReservationRepository>();
+  final IReservationRepository _reservationRepo =
+      getIt<IReservationRepository>();
   final SignalRService _signalRService = getIt<SignalRService>();
   final ScrollController _scrollController = ScrollController();
-  final TextEditingController _specialRequestController = TextEditingController();
+  final TextEditingController _specialRequestController =
+      TextEditingController();
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
@@ -70,7 +72,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     });
 
     _subDeleted = _signalRService.onReservationDeleted.listen((id) {
-       _fetchDayReservations();
+      _fetchDayReservations();
     });
   }
 
@@ -88,7 +90,11 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     final now = DateTime.now();
     final isToday = DateUtils.isSameDay(_selectedDate, now);
 
-    final activities = widget.restaurant.dailyActivitys?.where((a) => a.dayOfWeek == dayOfWeek).toList() ?? [];
+    final activities =
+        widget.restaurant.dailyActivitys
+            ?.where((a) => a.dayOfWeek == dayOfWeek)
+            .toList() ??
+        [];
 
     if (activities.isEmpty || _isDayClosedException(_selectedDate!)) {
       setState(() => _availableSlots = []);
@@ -100,8 +106,20 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       final start = _parseTimeString(activity.startTime);
       final end = _parseTimeString(activity.endTime);
 
-      DateTime current = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, start.hour, start.minute);
-      DateTime endTime = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, end.hour, end.minute);
+      DateTime current = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        start.hour,
+        start.minute,
+      );
+      DateTime endTime = DateTime(
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        end.hour,
+        end.minute,
+      );
 
       while (current.isBefore(endTime)) {
         final slot = TimeOfDay(hour: current.hour, minute: current.minute);
@@ -117,7 +135,9 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       }
     }
 
-    slots.sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
+    slots.sort(
+      (a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute),
+    );
 
     setState(() {
       _availableSlots = List.from(slots);
@@ -133,11 +153,13 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
   bool _isDayClosedException(DateTime date) {
     return widget.restaurant.closedDayExceptions?.any((e) {
-      final target = DateUtils.dateOnly(date);
-      final begin = DateUtils.dateOnly(e.exceptionDateBegin);
-      final end = DateUtils.dateOnly(e.exceptionDateEnd);
-      return (target.isAtSameMomentAs(begin) || target.isAfter(begin)) && (target.isAtSameMomentAs(end) || target.isBefore(end));
-    }) ?? false;
+          final target = DateUtils.dateOnly(date);
+          final begin = DateUtils.dateOnly(e.exceptionDateBegin);
+          final end = DateUtils.dateOnly(e.exceptionDateEnd);
+          return (target.isAtSameMomentAs(begin) || target.isAfter(begin)) &&
+              (target.isAtSameMomentAs(end) || target.isBefore(end));
+        }) ??
+        false;
   }
 
   Future<void> _fetchDayReservations() async {
@@ -165,7 +187,13 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     if (table.numberOfSeats < _numberOfPeople) return "Trop petite";
     if (_selectedTime == null) return "Choisir une heure";
 
-    final reqStart = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day, _selectedTime!.hour, _selectedTime!.minute);
+    final reqStart = DateTime(
+      _selectedDate!.year,
+      _selectedDate!.month,
+      _selectedDate!.day,
+      _selectedTime!.hour,
+      _selectedTime!.minute,
+    );
     const safetyMargin = Duration(minutes: 90);
 
     bool isBusy = _dayReservations.any((res) {
@@ -175,14 +203,20 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       final conflictStart = resStart.subtract(safetyMargin);
       final conflictEnd = resStart.add(safetyMargin);
 
-      return (reqStart.isAfter(conflictStart) && reqStart.isBefore(conflictEnd)) || reqStart.isAtSameMomentAs(resStart);
+      return (reqStart.isAfter(conflictStart) &&
+              reqStart.isBefore(conflictEnd)) ||
+          reqStart.isAtSameMomentAs(resStart);
     });
 
     return isBusy ? "Déjà réservée" : "Disponible";
   }
 
   bool _isDaySelectable(DateTime day) {
-    final hasActivity = widget.restaurant.dailyActivitys?.any((a) => a.dayOfWeek == day.weekday) ?? false;
+    final hasActivity =
+        widget.restaurant.dailyActivitys?.any(
+          (a) => a.dayOfWeek == day.weekday,
+        ) ??
+        false;
     if (!hasActivity) return false;
     return !_isDayClosedException(day);
   }
@@ -199,7 +233,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         sortOrder: 0,
         boundaryPoints: RestaurantRoomIn.defaultRoom().boundaryPoints,
         createdAt: DateTime.now(),
-      )
+      ),
     ];
   }
 
@@ -220,9 +254,14 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
     final room = rooms[_selectedRoomIndex];
     final allTables = widget.restaurant.tables ?? [];
-    final roomTables = allTables
-        .where((table) => table.roomId == room.id || (room.id == 0 && table.roomId == null))
-        .toList();
+    final roomTables =
+        allTables
+            .where(
+              (table) =>
+                  table.roomId == room.id ||
+                  (room.id == 0 && table.roomId == null),
+            )
+            .toList();
     final statuses = {
       for (final table in roomTables) table.id: _getTableStatus(table),
     };
@@ -233,19 +272,21 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: rooms.asMap().entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  selected: entry.key == _selectedRoomIndex,
-                  label: Text(entry.value.name),
-                  onSelected: (_) => setState(() {
-                    _selectedRoomIndex = entry.key;
-                    _selectedTable = null;
-                  }),
-                ),
-              );
-            }).toList(),
+            children:
+                rooms.asMap().entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      selected: entry.key == _selectedRoomIndex,
+                      label: Text(entry.value.name),
+                      onSelected:
+                          (_) => setState(() {
+                            _selectedRoomIndex = entry.key;
+                            _selectedTable = null;
+                          }),
+                    ),
+                  );
+                }).toList(),
           ),
         ),
         const SizedBox(height: 12),
@@ -264,7 +305,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         if (_selectedTable != null)
           Text(
             'Table n°${_selectedTable!.tableNumber} sélectionnée (${_selectedTable!.numberOfSeats} places)',
-            style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: colors.primary,
+              fontWeight: FontWeight.bold,
+            ),
           ),
       ],
     );
@@ -284,17 +328,32 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(widget.restaurant.restaurantName, style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                widget.restaurant.restaurantName,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
               const SizedBox(height: 16),
 
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.calendar_today),
-                  title: Text(_selectedDate == null ? "Choisir une date" : DateFormat('EEEE d MMMM', 'fr_FR').format(_selectedDate!)),
+                  title: Text(
+                    _selectedDate == null
+                        ? "Choisir une date"
+                        : DateFormat(
+                          'EEEE d MMMM',
+                          'fr_FR',
+                        ).format(_selectedDate!),
+                  ),
                   onTap: () async {
-                    if (widget.restaurant.dailyActivitys == null || widget.restaurant.dailyActivitys!.isEmpty) {
+                    if (widget.restaurant.dailyActivitys == null ||
+                        widget.restaurant.dailyActivitys!.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Ce restaurant n'a pas d'horaires configurés."))
+                        const SnackBar(
+                          content: Text(
+                            "Ce restaurant n'a pas d'horaires configurés.",
+                          ),
+                        ),
                       );
                       return;
                     }
@@ -329,23 +388,71 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
               if (_selectedDate != null) ...[
                 const SizedBox(height: 20),
-                const Text("Heure de début (blocage 1h30 avant/après)", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  "Heure de début (blocage 1h30 avant/après)",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<TimeOfDay>(
-                  decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.access_time),
+                  ),
                   initialValue: _selectedTime,
                   hint: const Text("Sélectionnez l'heure"),
-                  items: _availableSlots.map((t) => DropdownMenuItem(value: t, child: Text("${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}"))).toList(),
-                  onChanged: (val) => setState(() { _selectedTime = val; _selectedTable = null; }),
+                  items:
+                      _availableSlots
+                          .map(
+                            (t) => DropdownMenuItem(
+                              value: t,
+                              child: Text(
+                                "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}",
+                              ),
+                            ),
+                          )
+                          .toList(),
+                  onChanged:
+                      (val) => setState(() {
+                        _selectedTime = val;
+                        _selectedTable = null;
+                      }),
                 ),
                 const SizedBox(height: 20),
-                const Text("Nombre de personnes", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  "Nombre de personnes",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton.filledTonal(onPressed: _numberOfPeople > 1 ? () => setState(() { _numberOfPeople--; _selectedTable = null; }) : null, icon: const Icon(Icons.remove)),
-                    Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: Text("$_numberOfPeople", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
-                    IconButton.filledTonal(onPressed: () => setState(() { _numberOfPeople++; _selectedTable = null; }), icon: const Icon(Icons.add)),
+                    IconButton.filledTonal(
+                      onPressed:
+                          _numberOfPeople > 1
+                              ? () => setState(() {
+                                _numberOfPeople--;
+                                _selectedTable = null;
+                              })
+                              : null,
+                      icon: const Icon(Icons.remove),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        "$_numberOfPeople",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton.filledTonal(
+                      onPressed:
+                          () => setState(() {
+                            _numberOfPeople++;
+                            _selectedTable = null;
+                          }),
+                      icon: const Icon(Icons.add),
+                    ),
                   ],
                 ),
 
@@ -353,21 +460,44 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
                 if (_selectedTime != null) ...[
                   const SizedBox(height: 24),
-                  const Text("Choisir une table", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Choisir une table",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
-                  if (_isLoading) const Center(child: CircularProgressIndicator())
-                  else _buildRoomSelectionPlan(colors),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    _buildRoomSelectionPlan(colors),
                 ],
 
                 const SizedBox(height: 24),
-                TextField(controller: _specialRequestController, decoration: const InputDecoration(labelText: "Demande spéciale", border: OutlineInputBorder()), maxLines: 2),
+                TextField(
+                  controller: _specialRequestController,
+                  decoration: const InputDecoration(
+                    labelText: "Demande spéciale",
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
                 const SizedBox(height: 32),
-                SizedBox(width: double.infinity, child: ElevatedButton(
-                  onPressed: (_selectedTable != null && !_isLoading) ? _submitReservation : null,
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.all(16)),
-                  child: _isLoading ? const CircularProgressIndicator() : const Text("Confirmer la réservation"),
-                )),
-              ]
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                        (_selectedTable != null && !_isLoading)
+                            ? _submitReservation
+                            : null,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    child:
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : const Text("Confirmer la réservation"),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -376,17 +506,23 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   }
 
   Future<void> _submitReservation() async {
-    if (_selectedTable == null || _selectedTime == null || _selectedDate == null) return;
+    if (_selectedTable == null ||
+        _selectedTime == null ||
+        _selectedDate == null)
+      return;
 
     setState(() => _isLoading = true);
     try {
       final reservationDateTime = DateTime(
-        _selectedDate!.year, _selectedDate!.month, _selectedDate!.day,
-        _selectedTime!.hour, _selectedTime!.minute,
+        _selectedDate!.year,
+        _selectedDate!.month,
+        _selectedDate!.day,
+        _selectedTime!.hour,
+        _selectedTime!.minute,
       );
 
       final reservation = ReservationIn(
-        userId: 0, 
+        userId: 0,
         tableId: _selectedTable!.id,
         restaurantId: widget.restaurant.id,
         reservationDate: reservationDateTime,
@@ -398,13 +534,17 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       await _reservationRepo.createReservation(reservation.toJson());
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Réservation réussie !")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Réservation réussie !")));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erreur: $e")));
       }
     }
   }

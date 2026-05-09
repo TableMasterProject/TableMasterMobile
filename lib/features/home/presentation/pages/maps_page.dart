@@ -73,9 +73,10 @@ class _MapsPageState extends State<MapsPage> {
       _search.longitude = pos.longitude;
       _search.currentUserLatitude = pos.latitude;
       _search.currentUserLongitude = pos.longitude;
-
     } catch (e) {
-      debugPrint("Localisation non disponible (timeout ou refus), repli sur Paris: $e");
+      debugPrint(
+        "Localisation non disponible (timeout ou refus), repli sur Paris: $e",
+      );
       // Valeurs par défaut déjà réglées sur Paris
       _search.latitude = _mapCenter.latitude;
       _search.longitude = _mapCenter.longitude;
@@ -88,7 +89,6 @@ class _MapsPageState extends State<MapsPage> {
       setState(() => _isInitializing = false);
     }
   }
-
 
   void _onCameraMove(CameraPosition pos) {
     _mapCenter = pos.target;
@@ -199,8 +199,10 @@ class _MapsPageState extends State<MapsPage> {
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 20),
-              Text("Recherche des restaurants à proximité...",
-                  style: Theme.of(context).textTheme.bodyMedium),
+              Text(
+                "Recherche des restaurants à proximité...",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ],
           ),
         ),
@@ -277,9 +279,9 @@ class _MapsPageState extends State<MapsPage> {
               title: Text(r.restaurantName),
               subtitle: Text(r.addressString()),
               trailing: Text(
-                  r.distanceWithUser >= 1000
-                      ? '${(r.distanceWithUser / 1000).toStringAsFixed(1)} km'
-                      : '${r.distanceWithUser.toStringAsFixed(0)} m'
+                r.distanceWithUser >= 1000
+                    ? '${(r.distanceWithUser / 1000).toStringAsFixed(1)} km'
+                    : '${r.distanceWithUser.toStringAsFixed(0)} m',
               ),
               onTap: () => _openDetail(r),
             );
@@ -305,7 +307,7 @@ class _MapsPageState extends State<MapsPage> {
               onCameraMove: _onCameraMove,
               onCameraIdle: _onCameraIdle,
               markers: _markers,
-            )
+            ),
           ),
           Expanded(flex: 3, child: listSection),
         ],

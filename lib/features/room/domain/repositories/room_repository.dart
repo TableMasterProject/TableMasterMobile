@@ -7,5 +7,8 @@ abstract class IRoomRepository {
   Future<RestaurantRoomOut> addRoom(int restaurantId, RestaurantRoomIn room);
   Future<RestaurantRoomOut> editRoom(int roomId, RestaurantRoomIn room);
   Future<bool> removeRoom(int roomId);
-  Future<RestaurantRoomLayoutOut> saveLayout(int roomId, RestaurantRoomLayoutIn layout);
+  Future<RestaurantRoomLayoutOut> saveLayout(
+    int roomId,
+    RestaurantRoomLayoutIn layout,
+  );
 }

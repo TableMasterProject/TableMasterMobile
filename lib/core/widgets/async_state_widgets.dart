@@ -29,10 +29,7 @@ class AppEmptyState extends StatelessWidget {
               style: TextStyle(fontSize: 18, color: colors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
-            if (action != null) ...[
-              const SizedBox(height: 24),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 24), action!],
           ],
         ),
       ),
@@ -44,11 +41,7 @@ class AppErrorState extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
 
-  const AppErrorState({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const AppErrorState({super.key, required this.message, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -85,19 +78,19 @@ class AppErrorState extends StatelessWidget {
 class AppSavingDialog extends StatelessWidget {
   final String message;
 
-  const AppSavingDialog({
-    super.key,
-    this.message = "Sauvegarde en cours...",
-  });
+  const AppSavingDialog({super.key, this.message = "Sauvegarde en cours..."});
 
   static Future<void> show(BuildContext context, {String? message}) {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => PopScope(
-        canPop: false,
-        child: AppSavingDialog(message: message ?? "Sauvegarde en cours..."),
-      ),
+      builder:
+          (_) => PopScope(
+            canPop: false,
+            child: AppSavingDialog(
+              message: message ?? "Sauvegarde en cours...",
+            ),
+          ),
     );
   }
 
@@ -112,7 +105,10 @@ class AppSavingDialog extends StatelessWidget {
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
         ),

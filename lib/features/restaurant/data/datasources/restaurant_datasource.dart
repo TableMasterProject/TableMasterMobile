@@ -53,7 +53,10 @@ class RestaurantDataSource {
   }
 
   // PUT /api/Restaurant/{id}
-  Future<RestaurantOut> updateRestaurant(int id, RestaurantIn restaurant) async {
+  Future<RestaurantOut> updateRestaurant(
+    int id,
+    RestaurantIn restaurant,
+  ) async {
     try {
       final response = await apiClient.dio.put(
         '/Restaurant/$id',

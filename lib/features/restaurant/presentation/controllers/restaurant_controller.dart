@@ -64,7 +64,9 @@ class RestaurantController extends ChangeNotifier {
     _notify();
 
     try {
-      restaurant = await restaurantRepository.getRestaurantDetails(restaurantId);
+      restaurant = await restaurantRepository.getRestaurantDetails(
+        restaurantId,
+      );
       await refreshAll();
       if (enableRealtime) await initSignalR();
     } catch (e) {
@@ -105,10 +107,14 @@ class RestaurantController extends ChangeNotifier {
 
   Future<void> loadSummary(int restaurantId) async {
     try {
-      final search = SearchReservations()
-        ..restaurantId = restaurantId
-        ..pageSize = 100
-        ..statuses = [ReservationStatus.enAttente, ReservationStatus.validee];
+      final search =
+          SearchReservations()
+            ..restaurantId = restaurantId
+            ..pageSize = 100
+            ..statuses = [
+              ReservationStatus.enAttente,
+              ReservationStatus.validee,
+            ];
 
       summaryReservations = await reservationRepository.getReservations(search);
       _notify();
@@ -119,9 +125,10 @@ class RestaurantController extends ChangeNotifier {
 
   Future<void> loadDailyReservations(int restaurantId) async {
     try {
-      final search = SearchReservations()
-        ..restaurantId = restaurantId
-        ..pageSize = 50;
+      final search =
+          SearchReservations()
+            ..restaurantId = restaurantId
+            ..pageSize = 50;
 
       if (selectedFilter == 0) {
         search
@@ -223,7 +230,10 @@ class RestaurantController extends ChangeNotifier {
     }
   }
 
-  Future<void> attachCreatedRestaurant(UserOut user, RestaurantOut createdRestaurant) async {
+  Future<void> attachCreatedRestaurant(
+    UserOut user,
+    RestaurantOut createdRestaurant,
+  ) async {
     user.restaurantId = createdRestaurant.id;
     restaurant = createdRestaurant;
     _notify();
@@ -261,7 +271,9 @@ class RestaurantController extends ChangeNotifier {
       }
     });
 
-    _subValidated = signalRService.onReservationUpdateStatus.listen((reservation) {
+    _subValidated = signalRService.onReservationUpdateStatus.listen((
+      reservation,
+    ) {
       if (reservation.restaurantId == restaurantId) {
         refreshReservationData();
       }

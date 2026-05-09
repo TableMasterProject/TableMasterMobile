@@ -68,24 +68,24 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
     setState(() => _isLoading = true);
 
     try {
-      final createdRestaurant = await widget.restaurantRepository.createRestaurant(
-        _restaurantData.copyWith(userId: widget.user.id),
-      );
+      final createdRestaurant = await widget.restaurantRepository
+          .createRestaurant(_restaurantData.copyWith(userId: widget.user.id));
 
       if (changes.layouts.isNotEmpty) {
         for (var i = 0; i < changes.layouts.length; i++) {
           final draft = changes.layouts[i];
-          final defaultRoom = createdRestaurant.rooms?.isNotEmpty == true
-              ? createdRestaurant.rooms!.first
-              : null;
-          final roomId = draft.roomId ??
+          final defaultRoom =
+              createdRestaurant.rooms?.isNotEmpty == true
+                  ? createdRestaurant.rooms!.first
+                  : null;
+          final roomId =
+              draft.roomId ??
               (i == 0
                   ? defaultRoom?.id
                   : (await widget.roomRepository.addRoom(
-                      createdRestaurant.id,
-                      draft.room.copyWith(restaurantId: createdRestaurant.id),
-                    ))
-                      .id);
+                    createdRestaurant.id,
+                    draft.room.copyWith(restaurantId: createdRestaurant.id),
+                  )).id);
 
           if (roomId == null) continue;
 
@@ -97,8 +97,16 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
           );
         }
       } else if (changes.toAdd.isNotEmpty) {
-        final tables = changes.toAdd.map((table) => table.copyWith(restaurantId: createdRestaurant.id)).toList();
-        await widget.tableRepository.replaceTables(createdRestaurant.id, tables);
+        final tables =
+            changes.toAdd
+                .map(
+                  (table) => table.copyWith(restaurantId: createdRestaurant.id),
+                )
+                .toList();
+        await widget.tableRepository.replaceTables(
+          createdRestaurant.id,
+          tables,
+        );
       }
 
       final restaurant = await widget.restaurantRepository.getRestaurantDetails(
@@ -110,9 +118,9 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     }
   }
 

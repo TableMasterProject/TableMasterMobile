@@ -1,6 +1,5 @@
 import 'package:table_master_mobile/features/user/data/models/user_in.dart';
 
-
 class UserOut extends UserIn {
   int id;
   DateTime createdAt;
@@ -26,9 +25,10 @@ class UserOut extends UserIn {
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
       accountType: json['accountType'] ?? 0,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
       restaurantId: json['restaurantId'],
     );
   }

@@ -58,7 +58,10 @@ class _MenuPageState extends State<MenuPage> {
         itemName: _nameController.text,
         description: _descriptionController.text,
         price: double.tryParse(_priceController.text) ?? 0.0,
-        category: _categoryController.text.isEmpty ? 'Général' : _categoryController.text,
+        category:
+            _categoryController.text.isEmpty
+                ? 'Général'
+                : _categoryController.text,
       );
       await _repo.create(menu);
       _nameController.clear();
@@ -194,7 +197,9 @@ class _MenuPageState extends State<MenuPage> {
                                       Text('Catégorie: ${m.category}'),
                                       if (m.description.isNotEmpty)
                                         Text(m.description),
-                                      Text('Prix: ${m.price.toStringAsFixed(2)}€'),
+                                      Text(
+                                        'Prix: ${m.price.toStringAsFixed(2)}€',
+                                      ),
                                     ],
                                   ),
                                   trailing: IconButton(

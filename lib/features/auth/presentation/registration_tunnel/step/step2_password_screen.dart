@@ -4,7 +4,11 @@ class Step2PasswordScreen extends StatefulWidget {
   final Function(String password) onNext;
   final String password;
 
-  const Step2PasswordScreen({super.key, required this.onNext, required this.password});
+  const Step2PasswordScreen({
+    super.key,
+    required this.onNext,
+    required this.password,
+  });
 
   @override
   State<Step2PasswordScreen> createState() => _Step2PasswordScreenState();
@@ -51,7 +55,11 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
           children: [
             Text(
               "Sécurité du compte",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: colors.onSurface),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -68,16 +76,26 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
                 labelText: "Mot de passe",
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed:
+                      () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) return "Le mot de passe est obligatoire";
-                if (value.length < 8) return "Il doit contenir au moins 8 caractères";
-                if (!RegExp(r'[A-Z]').hasMatch(value)) return "Il faut au moins une majuscule";
-                if (!RegExp(r'[0-9]').hasMatch(value)) return "Il faut au moins un chiffre";
+                if (value == null || value.isEmpty)
+                  return "Le mot de passe est obligatoire";
+                if (value.length < 8)
+                  return "Il doit contenir au moins 8 caractères";
+                if (!RegExp(r'[A-Z]').hasMatch(value))
+                  return "Il faut au moins une majuscule";
+                if (!RegExp(r'[0-9]').hasMatch(value))
+                  return "Il faut au moins un chiffre";
                 return null;
               },
             ),
@@ -91,14 +109,21 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
                 labelText: "Confirmer le mot de passe",
                 prefixIcon: const Icon(Icons.lock_reset),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  icon: Icon(
+                    _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed:
+                      () => setState(() => _obscureConfirm = !_obscureConfirm),
                 ),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) return "Veuillez confirmer votre mot de passe";
-                if (value != _passwordController.text) return "Les mots de passe ne correspondent pas";
+                if (value == null || value.isEmpty)
+                  return "Veuillez confirmer votre mot de passe";
+                if (value != _passwordController.text)
+                  return "Les mots de passe ne correspondent pas";
                 return null;
               },
             ),
@@ -106,9 +131,18 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
             const SizedBox(height: 24),
 
             // Rappel des règles (UX)
-            _buildRule("Au moins 8 caractères", _passwordController.text.length >= 8),
-            _buildRule("Au moins une majuscule", RegExp(r'[A-Z]').hasMatch(_passwordController.text)),
-            _buildRule("Au moins un chiffre", RegExp(r'[0-9]').hasMatch(_passwordController.text)),
+            _buildRule(
+              "Au moins 8 caractères",
+              _passwordController.text.length >= 8,
+            ),
+            _buildRule(
+              "Au moins une majuscule",
+              RegExp(r'[A-Z]').hasMatch(_passwordController.text),
+            ),
+            _buildRule(
+              "Au moins un chiffre",
+              RegExp(r'[0-9]').hasMatch(_passwordController.text),
+            ),
 
             const SizedBox(height: 40),
 
@@ -123,7 +157,9 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
                   }
                 },
                 style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: const Text("Continuer", style: TextStyle(fontSize: 16)),
               ),

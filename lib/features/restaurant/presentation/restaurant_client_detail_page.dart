@@ -63,10 +63,13 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
 
   Future<void> _openMap() async {
     final r = _fullRestaurant ?? widget.restaurant;
-    final location = (r.latitude != null && r.longitude != null)
-        ? "${r.latitude},${r.longitude}"
-        : r.addressString();
-    final url = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}");
+    final location =
+        (r.latitude != null && r.longitude != null)
+            ? "${r.latitude},${r.longitude}"
+            : r.addressString();
+    final url = Uri.parse(
+      "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}",
+    );
     await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
@@ -88,7 +91,10 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => CreateReservationPage(restaurant: _fullRestaurant ?? widget.restaurant),
+              builder:
+                  (context) => CreateReservationPage(
+                    restaurant: _fullRestaurant ?? widget.restaurant,
+                  ),
             ),
           );
         },
@@ -125,12 +131,24 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                 children: [
                   if (restaurant.latitude != null)
                     GoogleMap(
-                      initialCameraPosition: CameraPosition(target: LatLng(restaurant.latitude!, restaurant.longitude!), zoom: 16),
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(
+                          restaurant.latitude!,
+                          restaurant.longitude!,
+                        ),
+                        zoom: 16,
+                      ),
                       markers: {
                         Marker(
                           markerId: const MarkerId('res'),
-                          position: LatLng(restaurant.latitude!, restaurant.longitude!),
-                          infoWindow: InfoWindow(title: restaurant.restaurantName, snippet: restaurant.addressString()),
+                          position: LatLng(
+                            restaurant.latitude!,
+                            restaurant.longitude!,
+                          ),
+                          infoWindow: InfoWindow(
+                            title: restaurant.restaurantName,
+                            snippet: restaurant.addressString(),
+                          ),
                         ),
                       },
                       myLocationEnabled: true,
@@ -138,8 +156,27 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                       mapToolbarEnabled: true,
                     )
                   else
-                    Container(color: colors.primaryContainer, child: Icon(Icons.restaurant, size: 80, color: colors.onPrimaryContainer.withValues(alpha: 0.3))),
-                  const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black38, Colors.transparent, Colors.black87]))),
+                    Container(
+                      color: colors.primaryContainer,
+                      child: Icon(
+                        Icons.restaurant,
+                        size: 80,
+                        color: colors.onPrimaryContainer.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  const DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black38,
+                          Colors.transparent,
+                          Colors.black87,
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -154,7 +191,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                 tabs: const [
                   Tab(icon: Icon(Icons.info_outline), text: 'À propos'),
                   Tab(icon: Icon(Icons.restaurant_menu), text: 'Menu'),
-                  Tab(icon: Icon(Icons.reviews_outlined), text: 'Avis')
+                  Tab(icon: Icon(Icons.reviews_outlined), text: 'Avis'),
                 ],
               ),
             ),
@@ -167,7 +204,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
         children: [
           _buildAboutTab(context, restaurant),
           _buildMenuTab(context, restaurant),
-          _buildReviewsTab(context, restaurant)
+          _buildReviewsTab(context, restaurant),
         ],
       ),
     );
@@ -374,13 +411,19 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+  Widget _buildInfoTile(
+    IconData icon,
+    String title,
+    String subtitle, {
+    VoidCallback? onTap,
+  }) {
     return ListTile(
       leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle),
       onTap: onTap,
-      trailing: onTap != null ? const Icon(Icons.chevron_right, size: 18) : null,
+      trailing:
+          onTap != null ? const Icon(Icons.chevron_right, size: 18) : null,
     );
   }
 }

@@ -1,5 +1,3 @@
-
-
 import '../../data/models/restaurant_in.dart';
 import '../../data/models/restaurant_out.dart';
 import '../../data/models/search_restaurant.dart';

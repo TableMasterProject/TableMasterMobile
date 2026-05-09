@@ -19,7 +19,7 @@ class UserRepositoryImpl implements IUserRepository {
 
   @override
   Future<LoginUserOut> register(UserIn user) async {
-    final result =  await remoteDataSource.addUser(user);
+    final result = await remoteDataSource.addUser(user);
 
     await _saveTokens(result.accessToken, result.refreshToken);
 

@@ -23,10 +23,7 @@ class UserDataSource {
   // POST /api/User (Inscription)
   Future<LoginUserOut> addUser(UserIn user) async {
     try {
-      final response = await apiClient.dio.post(
-        '/User',
-        data: user.toJson(),
-      );
+      final response = await apiClient.dio.post('/User', data: user.toJson());
       return LoginUserOut.fromJson(response.data);
     } on DioException catch (e) {
       _handleError(e);
@@ -37,10 +34,7 @@ class UserDataSource {
   // PUT /api/User (Mise à jour profil)
   Future<UserOut> updateUser(UserIn user) async {
     try {
-      final response = await apiClient.dio.put(
-        '/User',
-        data: user.toJson(),
-      );
+      final response = await apiClient.dio.put('/User', data: user.toJson());
       return UserOut.fromJson(response.data);
     } on DioException catch (e) {
       _handleError(e);
@@ -53,10 +47,7 @@ class UserDataSource {
     try {
       final response = await apiClient.dio.put(
         '/User/Password',
-        data: {
-          'OldPassword': oldPassword,
-          'NewPassword': newPassword,
-        },
+        data: {'OldPassword': oldPassword, 'NewPassword': newPassword},
       );
       return response.data as bool;
     } on DioException catch (e) {

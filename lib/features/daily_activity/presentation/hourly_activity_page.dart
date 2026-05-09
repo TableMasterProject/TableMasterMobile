@@ -29,7 +29,7 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
     'Samedi',
     'Dimanche',
   ];
-  
+
   int? _selectedDay; // 1 = Lundi, ..., 7 = Dimanche
   final _openingController = TextEditingController();
   final _closingController = TextEditingController();
@@ -91,10 +91,11 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
 
     // Validation basique du format HH:mm
     final timeRegex = RegExp(r'^([01]?[0-9]|2[0-3]):[0-5][0-9]$');
-    if (!timeRegex.hasMatch(finalOpening) || !timeRegex.hasMatch(finalClosing)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Format d\'heure invalide (HH:mm)')));
+    if (!timeRegex.hasMatch(finalOpening) ||
+        !timeRegex.hasMatch(finalClosing)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Format d\'heure invalide (HH:mm)')),
+      );
       return;
     }
 
@@ -113,9 +114,9 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
       _closingController.clear();
       await _loadActivities();
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Horaire enregistré avec succès')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Horaire enregistré avec succès')),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -179,7 +180,8 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
                               child: Text(_days[index]),
                             );
                           }),
-                          onChanged: (val) => setState(() => _selectedDay = val),
+                          onChanged:
+                              (val) => setState(() => _selectedDay = val),
                           decoration: const InputDecoration(
                             labelText: 'Jour de la semaine',
                             border: OutlineInputBorder(),
@@ -227,7 +229,10 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
                   ),
                   const Divider(),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
                     child: Text(
                       "Horaires actuels",
                       style: TextStyle(
@@ -250,14 +255,17 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
                             )
                             : ListView.separated(
                               itemCount: _activities.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1),
+                              separatorBuilder:
+                                  (_, __) => const Divider(height: 1),
                               itemBuilder: (context, index) {
                                 final a = _activities[index];
                                 return ListTile(
                                   leading: const Icon(Icons.access_time),
                                   title: Text(
                                     _days[(a.dayOfWeek - 1) % 7],
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   subtitle: Text(
                                     '${a.startTime.substring(0, 5)} - ${a.endTime.substring(0, 5)}',
@@ -272,8 +280,10 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
                                   onTap: () {
                                     setState(() {
                                       _selectedDay = a.dayOfWeek;
-                                      _openingController.text = a.startTime.substring(0, 5);
-                                      _closingController.text = a.endTime.substring(0, 5);
+                                      _openingController.text = a.startTime
+                                          .substring(0, 5);
+                                      _closingController.text = a.endTime
+                                          .substring(0, 5);
                                     });
                                   },
                                 );

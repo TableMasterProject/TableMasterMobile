@@ -182,20 +182,23 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         restaurantOut = await restaurantRepo.createRestaurant(restaurantData);
       }
 
-      if (restaurantOut != null && tableChanges != null && tableChanges!.layouts.isNotEmpty) {
+      if (restaurantOut != null &&
+          tableChanges != null &&
+          tableChanges!.layouts.isNotEmpty) {
         for (var i = 0; i < tableChanges!.layouts.length; i++) {
           final draft = tableChanges!.layouts[i];
-          final defaultRoom = restaurantOut!.rooms?.isNotEmpty == true
-              ? restaurantOut!.rooms!.first
-              : null;
-          final roomId = draft.roomId ??
+          final defaultRoom =
+              restaurantOut!.rooms?.isNotEmpty == true
+                  ? restaurantOut!.rooms!.first
+                  : null;
+          final roomId =
+              draft.roomId ??
               (i == 0
                   ? defaultRoom?.id
                   : (await roomRepo.addRoom(
-                      restaurantOut!.id,
-                      draft.room.copyWith(restaurantId: restaurantOut!.id),
-                    ))
-                      .id);
+                    restaurantOut!.id,
+                    draft.room.copyWith(restaurantId: restaurantOut!.id),
+                  )).id);
 
           if (roomId != null) {
             draft.layout.room.restaurantId = restaurantOut!.id;
@@ -205,7 +208,10 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         }
       }
 
-      if (restaurantOut != null && tableChanges != null && tableChanges!.layouts.isEmpty && tableChanges!.toAdd.isNotEmpty) {
+      if (restaurantOut != null &&
+          tableChanges != null &&
+          tableChanges!.layouts.isEmpty &&
+          tableChanges!.toAdd.isNotEmpty) {
         // En création, on a surtout des toAdd
         await tableRepo.replaceTables(restaurantOut!.id, tableChanges!.toAdd);
       }
@@ -257,7 +263,10 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
           onNext: _saveRestaurantStep,
           restaurantIn: restaurantData,
         ),
-        Step5TableManagementScreen(onNext: _saveTablesStep, initialTables: null,),
+        Step5TableManagementScreen(
+          onNext: _saveTablesStep,
+          initialTables: null,
+        ),
       ],
 
       // AFFICHAGE DYNAMIQUE DU RÉSULTAT FINAL

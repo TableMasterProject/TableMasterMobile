@@ -4,9 +4,9 @@ class AppNavigation {
   const AppNavigation._();
 
   static Future<T?> push<T>(BuildContext context, Widget page) {
-    return Navigator.of(context).push<T>(
-      MaterialPageRoute(builder: (_) => page),
-    );
+    return Navigator.of(
+      context,
+    ).push<T>(MaterialPageRoute(builder: (_) => page));
   }
 
   static Future<T?> pushReplacement<T, TO>(
@@ -27,4 +27,3 @@ class AppNavigation {
     );
   }
 }
-

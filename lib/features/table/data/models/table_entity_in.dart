@@ -4,10 +4,10 @@ enum TableShape {
   circle;
 
   int get apiValue => switch (this) {
-        TableShape.square => 0,
-        TableShape.rectangle => 1,
-        TableShape.circle => 2,
-      };
+    TableShape.square => 0,
+    TableShape.rectangle => 1,
+    TableShape.circle => 2,
+  };
 
   static TableShape fromJson(dynamic value) {
     if (value is String) {

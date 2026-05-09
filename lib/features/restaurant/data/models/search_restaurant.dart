@@ -26,8 +26,10 @@ class SearchRestaurant {
     if (pageSize != null) data['PageSize'] = pageSize;
     if (latitude != null) data['Latitude'] = latitude;
     if (longitude != null) data['Longitude'] = longitude;
-    if (currentUserLongitude != null) data['CurrentUserLongitude'] = currentUserLongitude;
-    if (currentUserLatitude != null) data['CurrentUserLatitude'] = currentUserLatitude;
+    if (currentUserLongitude != null)
+      data['CurrentUserLongitude'] = currentUserLongitude;
+    if (currentUserLatitude != null)
+      data['CurrentUserLatitude'] = currentUserLatitude;
     if (cuisineType != null) data['CuisineType'] = cuisineType;
     if (paymentMethods != null) data['PaymentMethods'] = paymentMethods;
     return data;

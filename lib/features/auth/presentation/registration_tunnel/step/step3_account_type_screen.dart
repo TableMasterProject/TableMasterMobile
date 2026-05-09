@@ -30,7 +30,8 @@ class Step3AccountTypeScreen extends StatelessWidget {
           _buildTypeCard(
             context,
             title: "Je suis un Client",
-            description: "Je souhaite réserver des tables et consulter les menus.",
+            description:
+                "Je souhaite réserver des tables et consulter les menus.",
             icon: Icons.person_outline,
             onTap: () => onSelectType(0), // Envoie false
           ),
@@ -41,7 +42,8 @@ class Step3AccountTypeScreen extends StatelessWidget {
           _buildTypeCard(
             context,
             title: "Je suis un Restaurateur",
-            description: "Je souhaite gérer mes réservations, mes tables et mon menu.",
+            description:
+                "Je souhaite gérer mes réservations, mes tables et mon menu.",
             icon: Icons.restaurant,
             onTap: () => onSelectType(1), // Envoie true
           ),
@@ -51,12 +53,12 @@ class Step3AccountTypeScreen extends StatelessWidget {
   }
 
   Widget _buildTypeCard(
-      BuildContext context, {
-        required String title,
-        required String description,
-        required IconData icon,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String title,
+    required String description,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     final colors = Theme.of(context).colorScheme;
 
     return InkWell(
@@ -82,12 +84,18 @@ class Step3AccountTypeScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

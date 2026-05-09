@@ -9,17 +9,22 @@ import '../features/reservation/data/models/reservation_out.dart';
 class SignalRService {
   HubConnection? _hubConnection;
   final _storage = const FlutterSecureStorage();
-  
+
   final _onReservationCreated = StreamController<ReservationOut>.broadcast();
-  final _onReservationUpdateStatus = StreamController<ReservationOut>.broadcast();
+  final _onReservationUpdateStatus =
+      StreamController<ReservationOut>.broadcast();
   final _onReservationDeleted = StreamController<int>.broadcast();
 
-  Stream<ReservationOut> get onReservationCreated => _onReservationCreated.stream;
-  Stream<ReservationOut> get onReservationUpdateStatus => _onReservationUpdateStatus.stream;
+  Stream<ReservationOut> get onReservationCreated =>
+      _onReservationCreated.stream;
+  Stream<ReservationOut> get onReservationUpdateStatus =>
+      _onReservationUpdateStatus.stream;
   Stream<int> get onReservationDeleted => _onReservationDeleted.stream;
 
   Future<void> init() async {
-    if (_hubConnection != null && _hubConnection!.state == HubConnectionState.Connected) return;
+    if (_hubConnection != null &&
+        _hubConnection!.state == HubConnectionState.Connected)
+      return;
 
     final baseUrl = AppConfig.apiUrl;
     final hubUrl = "$baseUrl/reservationHub";
@@ -33,10 +38,11 @@ class SignalRService {
       transport: HttpTransportType.WebSockets,
     );
 
-    _hubConnection = HubConnectionBuilder()
-        .withUrl(hubUrl, options: httpOptions)
-        .withAutomaticReconnect()
-        .build();
+    _hubConnection =
+        HubConnectionBuilder()
+            .withUrl(hubUrl, options: httpOptions)
+            .withAutomaticReconnect()
+            .build();
 
     _hubConnection?.on("ReceiveReservationCreated", (arguments) {
       try {
@@ -80,13 +86,19 @@ class SignalRService {
   Future<void> joinRestaurantGroup(int restaurantId) async {
     await init();
     if (_hubConnection?.state == HubConnectionState.Connected) {
-      await _hubConnection?.invoke("JoinRestaurantGroup", args: [restaurantId.toString()]);
+      await _hubConnection?.invoke(
+        "JoinRestaurantGroup",
+        args: [restaurantId.toString()],
+      );
     }
   }
 
   Future<void> leaveRestaurantGroup(int restaurantId) async {
     if (_hubConnection?.state == HubConnectionState.Connected) {
-      await _hubConnection?.invoke("LeaveRestaurantGroup", args: [restaurantId.toString()]);
+      await _hubConnection?.invoke(
+        "LeaveRestaurantGroup",
+        args: [restaurantId.toString()],
+      );
     }
   }
 

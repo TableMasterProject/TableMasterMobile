@@ -51,7 +51,10 @@ void setupDependencies() {
 
   // Repository Auth
   getIt.registerLazySingleton<IAuthRepository>(
-    () => AuthRepositoryImpl(getIt<AuthDataSource>(), getIt<NotificationService>()),
+    () => AuthRepositoryImpl(
+      getIt<AuthDataSource>(),
+      getIt<NotificationService>(),
+    ),
   );
   // endregion
 

@@ -21,12 +21,19 @@ class RestaurantRoomOut extends RestaurantRoomIn {
       restaurantId: json['restaurantId'] ?? 0,
       name: json['name'] ?? '',
       sortOrder: json['sortOrder'] ?? 0,
-      boundaryPoints: points is List
-          ? points.map((point) => RoomPoint.fromJson(Map<String, dynamic>.from(point))).toList()
-          : RestaurantRoomIn.defaultRoom().boundaryPoints,
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      boundaryPoints:
+          points is List
+              ? points
+                  .map(
+                    (point) =>
+                        RoomPoint.fromJson(Map<String, dynamic>.from(point)),
+                  )
+                  .toList()
+              : RestaurantRoomIn.defaultRoom().boundaryPoints,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 }

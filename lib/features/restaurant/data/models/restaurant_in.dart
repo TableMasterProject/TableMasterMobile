@@ -77,7 +77,8 @@ class RestaurantIn {
       cuisineType: cuisineType ?? this.cuisineType,
       paymentMethods: paymentMethods ?? this.paymentMethods,
       description: description ?? this.description,
-      isAutoValidateReservation: isAutoValidateReservation ?? this.isAutoValidateReservation,
+      isAutoValidateReservation:
+          isAutoValidateReservation ?? this.isAutoValidateReservation,
     );
   }
 }

@@ -41,15 +41,25 @@ class ReservationCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 6),
-                  Text('${dateFormat.format(r.reservationDate.toLocal())} à ${timeFormat.format(r.reservationDate.toLocal())}'),
+                  Text(
+                    '${dateFormat.format(r.reservationDate.toLocal())} à ${timeFormat.format(r.reservationDate.toLocal())}',
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.people_outline, size: 14, color: Colors.grey),
+                  const Icon(
+                    Icons.people_outline,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 6),
                   Text('${r.numberOfPeople} convives'),
                 ],
@@ -59,12 +69,20 @@ class ReservationCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 4),
                   child: Row(
                     children: [
-                      const Icon(Icons.note_outlined, size: 14, color: Colors.grey),
+                      const Icon(
+                        Icons.note_outlined,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           'Demande : ${r.specialRequest}',
-                          style: TextStyle(color: colors.primary, fontStyle: FontStyle.italic, fontSize: 13),
+                          style: TextStyle(
+                            color: colors.primary,
+                            fontStyle: FontStyle.italic,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -73,7 +91,11 @@ class ReservationCard extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.table_restaurant_outlined, size: 14, color: Colors.grey),
+                  const Icon(
+                    Icons.table_restaurant_outlined,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(width: 6),
                   Text('Table : ${r.table?.tableNumber ?? 'N/A'}'),
                 ],
@@ -130,13 +152,25 @@ class ReservationCard extends StatelessWidget {
   Widget _buildStatusIcon(ReservationStatus status) {
     switch (status) {
       case ReservationStatus.validee:
-        return const CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.check, color: Colors.white, size: 18));
+        return const CircleAvatar(
+          backgroundColor: Colors.green,
+          child: Icon(Icons.check, color: Colors.white, size: 18),
+        );
       case ReservationStatus.enAttente:
-        return const CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.timer, color: Colors.white, size: 18));
+        return const CircleAvatar(
+          backgroundColor: Colors.orange,
+          child: Icon(Icons.timer, color: Colors.white, size: 18),
+        );
       case ReservationStatus.finie:
-        return const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.done_all, color: Colors.white, size: 18));
+        return const CircleAvatar(
+          backgroundColor: Colors.blue,
+          child: Icon(Icons.done_all, color: Colors.white, size: 18),
+        );
       default:
-        return const CircleAvatar(backgroundColor: Colors.red, child: Icon(Icons.close, color: Colors.white, size: 18));
+        return const CircleAvatar(
+          backgroundColor: Colors.red,
+          child: Icon(Icons.close, color: Colors.white, size: 18),
+        );
     }
   }
 
@@ -144,11 +178,26 @@ class ReservationCard extends StatelessWidget {
     Color color;
     String label;
     switch (status) {
-      case ReservationStatus.enAttente: color = Colors.orange; label = "EN ATTENTE"; break;
-      case ReservationStatus.validee: color = Colors.green; label = "CONFIRMÉE"; break;
-      case ReservationStatus.finie: color = Colors.blue; label = "TERMINÉE"; break;
-      case ReservationStatus.annuleeResto: color = Colors.red; label = "ANNULÉE (RESTO)"; break;
-      case ReservationStatus.annuleeClient: color = Colors.red; label = "ANNULÉE (CLIENT)"; break;
+      case ReservationStatus.enAttente:
+        color = Colors.orange;
+        label = "EN ATTENTE";
+        break;
+      case ReservationStatus.validee:
+        color = Colors.green;
+        label = "CONFIRMÉE";
+        break;
+      case ReservationStatus.finie:
+        color = Colors.blue;
+        label = "TERMINÉE";
+        break;
+      case ReservationStatus.annuleeResto:
+        color = Colors.red;
+        label = "ANNULÉE (RESTO)";
+        break;
+      case ReservationStatus.annuleeClient:
+        color = Colors.red;
+        label = "ANNULÉE (CLIENT)";
+        break;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -157,7 +206,14 @@ class ReservationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

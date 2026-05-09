@@ -1,9 +1,9 @@
 enum ReservationStatus {
-  enAttente,     // 0
-  validee,       // 1
-  finie,         // 2
-  annuleeResto,  // 3
-  annuleeClient  // 4
+  enAttente, // 0
+  validee, // 1
+  finie, // 2
+  annuleeResto, // 3
+  annuleeClient, // 4
 }
 
 class ReservationIn {

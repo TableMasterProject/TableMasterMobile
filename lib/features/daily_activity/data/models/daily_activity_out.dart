@@ -20,9 +20,10 @@ class DailyActivityOut extends DailyActivityIn {
       dayOfWeek: json['dayOfWeek'] ?? 0,
       startTime: json['startTime'] ?? "00:00:00",
       endTime: json['endTime'] ?? "00:00:00",
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.parse(json['createdAt'])
+              : DateTime.now(),
     );
   }
 }

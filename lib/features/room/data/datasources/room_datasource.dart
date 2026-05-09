@@ -13,7 +13,9 @@ class RoomDataSource {
 
   Future<List<RestaurantRoomOut>> getRoomsByRestaurant(int restaurantId) async {
     try {
-      final response = await apiClient.dio.get('/Room/Restaurant/$restaurantId');
+      final response = await apiClient.dio.get(
+        '/Room/Restaurant/$restaurantId',
+      );
       final List<dynamic> data = response.data;
       return data.map((json) => RestaurantRoomOut.fromJson(json)).toList();
     } on DioException catch (e) {
@@ -22,7 +24,10 @@ class RoomDataSource {
     }
   }
 
-  Future<RestaurantRoomOut> createRoom(int restaurantId, RestaurantRoomIn room) async {
+  Future<RestaurantRoomOut> createRoom(
+    int restaurantId,
+    RestaurantRoomIn room,
+  ) async {
     try {
       final response = await apiClient.dio.post(
         '/Room/Restaurant/$restaurantId',
@@ -35,9 +40,15 @@ class RoomDataSource {
     }
   }
 
-  Future<RestaurantRoomOut> updateRoom(int roomId, RestaurantRoomIn room) async {
+  Future<RestaurantRoomOut> updateRoom(
+    int roomId,
+    RestaurantRoomIn room,
+  ) async {
     try {
-      final response = await apiClient.dio.put('/Room/$roomId', data: room.toJson());
+      final response = await apiClient.dio.put(
+        '/Room/$roomId',
+        data: room.toJson(),
+      );
       return RestaurantRoomOut.fromJson(response.data);
     } on DioException catch (e) {
       _handleError(e);

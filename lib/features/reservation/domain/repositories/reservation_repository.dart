@@ -7,6 +7,9 @@ abstract class IReservationRepository {
   Future<List<ReservationOut>> getMyReservations(SearchReservations search);
 
   Future<ReservationOut> createReservation(Map<String, dynamic> data);
-  Future<ReservationOut> updateReservationStatus(int id, ReservationStatus reservationStatus);
+  Future<ReservationOut> updateReservationStatus(
+    int id,
+    ReservationStatus reservationStatus,
+  );
   Future<bool> deleteReservation(int id);
 }

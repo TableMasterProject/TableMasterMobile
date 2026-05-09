@@ -34,10 +34,11 @@ class _ReviewsPageState extends State<ReviewsPage> {
       _error = null;
     });
     try {
-      final reviews = widget.restaurantId != null
-          ? await _repo.getByRestaurant(widget.restaurantId!, _search)
-          : await _repo.getMyReviews(_search);
-      
+      final reviews =
+          widget.restaurantId != null
+              ? await _repo.getByRestaurant(widget.restaurantId!, _search)
+              : await _repo.getMyReviews(_search);
+
       // Tri par date (plus récent en haut)
       reviews.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       setState(() => _reviews = reviews);
@@ -51,14 +52,26 @@ class _ReviewsPageState extends State<ReviewsPage> {
   Future<void> _deleteReview(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Supprimer l'avis"),
-        content: const Text("Êtes-vous sûr de vouloir supprimer cet avis ?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Annuler")),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Supprimer", style: TextStyle(color: Colors.red))),
-        ],
-      ),
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text("Supprimer l'avis"),
+            content: const Text(
+              "Êtes-vous sûr de vouloir supprimer cet avis ?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text("Annuler"),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text(
+                  "Supprimer",
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
     );
 
     if (confirm != true) return;
@@ -67,11 +80,15 @@ class _ReviewsPageState extends State<ReviewsPage> {
       await _repo.deleteReview(id);
       await _loadReviews();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Avis supprimé")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Avis supprimé")));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Erreur: $e")));
       }
     }
   }
@@ -85,63 +102,73 @@ class _ReviewsPageState extends State<ReviewsPage> {
       appBar: AppBar(title: Text(widget.title)),
       body: RefreshIndicator(
         onRefresh: _loadReviews,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
+        child:
+            _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
                 ? Center(child: Text("Erreur: $_error"))
                 : _reviews.isEmpty
-                    ? const Center(child: Text("Aucun avis pour le moment"))
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _reviews.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final r = _reviews[index];
-                          return Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: List.generate(5, (i) {
-                                          return Icon(
-                                            i < r.rating ? Icons.star : Icons.star_border,
-                                            color: Colors.amber,
-                                            size: 20,
-                                          );
-                                        }),
-                                      ),
-                                      Text(
-                                        dateFormat.format(r.createdAt.toLocal()),
-                                        style: TextStyle(fontSize: 12, color: colors.onSurfaceVariant),
-                                      ),
-                                    ],
+                ? const Center(child: Text("Aucun avis pour le moment"))
+                : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _reviews.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final r = _reviews[index];
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: List.generate(5, (i) {
+                                    return Icon(
+                                      i < r.rating
+                                          ? Icons.star
+                                          : Icons.star_border,
+                                      color: Colors.amber,
+                                      size: 20,
+                                    );
+                                  }),
+                                ),
+                                Text(
+                                  dateFormat.format(r.createdAt.toLocal()),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colors.onSurfaceVariant,
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    r.comment ?? "Pas de commentaire",
-                                    style: const TextStyle(fontSize: 15),
-                                  ),
-                                  if (widget.restaurantId == null) ...[ // Mode "Mes avis" (Client)
-                                    const SizedBox(height: 8),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        onPressed: () => _deleteReview(r.id),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
+                            const SizedBox(height: 12),
+                            Text(
+                              r.comment ?? "Pas de commentaire",
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                            if (widget.restaurantId == null) ...[
+                              // Mode "Mes avis" (Client)
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _deleteReview(r.id),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
+                    );
+                  },
+                ),
       ),
     );
   }

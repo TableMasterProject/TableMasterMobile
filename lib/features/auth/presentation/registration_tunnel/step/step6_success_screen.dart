@@ -16,7 +16,9 @@ class _Step6SuccessScreenState extends State<Step6SuccessScreen> {
   @override
   void initState() {
     super.initState();
-    _controllerCenter = ConfettiController(duration: const Duration(seconds: 10));
+    _controllerCenter = ConfettiController(
+      duration: const Duration(seconds: 10),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(seconds: 1), () {
@@ -26,7 +28,6 @@ class _Step6SuccessScreenState extends State<Step6SuccessScreen> {
         }
       });
     });
-
   }
 
   @override
@@ -112,9 +113,14 @@ class _Step6SuccessScreenState extends State<Step6SuccessScreen> {
           numberOfParticles: 50, // Plus de particules pour bien les voir
           gravity: 0.5,
           shouldLoop: false,
-          colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
+          colors: const [
+            Colors.green,
+            Colors.blue,
+            Colors.pink,
+            Colors.orange,
+            Colors.purple,
+          ],
         ),
-
       ],
     );
   }

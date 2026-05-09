@@ -11,8 +11,8 @@ class ReservationDataSource {
   ReservationDataSource(this.apiClient);
 
   Future<List<ReservationOut>> getReservations(
-      SearchReservations search,
-      ) async {
+    SearchReservations search,
+  ) async {
     try {
       final response = await apiClient.dio.get(
         '/Reservation',
@@ -38,7 +38,10 @@ class ReservationDataSource {
   }
 
   // GET /api/Reservation/{id}/Validate?IsValidate=true
-  Future<ReservationOut> updateReservationStatus(int id, ReservationStatus status) async {
+  Future<ReservationOut> updateReservationStatus(
+    int id,
+    ReservationStatus status,
+  ) async {
     try {
       final response = await apiClient.dio.put(
         '/Reservation/$id/Status',

@@ -134,14 +134,16 @@ class _RestaurantPageState extends State<RestaurantPage> {
       Navigator.of(context).pop();
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Informations du restaurant mises à jour.")),
+        const SnackBar(
+          content: Text("Informations du restaurant mises à jour."),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     }
   }
 
@@ -152,15 +154,15 @@ class _RestaurantPageState extends State<RestaurantPage> {
       if (!mounted) return;
       Navigator.of(context).pop();
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Tables mises à jour.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Tables mises à jour.")));
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     }
   }
 
@@ -169,17 +171,19 @@ class _RestaurantPageState extends State<RestaurantPage> {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        if (widget.user.restaurantId == null && _controller.restaurant == null) {
+        if (widget.user.restaurantId == null &&
+            _controller.restaurant == null) {
           return AppEmptyState(
             icon: Icons.restaurant_outlined,
             message: "Aucun restaurant associé",
-            action: widget.user.accountType == 1
-                ? FilledButton.icon(
-                    onPressed: _openCreateRestaurantFlow,
-                    icon: const Icon(Icons.add_business_outlined),
-                    label: const Text("Créer son restaurant"),
-                  )
-                : null,
+            action:
+                widget.user.accountType == 1
+                    ? FilledButton.icon(
+                      onPressed: _openCreateRestaurantFlow,
+                      icon: const Icon(Icons.add_business_outlined),
+                      label: const Text("Créer son restaurant"),
+                    )
+                    : null,
           );
         }
 
@@ -204,36 +208,37 @@ class _RestaurantPageState extends State<RestaurantPage> {
 
         final body = switch (_controller.viewIndex) {
           1 => _ReservationsView(
-              reservations: _controller.reservations,
-              summaryReservations: _controller.summaryReservations,
-              selectedFilter: _controller.selectedFilter,
-              onFilterChanged: _controller.selectReservationFilter,
-              onStatusUpdate: _controller.updateReservationStatus,
-            ),
+            reservations: _controller.reservations,
+            summaryReservations: _controller.summaryReservations,
+            selectedFilter: _controller.selectedFilter,
+            onFilterChanged: _controller.selectReservationFilter,
+            onStatusUpdate: _controller.updateReservationStatus,
+          ),
           2 => _MenuView(
-              restaurantId: restaurant.id,
-              menuItems: _controller.menuItems,
-              onMenuChanged: () => _controller.loadMenu(restaurant.id),
-            ),
+            restaurantId: restaurant.id,
+            menuItems: _controller.menuItems,
+            onMenuChanged: () => _controller.loadMenu(restaurant.id),
+          ),
           3 => _SettingsView(
-              restaurant: restaurant,
-              onOpenInfo: () => _openRestaurantInfo(restaurant),
-              onOpenTables: () => _openTableManagement(restaurant),
-            ),
+            restaurant: restaurant,
+            onOpenInfo: () => _openRestaurantInfo(restaurant),
+            onOpenTables: () => _openTableManagement(restaurant),
+          ),
           _ => _TablesView(
-              restaurant: restaurant,
-              summaryReservations: _controller.summaryReservations,
-              onTableChanged: _controller.refreshReservationData,
-            ),
+            restaurant: restaurant,
+            summaryReservations: _controller.summaryReservations,
+            onTableChanged: _controller.refreshReservationData,
+          ),
         };
 
         return Column(
           children: [
             _RestaurantTabs(
               selectedIndex: _controller.viewIndex,
-              pendingCount: _controller.summaryReservations
-                  .where((r) => r.status == ReservationStatus.enAttente)
-                  .length,
+              pendingCount:
+                  _controller.summaryReservations
+                      .where((r) => r.status == ReservationStatus.enAttente)
+                      .length,
               onChanged: _controller.selectView,
             ),
             const Divider(height: 1),
@@ -264,7 +269,12 @@ class _RestaurantTabs extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _TabButton(label: "Tables", index: 0, selectedIndex: selectedIndex, onChanged: onChanged),
+            _TabButton(
+              label: "Tables",
+              index: 0,
+              selectedIndex: selectedIndex,
+              onChanged: onChanged,
+            ),
             const SizedBox(width: 8),
             _TabButton(
               label: "Réservations",
@@ -274,9 +284,19 @@ class _RestaurantTabs extends StatelessWidget {
               onChanged: onChanged,
             ),
             const SizedBox(width: 8),
-            _TabButton(label: "Menu", index: 2, selectedIndex: selectedIndex, onChanged: onChanged),
+            _TabButton(
+              label: "Menu",
+              index: 2,
+              selectedIndex: selectedIndex,
+              onChanged: onChanged,
+            ),
             const SizedBox(width: 8),
-            _TabButton(label: "Paramètres", index: 3, selectedIndex: selectedIndex, onChanged: onChanged),
+            _TabButton(
+              label: "Paramètres",
+              index: 3,
+              selectedIndex: selectedIndex,
+              onChanged: onChanged,
+            ),
           ],
         ),
       ),
@@ -310,8 +330,10 @@ class _TabButton extends StatelessWidget {
         FilledButton(
           onPressed: () => onChanged(index),
           style: FilledButton.styleFrom(
-            backgroundColor: isSelected ? colors.primary : colors.surfaceContainerHighest,
-            foregroundColor: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
+            backgroundColor:
+                isSelected ? colors.primary : colors.surfaceContainerHighest,
+            foregroundColor:
+                isSelected ? colors.onPrimary : colors.onSurfaceVariant,
           ),
           child: Text(label),
         ),
@@ -322,7 +344,10 @@ class _TabButton extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(4),
               constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
               child: Text(
                 '$badgeCount',
                 style: const TextStyle(
@@ -374,7 +399,10 @@ class _TablesViewState extends State<_TablesView> {
   List<TableEntityOut> _tablesForRoom(RestaurantRoomOut room) {
     final tables = widget.restaurant.tables ?? <TableEntityOut>[];
     return tables
-        .where((table) => table.roomId == room.id || (room.id == 0 && table.roomId == null))
+        .where(
+          (table) =>
+              table.roomId == room.id || (room.id == 0 && table.roomId == null),
+        )
         .toList();
   }
 
@@ -386,16 +414,21 @@ class _TablesViewState extends State<_TablesView> {
 
   String _tableStatusLabel(TableEntityOut table, DateTime now) {
     final reservations = _reservationsForTable(table);
-    final pendingCount = reservations
-        .where((reservation) => reservation.status == ReservationStatus.enAttente)
-        .length;
-    final todayValidatedCount = reservations
-        .where(
-          (reservation) =>
-              reservation.status == ReservationStatus.validee &&
-              DateUtils.isSameDay(reservation.reservationDate, now),
-        )
-        .length;
+    final pendingCount =
+        reservations
+            .where(
+              (reservation) =>
+                  reservation.status == ReservationStatus.enAttente,
+            )
+            .length;
+    final todayValidatedCount =
+        reservations
+            .where(
+              (reservation) =>
+                  reservation.status == ReservationStatus.validee &&
+                  DateUtils.isSameDay(reservation.reservationDate, now),
+            )
+            .length;
 
     if (pendingCount > 0 && todayValidatedCount > 0) {
       return '$pendingCount att. / $todayValidatedCount valid.';
@@ -427,23 +460,28 @@ class _TablesViewState extends State<_TablesView> {
         children: [
           Text(
             "Gestion des tables",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: colors.onSurface,
+            ),
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: tables.isEmpty
-                ? const AppEmptyState(
-                    icon: Icons.table_bar_outlined,
-                    message: "Aucune table configurée",
-                  )
-                : _RoomTablePlan(
-                    rooms: rooms,
-                    reservationsForTable: _reservationsForTable,
-                    now: now,
-                    onTableSelected: _openTable,
-                    tablesForRoom: _tablesForRoom,
-                    tableStatusLabel: _tableStatusLabel,
-                  ),
+            child:
+                tables.isEmpty
+                    ? const AppEmptyState(
+                      icon: Icons.table_bar_outlined,
+                      message: "Aucune table configurée",
+                    )
+                    : _RoomTablePlan(
+                      rooms: rooms,
+                      reservationsForTable: _reservationsForTable,
+                      now: now,
+                      onTableSelected: _openTable,
+                      tablesForRoom: _tablesForRoom,
+                      tableStatusLabel: _tableStatusLabel,
+                    ),
           ),
         ],
       ),
@@ -453,7 +491,8 @@ class _TablesViewState extends State<_TablesView> {
 
 class _RoomTablePlan extends StatelessWidget {
   final List<RestaurantRoomOut> rooms;
-  final List<ReservationOut> Function(TableEntityOut table) reservationsForTable;
+  final List<ReservationOut> Function(TableEntityOut table)
+  reservationsForTable;
   final List<TableEntityOut> Function(RestaurantRoomOut room) tablesForRoom;
   final String Function(TableEntityOut table, DateTime now) tableStatusLabel;
   final DateTime now;
@@ -487,8 +526,16 @@ class _RoomTablePlan extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _TableBadge(text: "validées aujourd'hui", color: Colors.blue, icon: Icons.event),
-            _TableBadge(text: 'en attente', color: Colors.orange, icon: Icons.pending_actions),
+            _TableBadge(
+              text: "validées aujourd'hui",
+              color: Colors.blue,
+              icon: Icons.event,
+            ),
+            _TableBadge(
+              text: 'en attente',
+              color: Colors.orange,
+              icon: Icons.pending_actions,
+            ),
           ],
         ),
       ],
@@ -499,7 +546,8 @@ class _RoomTablePlan extends StatelessWidget {
 class _RoomPlanSection extends StatelessWidget {
   final RestaurantRoomOut room;
   final List<TableEntityOut> roomTables;
-  final List<ReservationOut> Function(TableEntityOut table) reservationsForTable;
+  final List<ReservationOut> Function(TableEntityOut table)
+  reservationsForTable;
   final String Function(TableEntityOut table, DateTime now) tableStatusLabel;
   final DateTime now;
   final ValueChanged<TableEntityOut> onTableSelected;
@@ -524,16 +572,21 @@ class _RoomPlanSection extends StatelessWidget {
 
     for (final table in roomTables) {
       final reservations = reservationsForTable(table);
-      pendingBadgeCounts[table.id] = reservations
-          .where((reservation) => reservation.status == ReservationStatus.enAttente)
-          .length;
-      validatedBadgeCounts[table.id] = reservations
-          .where(
-            (reservation) =>
-                reservation.status == ReservationStatus.validee &&
-                DateUtils.isSameDay(reservation.reservationDate, now),
-          )
-          .length;
+      pendingBadgeCounts[table.id] =
+          reservations
+              .where(
+                (reservation) =>
+                    reservation.status == ReservationStatus.enAttente,
+              )
+              .length;
+      validatedBadgeCounts[table.id] =
+          reservations
+              .where(
+                (reservation) =>
+                    reservation.status == ReservationStatus.validee &&
+                    DateUtils.isSameDay(reservation.reservationDate, now),
+              )
+              .length;
     }
 
     return Padding(
@@ -546,12 +599,17 @@ class _RoomPlanSection extends StatelessWidget {
               Expanded(
                 child: Text(
                   room.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Text(
                 '${roomTables.length} table${roomTables.length > 1 ? 's' : ''}',
-                style: TextStyle(color: colors.onSurfaceVariant, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -578,6 +636,7 @@ class _RoomPlanSection extends StatelessWidget {
     );
   }
 }
+
 class _TableBadge extends StatelessWidget {
   final String text;
   final Color color;
@@ -605,7 +664,11 @@ class _TableBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -631,9 +694,13 @@ class _ReservationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final pendingTotal = summaryReservations
-        .where((reservation) => reservation.status == ReservationStatus.enAttente)
-        .length;
+    final pendingTotal =
+        summaryReservations
+            .where(
+              (reservation) =>
+                  reservation.status == ReservationStatus.enAttente,
+            )
+            .length;
 
     return Column(
       children: [
@@ -641,7 +708,12 @@ class _ReservationsView extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              _FilterChip(label: "Validées", index: 0, selectedFilter: selectedFilter, onChanged: onFilterChanged),
+              _FilterChip(
+                label: "Validées",
+                index: 0,
+                selectedFilter: selectedFilter,
+                onChanged: onFilterChanged,
+              ),
               const SizedBox(width: 8),
               _FilterChip(
                 label: "En attente ($pendingTotal)",
@@ -650,34 +722,42 @@ class _ReservationsView extends StatelessWidget {
                 onChanged: onFilterChanged,
               ),
               const SizedBox(width: 8),
-              _FilterChip(label: "Historique", index: 2, selectedFilter: selectedFilter, onChanged: onFilterChanged),
+              _FilterChip(
+                label: "Historique",
+                index: 2,
+                selectedFilter: selectedFilter,
+                onChanged: onFilterChanged,
+              ),
             ],
           ),
         ),
         Expanded(
-          child: reservations.isEmpty
-              ? AppEmptyState(
-                  icon: Icons.event_busy,
-                  message: "Aucune réservation",
-                  action: Text(
-                    "Les réservations apparaîtront ici.",
-                    style: TextStyle(color: colors.onSurfaceVariant),
+          child:
+              reservations.isEmpty
+                  ? AppEmptyState(
+                    icon: Icons.event_busy,
+                    message: "Aucune réservation",
+                    action: Text(
+                      "Les réservations apparaîtront ici.",
+                      style: TextStyle(color: colors.onSurfaceVariant),
+                    ),
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: reservations.length,
+                    itemBuilder: (context, index) {
+                      final reservation = reservations[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: ReservationCard(
+                          reservation: reservation,
+                          onStatusUpdate:
+                              (newStatus) =>
+                                  onStatusUpdate(reservation.id, newStatus),
+                        ),
+                      );
+                    },
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: reservations.length,
-                  itemBuilder: (context, index) {
-                    final reservation = reservations[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: ReservationCard(
-                        reservation: reservation,
-                        onStatusUpdate: (newStatus) => onStatusUpdate(reservation.id, newStatus),
-                      ),
-                    );
-                  },
-                ),
         ),
       ],
     );
@@ -733,11 +813,18 @@ class _MenuView extends StatelessWidget {
             children: [
               Text(
                 "Votre menu",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: colors.onSurface),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurface,
+                ),
               ),
               IconButton.filledTonal(
                 onPressed: () async {
-                  await AppNavigation.push<void>(context, MenuPage(restaurantId: restaurantId));
+                  await AppNavigation.push<void>(
+                    context,
+                    MenuPage(restaurantId: restaurantId),
+                  );
                   await onMenuChanged();
                 },
                 icon: const Icon(Icons.edit),
@@ -746,63 +833,81 @@ class _MenuView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: menuItems.isEmpty
-                ? const AppEmptyState(
-                    icon: Icons.restaurant_menu,
-                    message: "Aucun plat ajouté au menu",
-                  )
-                : GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.8,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: menuItems.length,
-                    itemBuilder: (context, index) {
-                      final item = menuItems[index];
-                      return Card(
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.5)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                child: Container(
-                                  width: double.infinity,
-                                  color: colors.secondaryContainer.withValues(alpha: 0.3),
-                                  child: const Icon(Icons.restaurant_menu, size: 40),
+            child:
+                menuItems.isEmpty
+                    ? const AppEmptyState(
+                      icon: Icons.restaurant_menu,
+                      message: "Aucun plat ajouté au menu",
+                    )
+                    : GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.8,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                      itemCount: menuItems.length,
+                      itemBuilder: (context, index) {
+                        final item = menuItems[index];
+                        return Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: colors.outlineVariant.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(16),
+                                  ),
+                                  child: Container(
+                                    width: double.infinity,
+                                    color: colors.secondaryContainer.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    child: const Icon(
+                                      Icons.restaurant_menu,
+                                      size: 40,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.itemName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    "${item.price.toStringAsFixed(2)} €",
-                                    style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
+                              Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.itemName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      "${item.price.toStringAsFixed(2)} €",
+                                      style: TextStyle(
+                                        color: colors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
           ),
         ],
       ),
@@ -851,28 +956,31 @@ class _SettingsView extends StatelessWidget {
           icon: Icons.access_time_outlined,
           title: "Horaires d'ouverture",
           subtitle: "Gérer vos créneaux quotidiens",
-          onTap: () => AppNavigation.push<void>(
-            context,
-            HourlyActivityPage(restaurantId: restaurant.id),
-          ),
+          onTap:
+              () => AppNavigation.push<void>(
+                context,
+                HourlyActivityPage(restaurantId: restaurant.id),
+              ),
         ),
         AppSettingTile(
           icon: Icons.calendar_today_outlined,
           title: "Fermetures exceptionnelles",
           subtitle: "Gérer les jours fériés et vacances",
-          onTap: () => AppNavigation.push<void>(
-            context,
-            ExceptionsPage(restaurantId: restaurant.id),
-          ),
+          onTap:
+              () => AppNavigation.push<void>(
+                context,
+                ExceptionsPage(restaurantId: restaurant.id),
+              ),
         ),
         AppSettingTile(
           icon: Icons.star_outline_rounded,
           title: "Avis clients",
           subtitle: "Consulter les notes et commentaires",
-          onTap: () => AppNavigation.push<void>(
-            context,
-            RestaurantReviewsPage(restaurantId: restaurant.id),
-          ),
+          onTap:
+              () => AppNavigation.push<void>(
+                context,
+                RestaurantReviewsPage(restaurantId: restaurant.id),
+              ),
         ),
       ],
     );
@@ -883,10 +991,7 @@ class _SettingsStepPage extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const _SettingsStepPage({
-    required this.title,
-    required this.child,
-  });
+  const _SettingsStepPage({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {

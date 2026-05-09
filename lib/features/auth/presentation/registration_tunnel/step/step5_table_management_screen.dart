@@ -187,9 +187,9 @@ class _Step5TableManagementScreenState
       _selectedTable = table;
       _layoutRevision++;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Table $addedTableNumber ajoutée.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Table $addedTableNumber ajoutée.')));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(

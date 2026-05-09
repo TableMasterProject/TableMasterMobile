@@ -8,16 +8,10 @@ class SearchReviews {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'Offset': offset,
-      'PageSize': pageSize,
-    };
+    return {'Offset': offset, 'PageSize': pageSize};
   }
 
-  SearchReviews copyWith({
-    int? offset,
-    int? pageSize,
-  }) {
+  SearchReviews copyWith({int? offset, int? pageSize}) {
     return SearchReviews(
       offset: offset ?? this.offset,
       pageSize: pageSize ?? this.pageSize,

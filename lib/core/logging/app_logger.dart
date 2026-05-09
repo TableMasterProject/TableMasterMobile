@@ -8,4 +8,3 @@ class AppLogger {
     debugPrint(error == null ? message : "$message: $error");
   }
 }
-

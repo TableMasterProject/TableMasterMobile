@@ -4,8 +4,6 @@ class LoginTokenIn {
   LoginTokenIn({required this.refreshToken});
 
   Map<String, dynamic> toJson() {
-    return {
-      'RefreshToken': refreshToken,
-    };
+    return {'RefreshToken': refreshToken};
   }
 }
