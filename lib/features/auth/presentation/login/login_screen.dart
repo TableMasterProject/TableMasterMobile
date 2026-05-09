@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/widgets/table_master_logo.dart';
 import 'package:table_master_mobile/features/home/presentation/home_screen.dart';
-import '../../../../core/app_config.dart';
 import '../../../../core/injection.dart';
 import '../../data/models/login_user_in.dart';
 import '../../data/models/login_user_out.dart';
@@ -73,17 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                AppConfig.appName,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: colors.primary,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Icon(Icons.lock_outline, size: 80, color: colors.primary),
-              const SizedBox(height: 20),
+              const TableMasterLogo(size: 190),
+              const SizedBox(height: 28),
               Text(
                 "Bienvenue",
                 style: TextStyle(

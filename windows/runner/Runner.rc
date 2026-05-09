@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.table_master_mobile" "\0"
-            VALUE "FileDescription", "table_master_mobile" "\0"
+            VALUE "FileDescription", "Table Master" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "table_master_mobile" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.table_master_mobile. All rights reserved." "\0"
             VALUE "OriginalFilename", "table_master_mobile.exe" "\0"
-            VALUE "ProductName", "table_master_mobile" "\0"
+            VALUE "ProductName", "Table Master" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

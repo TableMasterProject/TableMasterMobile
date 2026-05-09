@@ -1,11 +1,11 @@
 {
-    "name": "table_master_mobile",
-    "short_name": "table_master_mobile",
+    "name": "Table Master",
+    "short_name": "Table Master",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#3F51B5",
+    "theme_color": "#3F51B5",
+    "description": "TableMaster, l'application de réservation et de gestion de tables pour clients et restaurateurs.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
