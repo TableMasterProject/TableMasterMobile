@@ -117,7 +117,7 @@ class NotificationService {
       _registerTokenIfUserLoggedIn,
     );
 
-    final token = await FirebaseMessaging.instance.getToken();
+    final token = await _getMessagingToken();
     if (token != null) {
       await _registerTokenIfUserLoggedIn(token);
     }
@@ -152,9 +152,18 @@ class NotificationService {
   }
 
   Future<void> registerTokenForCurrentUser() async {
-    final token = await FirebaseMessaging.instance.getToken();
+    final token = await _getMessagingToken();
     if (token != null) {
       await _registerTokenIfUserLoggedIn(token);
+    }
+  }
+
+  Future<String?> _getMessagingToken() async {
+    try {
+      return await FirebaseMessaging.instance.getToken();
+    } catch (error) {
+      AppLogger.debug('Erreur récupération token FCM', error);
+      return null;
     }
   }
 
