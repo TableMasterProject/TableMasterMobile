@@ -7,6 +7,9 @@ import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/restaurant/data/datasources/restaurant_datasource.dart';
 import '../features/restaurant/data/repositories/restaurant_repository_impl.dart';
 import '../features/restaurant/domain/repositories/restaurant_repository.dart';
+import '../features/room/data/datasources/room_datasource.dart';
+import '../features/room/data/repositories/room_repository_impl.dart';
+import '../features/room/domain/repositories/room_repository.dart';
 import '../features/table/data/datasources/table_datasource.dart';
 import '../features/table/data/repositories/table_repository_impl.dart';
 import '../features/table/domain/repositories/table_repository.dart';
@@ -83,6 +86,15 @@ void setupDependencies() {
   // Repository Table
   getIt.registerLazySingleton<ITableRepository>(
     () => TableRepositoryImpl(getIt<TableDataSource>()),
+  );
+  // endregion
+
+  // region Room
+  getIt.registerLazySingleton<RoomDataSource>(
+    () => RoomDataSource(getIt<ApiClient>()),
+  );
+  getIt.registerLazySingleton<IRoomRepository>(
+    () => RoomRepositoryImpl(getIt<RoomDataSource>()),
   );
   // endregion
 

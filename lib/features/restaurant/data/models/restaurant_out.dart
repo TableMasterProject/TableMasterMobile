@@ -4,6 +4,7 @@ import '../../../closed_day_exception/data/models/closed_day_exception_out.dart'
 import '../../../daily_activity/data/models/daily_activity_out.dart';
 import '../../../menu/data/models/menu_out.dart';
 import '../../../review/data/models/review_out.dart';
+import '../../../room/data/models/restaurant_room_out.dart';
 import '../../../table/data/models/table_entity_out.dart';
 
 class RestaurantOut extends RestaurantIn {
@@ -15,6 +16,7 @@ class RestaurantOut extends RestaurantIn {
   int numberOfReviews;
 
   // Listes d'objets liés (Assure-toi d'avoir créé les modèles correspondants)
+  List<RestaurantRoomOut>? rooms;
   List<TableEntityOut>? tables;
   List<DailyActivityOut>? dailyActivitys;
   List<ClosedDayExceptionOut>? closedDayExceptions;
@@ -41,6 +43,7 @@ class RestaurantOut extends RestaurantIn {
     required this.distanceWithUser,
     required this.averageRating,
     required this.numberOfReviews,
+    this.rooms,
     this.tables,
     this.dailyActivitys,
     this.closedDayExceptions,
@@ -82,6 +85,12 @@ class RestaurantOut extends RestaurantIn {
       numberOfReviews: json['numberOfReviews'] ?? 0,
 
       // Mapping des listes
+      rooms:
+          json['rooms'] != null
+              ? List<RestaurantRoomOut>.from(
+                json['rooms'].map((x) => RestaurantRoomOut.fromJson(x)),
+              )
+              : null,
       tables:
           json['tables'] != null
               ? List<TableEntityOut>.from(

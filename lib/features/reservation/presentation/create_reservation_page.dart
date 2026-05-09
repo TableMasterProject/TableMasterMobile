@@ -8,6 +8,9 @@ import 'package:table_master_mobile/features/reservation/data/models/reservation
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_in.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_out.dart';
+import 'package:table_master_mobile/features/room/presentation/widgets/room_plan_canvas.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
 
 class CreateReservationPage extends StatefulWidget {
@@ -29,6 +32,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   TimeOfDay? _selectedTime;
   int _numberOfPeople = 2;
   TableEntityOut? _selectedTable;
+  int _selectedRoomIndex = 0;
 
   bool _isLoading = false;
   List<ReservationOut> _dayReservations = [];
@@ -183,6 +187,22 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     return !_isDayClosedException(day);
   }
 
+  List<RestaurantRoomOut> _roomsForPlan() {
+    final rooms = widget.restaurant.rooms;
+    if (rooms != null && rooms.isNotEmpty) return rooms;
+
+    return [
+      RestaurantRoomOut(
+        id: 0,
+        restaurantId: widget.restaurant.id,
+        name: 'Salle principale',
+        sortOrder: 0,
+        boundaryPoints: RestaurantRoomIn.defaultRoom().boundaryPoints,
+        createdAt: DateTime.now(),
+      )
+    ];
+  }
+
   DateTime _getFirstValidDate() {
     final today = DateUtils.dateOnly(DateTime.now());
     for (int i = 0; i < 90; i++) {
@@ -192,6 +212,62 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       }
     }
     return today;
+  }
+
+  Widget _buildRoomSelectionPlan(ColorScheme colors) {
+    final rooms = _roomsForPlan();
+    if (_selectedRoomIndex >= rooms.length) _selectedRoomIndex = 0;
+
+    final room = rooms[_selectedRoomIndex];
+    final allTables = widget.restaurant.tables ?? [];
+    final roomTables = allTables
+        .where((table) => table.roomId == room.id || (room.id == 0 && table.roomId == null))
+        .toList();
+    final statuses = {
+      for (final table in roomTables) table.id: _getTableStatus(table),
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: rooms.asMap().entries.map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  selected: entry.key == _selectedRoomIndex,
+                  label: Text(entry.value.name),
+                  onSelected: (_) => setState(() {
+                    _selectedRoomIndex = entry.key;
+                    _selectedTable = null;
+                  }),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        RoomPlanCanvas(
+          boundaryPoints: room.boundaryPoints,
+          tables: roomTables,
+          selectedTableId: _selectedTable?.id,
+          tableStatuses: statuses,
+          onTableSelected: (table) {
+            if (table is! TableEntityOut) return;
+            if (_getTableStatus(table) != 'Disponible') return;
+            setState(() => _selectedTable = table);
+          },
+        ),
+        const SizedBox(height: 8),
+        if (_selectedTable != null)
+          Text(
+            'Table n°${_selectedTable!.tableNumber} sélectionnée (${_selectedTable!.numberOfSeats} places)',
+            style: TextStyle(color: colors.primary, fontWeight: FontWeight.bold),
+          ),
+      ],
+    );
   }
 
   @override
@@ -280,7 +356,8 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                   const Text("Choisir une table", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   if (_isLoading) const Center(child: CircularProgressIndicator())
-                  else ListView.builder(
+                  else _buildRoomSelectionPlan(colors),
+                  if (false) ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: widget.restaurant.tables?.length ?? 0,

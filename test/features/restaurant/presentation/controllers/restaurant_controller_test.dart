@@ -12,6 +12,10 @@ import 'package:table_master_mobile/features/restaurant/data/models/restaurant_o
 import 'package:table_master_mobile/features/restaurant/data/models/search_restaurant.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:table_master_mobile/features/restaurant/presentation/controllers/restaurant_controller.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_in.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_layout.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_out.dart';
+import 'package:table_master_mobile/features/room/domain/repositories/room_repository.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_in.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
@@ -90,15 +94,67 @@ RestaurantController _buildController({
   _FakeReservationRepository? reservationRepo,
   _FakeTableRepository? tableRepo,
   _FakeMenuRepository? menuRepo,
+  _FakeRoomRepository? roomRepo,
 }) {
   return RestaurantController(
     restaurantRepository: restaurantRepo ?? _FakeRestaurantRepository(),
     reservationRepository: reservationRepo ?? _FakeReservationRepository(),
     tableRepository: tableRepo ?? _FakeTableRepository(),
     menuRepository: menuRepo ?? _FakeMenuRepository(),
+    roomRepository: roomRepo ?? _FakeRoomRepository(),
     signalRService: SignalRService(),
     enableRealtime: false,
   );
+}
+
+class _FakeRoomRepository implements IRoomRepository {
+  final List<int> savedLayoutRoomIds = [];
+
+  @override
+  Future<RestaurantRoomOut> addRoom(int restaurantId, RestaurantRoomIn room) async {
+    return RestaurantRoomOut(
+      id: 1,
+      restaurantId: restaurantId,
+      name: room.name,
+      sortOrder: room.sortOrder,
+      boundaryPoints: room.boundaryPoints,
+      createdAt: DateTime(2024),
+    );
+  }
+
+  @override
+  Future<RestaurantRoomOut> editRoom(int roomId, RestaurantRoomIn room) async {
+    return RestaurantRoomOut(
+      id: roomId,
+      restaurantId: room.restaurantId,
+      name: room.name,
+      sortOrder: room.sortOrder,
+      boundaryPoints: room.boundaryPoints,
+      createdAt: DateTime(2024),
+    );
+  }
+
+  @override
+  Future<List<RestaurantRoomOut>> getRestaurantRooms(int restaurantId) async => [];
+
+  @override
+  Future<bool> removeRoom(int roomId) async => true;
+
+  @override
+  Future<RestaurantRoomLayoutOut> saveLayout(int roomId, RestaurantRoomLayoutIn layout) async {
+    savedLayoutRoomIds.add(roomId);
+    return RestaurantRoomLayoutOut(
+      room: RestaurantRoomOut(
+        id: roomId,
+        restaurantId: layout.room.restaurantId,
+        name: layout.room.name,
+        sortOrder: layout.room.sortOrder,
+        boundaryPoints: layout.room.boundaryPoints,
+        createdAt: DateTime(2024),
+      ),
+      tables: [],
+    );
+  }
 }
 
 RestaurantIn _restaurantIn({String name = 'Restaurant'}) {

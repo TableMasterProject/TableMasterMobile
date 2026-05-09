@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/navigation/app_navigation.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
@@ -22,6 +21,10 @@ import 'package:table_master_mobile/features/restaurant/domain/repositories/rest
 import 'package:table_master_mobile/features/restaurant/presentation/controllers/restaurant_controller.dart';
 import 'package:table_master_mobile/features/restaurant/presentation/restaurant_setup_flow.dart';
 import 'package:table_master_mobile/features/review/presentation/pages/restaurant_reviews_page.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_in.dart';
+import 'package:table_master_mobile/features/room/data/models/restaurant_room_out.dart';
+import 'package:table_master_mobile/features/room/domain/repositories/room_repository.dart';
+import 'package:table_master_mobile/features/room/presentation/widgets/room_plan_canvas.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
 import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
@@ -47,6 +50,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
       reservationRepository: getIt<IReservationRepository>(),
       tableRepository: getIt<ITableRepository>(),
       menuRepository: getIt<IMenuRepository>(),
+      roomRepository: getIt<IRoomRepository>(),
       signalRService: getIt<SignalRService>(),
     )..onNewReservation = _showNewReservationSnackBar;
 
@@ -86,6 +90,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
         user: widget.user,
         restaurantRepository: getIt<IRestaurantRepository>(),
         tableRepository: getIt<ITableRepository>(),
+        roomRepository: getIt<IRoomRepository>(),
       ),
     );
 
@@ -114,6 +119,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
         title: "Gestion des tables",
         child: Step5TableManagementScreen(
           initialTables: restaurant.tables,
+          initialRooms: restaurant.rooms,
           onNext: (changes) => _saveTableSettings(changes),
         ),
       ),
@@ -333,7 +339,7 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-class _TablesView extends StatelessWidget {
+class _TablesView extends StatefulWidget {
   final RestaurantOut restaurant;
   final List<ReservationOut> summaryReservations;
   final Future<void> Function() onTableChanged;
@@ -345,9 +351,73 @@ class _TablesView extends StatelessWidget {
   });
 
   @override
+  State<_TablesView> createState() => _TablesViewState();
+}
+
+class _TablesViewState extends State<_TablesView> {
+  List<RestaurantRoomOut> _roomsForPlan() {
+    final rooms = widget.restaurant.rooms;
+    if (rooms != null && rooms.isNotEmpty) return rooms;
+
+    return [
+      RestaurantRoomOut(
+        id: 0,
+        restaurantId: widget.restaurant.id,
+        name: 'Salle principale',
+        sortOrder: 0,
+        boundaryPoints: RestaurantRoomIn.defaultRoom().boundaryPoints,
+        createdAt: DateTime.now(),
+      ),
+    ];
+  }
+
+  List<TableEntityOut> _tablesForRoom(RestaurantRoomOut room) {
+    final tables = widget.restaurant.tables ?? <TableEntityOut>[];
+    return tables
+        .where((table) => table.roomId == room.id || (room.id == 0 && table.roomId == null))
+        .toList();
+  }
+
+  List<ReservationOut> _reservationsForTable(TableEntityOut table) {
+    return widget.summaryReservations
+        .where((reservation) => reservation.tableId == table.id)
+        .toList();
+  }
+
+  String _tableStatusLabel(TableEntityOut table, DateTime now) {
+    final reservations = _reservationsForTable(table);
+    final pendingCount = reservations
+        .where((reservation) => reservation.status == ReservationStatus.enAttente)
+        .length;
+    final todayValidatedCount = reservations
+        .where(
+          (reservation) =>
+              reservation.status == ReservationStatus.validee &&
+              DateUtils.isSameDay(reservation.reservationDate, now),
+        )
+        .length;
+
+    if (pendingCount > 0 && todayValidatedCount > 0) {
+      return '$pendingCount att. / $todayValidatedCount valid.';
+    }
+    if (pendingCount > 0) return '$pendingCount attente';
+    if (todayValidatedCount > 0) return '$todayValidatedCount validee';
+    return '';
+  }
+
+  Future<void> _openTable(TableEntityOut table) async {
+    await AppNavigation.push<void>(
+      context,
+      TableReservationsPage(restaurantId: widget.restaurant.id, table: table),
+    );
+    await widget.onTableChanged();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final tables = restaurant.tables ?? <TableEntityOut>[];
+    final tables = widget.restaurant.tables ?? <TableEntityOut>[];
+    final rooms = _roomsForPlan();
     final now = DateTime.now();
 
     return Padding(
@@ -366,76 +436,13 @@ class _TablesView extends StatelessWidget {
                     icon: Icons.table_bar_outlined,
                     message: "Aucune table configurée",
                   )
-                : ListView.separated(
-                    itemCount: tables.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final table = tables[index];
-                      final tableReservations = summaryReservations
-                          .where((reservation) => reservation.tableId == table.id)
-                          .toList();
-                      final pendingCount = tableReservations
-                          .where((reservation) => reservation.status == ReservationStatus.enAttente)
-                          .length;
-                      final todayCount = tableReservations
-                          .where(
-                            (reservation) =>
-                                reservation.status == ReservationStatus.validee &&
-                                DateUtils.isSameDay(reservation.reservationDate, now),
-                          )
-                          .length;
-
-                      return Card(
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: colors.primaryContainer,
-                            child: Text(
-                              table.tableNumber.toString(),
-                              style: TextStyle(
-                                color: colors.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            "Table ${table.tableNumber}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text("${table.numberOfSeats} places disponibles"),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (todayCount > 0)
-                                _TableBadge(text: todayCount.toString(), color: Colors.blue, icon: Icons.event),
-                              if (pendingCount > 0)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  child: _TableBadge(
-                                    text: pendingCount.toString(),
-                                    color: Colors.orange,
-                                    icon: Icons.pending_actions,
-                                  ),
-                                ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.chevron_right, size: 20),
-                            ],
-                          ),
-                          onTap: () async {
-                            await AppNavigation.push<void>(
-                              context,
-                              TableReservationsPage(restaurantId: restaurant.id, table: table),
-                            );
-                            await onTableChanged();
-                          },
-                        ),
-                      );
-                    },
+                : _RoomTablePlan(
+                    rooms: rooms,
+                    reservationsForTable: _reservationsForTable,
+                    now: now,
+                    onTableSelected: _openTable,
+                    tablesForRoom: _tablesForRoom,
+                    tableStatusLabel: _tableStatusLabel,
                   ),
           ),
         ],
@@ -444,6 +451,133 @@ class _TablesView extends StatelessWidget {
   }
 }
 
+class _RoomTablePlan extends StatelessWidget {
+  final List<RestaurantRoomOut> rooms;
+  final List<ReservationOut> Function(TableEntityOut table) reservationsForTable;
+  final List<TableEntityOut> Function(RestaurantRoomOut room) tablesForRoom;
+  final String Function(TableEntityOut table, DateTime now) tableStatusLabel;
+  final DateTime now;
+  final ValueChanged<TableEntityOut> onTableSelected;
+
+  const _RoomTablePlan({
+    required this.rooms,
+    required this.reservationsForTable,
+    required this.tablesForRoom,
+    required this.tableStatusLabel,
+    required this.now,
+    required this.onTableSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        ...rooms.map(
+          (room) => _RoomPlanSection(
+            room: room,
+            roomTables: tablesForRoom(room),
+            reservationsForTable: reservationsForTable,
+            tableStatusLabel: tableStatusLabel,
+            now: now,
+            onTableSelected: onTableSelected,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _TableBadge(text: "validées aujourd'hui", color: Colors.blue, icon: Icons.event),
+            _TableBadge(text: 'en attente', color: Colors.orange, icon: Icons.pending_actions),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _RoomPlanSection extends StatelessWidget {
+  final RestaurantRoomOut room;
+  final List<TableEntityOut> roomTables;
+  final List<ReservationOut> Function(TableEntityOut table) reservationsForTable;
+  final String Function(TableEntityOut table, DateTime now) tableStatusLabel;
+  final DateTime now;
+  final ValueChanged<TableEntityOut> onTableSelected;
+
+  const _RoomPlanSection({
+    required this.room,
+    required this.roomTables,
+    required this.reservationsForTable,
+    required this.tableStatusLabel,
+    required this.now,
+    required this.onTableSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final tableStatuses = {
+      for (final table in roomTables) table.id: tableStatusLabel(table, now),
+    };
+    final pendingBadgeCounts = <int, int>{};
+    final validatedBadgeCounts = <int, int>{};
+
+    for (final table in roomTables) {
+      final reservations = reservationsForTable(table);
+      pendingBadgeCounts[table.id] = reservations
+          .where((reservation) => reservation.status == ReservationStatus.enAttente)
+          .length;
+      validatedBadgeCounts[table.id] = reservations
+          .where(
+            (reservation) =>
+                reservation.status == ReservationStatus.validee &&
+                DateUtils.isSameDay(reservation.reservationDate, now),
+          )
+          .length;
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  room.name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ),
+              Text(
+                '${roomTables.length} table${roomTables.length > 1 ? 's' : ''}',
+                style: TextStyle(color: colors.onSurfaceVariant, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (roomTables.isEmpty)
+            Text(
+              "Aucune table dans cette salle",
+              style: TextStyle(color: colors.onSurfaceVariant),
+            )
+          else
+            RoomPlanCanvas(
+              boundaryPoints: room.boundaryPoints,
+              tables: roomTables,
+              tableStatuses: tableStatuses,
+              pendingBadgeCounts: pendingBadgeCounts,
+              validatedBadgeCounts: validatedBadgeCounts,
+              disableUnavailableTables: false,
+              onTableSelected: (table) {
+                if (table is TableEntityOut) onTableSelected(table);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
 class _TableBadge extends StatelessWidget {
   final String text;
   final Color color;

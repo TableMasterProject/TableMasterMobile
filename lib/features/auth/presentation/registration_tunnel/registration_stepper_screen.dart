@@ -8,6 +8,7 @@ import 'package:table_master_mobile/features/auth/presentation/registration_tunn
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step5_table_management_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_error_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step6_success_screen.dart';
+import 'package:table_master_mobile/features/room/domain/repositories/room_repository.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
 import 'package:table_master_mobile/features/user/domain/repositories/user_repository.dart';
@@ -42,6 +43,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   final userRepo = getIt<IUserRepository>();
   final restaurantRepo = getIt<IRestaurantRepository>();
   final tableRepo = getIt<ITableRepository>();
+  final roomRepo = getIt<IRoomRepository>();
 
   // dataOut
   LoginUserOut? loginUserOut;
@@ -181,7 +183,30 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         restaurantOut = await restaurantRepo.createRestaurant(restaurantData);
       }
 
-      if (restaurantOut != null && tableChanges != null && tableChanges!.toAdd.isNotEmpty) {
+      if (restaurantOut != null && tableChanges != null && tableChanges!.layouts.isNotEmpty) {
+        for (var i = 0; i < tableChanges!.layouts.length; i++) {
+          final draft = tableChanges!.layouts[i];
+          final defaultRoom = restaurantOut!.rooms?.isNotEmpty == true
+              ? restaurantOut!.rooms!.first
+              : null;
+          final roomId = draft.roomId ??
+              (i == 0
+                  ? defaultRoom?.id
+                  : (await roomRepo.addRoom(
+                      restaurantOut!.id,
+                      draft.room.copyWith(restaurantId: restaurantOut!.id),
+                    ))
+                      .id);
+
+          if (roomId != null) {
+            draft.layout.room.restaurantId = restaurantOut!.id;
+            draft.layout.room.sortOrder = i;
+            await roomRepo.saveLayout(roomId, draft.layout);
+          }
+        }
+      }
+
+      if (restaurantOut != null && tableChanges != null && tableChanges!.layouts.isEmpty && tableChanges!.toAdd.isNotEmpty) {
         // En création, on a surtout des toAdd
         await tableRepo.replaceTables(restaurantOut!.id, tableChanges!.toAdd);
       }

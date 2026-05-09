@@ -4,6 +4,7 @@ import 'package:table_master_mobile/features/auth/presentation/registration_tunn
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
+import 'package:table_master_mobile/features/room/domain/repositories/room_repository.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
@@ -12,12 +13,14 @@ class RestaurantSetupFlow extends StatefulWidget {
   final UserOut user;
   final IRestaurantRepository restaurantRepository;
   final ITableRepository tableRepository;
+  final IRoomRepository roomRepository;
 
   const RestaurantSetupFlow({
     super.key,
     required this.user,
     required this.restaurantRepository,
     required this.tableRepository,
+    required this.roomRepository,
   });
 
   @override
@@ -70,10 +73,32 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
         _restaurantData.copyWith(userId: widget.user.id),
       );
 
-      if (changes.toAdd.isNotEmpty) {
-        final tables = changes.toAdd
-            .map((table) => table.copyWith(restaurantId: createdRestaurant.id))
-            .toList();
+      if (changes.layouts.isNotEmpty) {
+        for (var i = 0; i < changes.layouts.length; i++) {
+          final draft = changes.layouts[i];
+          final defaultRoom = createdRestaurant.rooms?.isNotEmpty == true
+              ? createdRestaurant.rooms!.first
+              : null;
+          final roomId = draft.roomId ??
+              (i == 0
+                  ? defaultRoom?.id
+                  : (await widget.roomRepository.addRoom(
+                      createdRestaurant.id,
+                      draft.room.copyWith(restaurantId: createdRestaurant.id),
+                    ))
+                      .id);
+
+          if (roomId == null) continue;
+
+          await widget.roomRepository.saveLayout(
+            roomId,
+            draft.layout
+              ..room.restaurantId = createdRestaurant.id
+              ..room.sortOrder = i,
+          );
+        }
+      } else if (changes.toAdd.isNotEmpty) {
+        final tables = changes.toAdd.map((table) => table.copyWith(restaurantId: createdRestaurant.id)).toList();
         await widget.tableRepository.replaceTables(createdRestaurant.id, tables);
       }
 
@@ -153,6 +178,7 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
                   Step5TableManagementScreen(
                     onNext: _saveTablesStep,
                     initialTables: null,
+                    initialRooms: null,
                   ),
                 ],
               ),

@@ -13,6 +13,7 @@ import 'package:table_master_mobile/features/reservation/domain/repositories/res
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
+import 'package:table_master_mobile/features/room/domain/repositories/room_repository.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
 import 'package:table_master_mobile/features/table/domain/repositories/table_repository.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
@@ -22,6 +23,7 @@ class RestaurantController extends ChangeNotifier {
   final IReservationRepository reservationRepository;
   final ITableRepository tableRepository;
   final IMenuRepository menuRepository;
+  final IRoomRepository roomRepository;
   final SignalRService signalRService;
   final AudioPlayer audioPlayer;
   final bool enableRealtime;
@@ -31,6 +33,7 @@ class RestaurantController extends ChangeNotifier {
     required this.reservationRepository,
     required this.tableRepository,
     required this.menuRepository,
+    required this.roomRepository,
     required this.signalRService,
     AudioPlayer? audioPlayer,
     this.enableRealtime = true,
@@ -176,22 +179,42 @@ class RestaurantController extends ChangeNotifier {
 
     _setSaving(true);
     try {
-      for (final table in changes.toAdd) {
-        await tableRepository.addTable(
-          restaurantId,
-          table.copyWith(restaurantId: restaurantId),
-        );
-      }
+      if (changes.layouts.isNotEmpty) {
+        for (final draft in changes.layouts) {
+          var roomId = draft.roomId;
+          if (roomId == null) {
+            final createdRoom = await roomRepository.addRoom(
+              restaurantId,
+              draft.room.copyWith(restaurantId: restaurantId),
+            );
+            roomId = createdRoom.id;
+          }
 
-      for (final table in changes.toUpdate) {
-        await tableRepository.editTable(
-          table.id,
-          table.copyWith(restaurantId: restaurantId),
-        );
-      }
+          draft.layout.room.restaurantId = restaurantId;
+          await roomRepository.saveLayout(roomId, draft.layout);
+        }
 
-      for (final table in changes.toDelete) {
-        await tableRepository.removeTable(table.id);
+        for (final roomId in changes.roomIdsToDelete) {
+          await roomRepository.removeRoom(roomId);
+        }
+      } else {
+        for (final table in changes.toAdd) {
+          await tableRepository.addTable(
+            restaurantId,
+            table.copyWith(restaurantId: restaurantId),
+          );
+        }
+
+        for (final table in changes.toUpdate) {
+          await tableRepository.editTable(
+            table.id,
+            table.copyWith(restaurantId: restaurantId),
+          );
+        }
+
+        for (final table in changes.toDelete) {
+          await tableRepository.removeTable(table.id);
+        }
       }
 
       await reloadRestaurantDetails();
