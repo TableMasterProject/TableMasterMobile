@@ -1,0 +1,10 @@
+services:
+  tablemaster-mobile-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tablemaster-mobile-web:local
+    container_name: tablemaster-mobile-web
+    restart: unless-stopped
+    ports:
+      - "8081:80"

@@ -8,6 +8,11 @@ on:
 
 permissions:
   contents: write
+  packages: write
+
+env:
+  WEB_ARTIFACT_NAME: tablemaster-web-prod.zip
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/tablemaster-mobile-web
 
 jobs:
   flutter-build:
@@ -50,7 +55,7 @@ jobs:
       - name: Zip Web Build
         run: |
           cd build/web
-          zip -r ../../tablemaster-web-prod.zip .
+          zip -r ../../${WEB_ARTIFACT_NAME} .
 
       - name: Build APK Production
         run: flutter build apk --release --dart-define-from-file=config/prod.json
@@ -65,7 +70,7 @@ jobs:
           name: flutter-builds
           path: |
             tablemaster-prod.apk
-            tablemaster-web-prod.zip
+            ${{ env.WEB_ARTIFACT_NAME }}
 
       - name: Create GitHub Release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -77,7 +82,7 @@ jobs:
 
           gh release create "$TAG" \
             tablemaster-prod.apk \
-            tablemaster-web-prod.zip \
+            "${WEB_ARTIFACT_NAME}" \
             --title "$TITLE" \
             --notes "Build Flutter production depuis main.
 
@@ -85,5 +90,116 @@ jobs:
 
           Fichiers:
           - tablemaster-prod.apk
-          - tablemaster-web-prod.zip" \
+          - ${WEB_ARTIFACT_NAME}" \
             --latest
+
+  docker-build-and-push:
+    name: Build and push web Docker image
+    runs-on: ubuntu-latest
+    needs: flutter-build
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flutter-builds
+
+      - name: Extract web build
+        run: |
+          mkdir -p web-deploy
+          unzip -q "${WEB_ARTIFACT_NAME}" -d web-deploy
+          mkdir -p build
+          mv web-deploy build/web
+
+      - name: Normalize image name
+        run: |
+          IMAGE_NAME_LOWER=$(echo "${IMAGE_NAME}" | tr '[:upper:]' '[:lower:]')
+          echo "IMAGE_NAME_LOWER=$IMAGE_NAME_LOWER" >> $GITHUB_ENV
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME_LOWER }}:prod
+            ${{ env.IMAGE_NAME_LOWER }}:${{ github.sha }}
+
+  deploy-web:
+    name: Deploy web to Oracle VPS
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H ${{ secrets.ORACLE_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy Docker Compose file
+        env:
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_MOBILE_WEB_PATH: ${{ secrets.ORACLE_MOBILE_WEB_PATH }}
+        run: |
+          set -e
+          REMOTE_APP_DIR="${ORACLE_MOBILE_WEB_PATH:-/opt/tablemaster/prod/TableMasterMobile}"
+          test -n "$ORACLE_USER"
+          test -n "$ORACLE_HOST"
+
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" "mkdir -p '$REMOTE_APP_DIR'"
+          scp -i ~/.ssh/oracle_key docker-compose.prod.yml "$ORACLE_USER@$ORACLE_HOST:$REMOTE_APP_DIR/docker-compose.yml"
+
+      - name: Deploy with Docker Compose
+        env:
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_MOBILE_WEB_PATH: ${{ secrets.ORACLE_MOBILE_WEB_PATH }}
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+        run: |
+          set -e
+          REMOTE_APP_DIR="${ORACLE_MOBILE_WEB_PATH:-/opt/tablemaster/prod/TableMasterMobile}"
+
+          test -n "$ORACLE_USER"
+          test -n "$ORACLE_HOST"
+          test -n "$GHCR_USERNAME"
+          test -n "$GHCR_READ_TOKEN"
+
+          GHCR_OWNER_LOWER=$(echo "$GHCR_OWNER" | tr '[:upper:]' '[:lower:]')
+
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" << EOF
+            set -e
+
+            cd "$REMOTE_APP_DIR"
+            export GHCR_OWNER="$GHCR_OWNER_LOWER"
+
+            echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
+
+            docker compose ps
+          EOF

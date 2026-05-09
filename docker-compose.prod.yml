@@ -1,0 +1,7 @@
+services:
+  tablemaster-mobile-web:
+    image: ghcr.io/${GHCR_OWNER}/tablemaster-mobile-web:prod
+    container_name: tablemaster-mobile-web
+    restart: unless-stopped
+    ports:
+      - "8081:80"

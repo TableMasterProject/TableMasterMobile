@@ -1,5 +1,5 @@
 {
   "APP_NAME": "Table Master",
-  "API_URL": "http://141.253.120.94:8080",
+  "API_URL": "https://api.tablemaster.lmpe.ovh",
   "IS_PROD": true
 }
