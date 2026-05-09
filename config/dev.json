@@ -1,0 +1,5 @@
+{
+  "APP_NAME": "Table Master (DEV)",
+  "API_URL": "http://192.168.0.28:5012",
+  "IS_PROD": false
+}
