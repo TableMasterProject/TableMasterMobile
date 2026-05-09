@@ -23,8 +23,9 @@ class SignalRService {
 
   Future<void> init() async {
     if (_hubConnection != null &&
-        _hubConnection!.state == HubConnectionState.Connected)
+        _hubConnection!.state == HubConnectionState.Connected) {
       return;
+    }
 
     final baseUrl = AppConfig.apiUrl;
     final hubUrl = "$baseUrl/reservationHub";

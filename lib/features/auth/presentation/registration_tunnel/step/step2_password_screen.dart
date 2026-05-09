@@ -88,14 +88,18 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
                 ),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty)
+                if (value == null || value.isEmpty) {
                   return "Le mot de passe est obligatoire";
-                if (value.length < 8)
+                }
+                if (value.length < 8) {
                   return "Il doit contenir au moins 8 caractères";
-                if (!RegExp(r'[A-Z]').hasMatch(value))
+                }
+                if (!RegExp(r'[A-Z]').hasMatch(value)) {
                   return "Il faut au moins une majuscule";
-                if (!RegExp(r'[0-9]').hasMatch(value))
+                }
+                if (!RegExp(r'[0-9]').hasMatch(value)) {
                   return "Il faut au moins un chiffre";
+                }
                 return null;
               },
             ),
@@ -120,10 +124,12 @@ class _Step2PasswordScreenState extends State<Step2PasswordScreen> {
                 ),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty)
+                if (value == null || value.isEmpty) {
                   return "Veuillez confirmer votre mot de passe";
-                if (value != _passwordController.text)
+                }
+                if (value != _passwordController.text) {
                   return "Les mots de passe ne correspondent pas";
+                }
                 return null;
               },
             ),

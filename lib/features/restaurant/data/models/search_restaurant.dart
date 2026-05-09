@@ -22,16 +22,30 @@ class SearchRestaurant {
   Map<String, dynamic> toJson() {
     // On ne garde que les valeurs non nulles pour ne pas polluer l'URL
     final Map<String, dynamic> data = {};
-    if (offset != null) data['Offset'] = offset;
-    if (pageSize != null) data['PageSize'] = pageSize;
-    if (latitude != null) data['Latitude'] = latitude;
-    if (longitude != null) data['Longitude'] = longitude;
-    if (currentUserLongitude != null)
+    if (offset != null) {
+      data['Offset'] = offset;
+    }
+    if (pageSize != null) {
+      data['PageSize'] = pageSize;
+    }
+    if (latitude != null) {
+      data['Latitude'] = latitude;
+    }
+    if (longitude != null) {
+      data['Longitude'] = longitude;
+    }
+    if (currentUserLongitude != null) {
       data['CurrentUserLongitude'] = currentUserLongitude;
-    if (currentUserLatitude != null)
+    }
+    if (currentUserLatitude != null) {
       data['CurrentUserLatitude'] = currentUserLatitude;
-    if (cuisineType != null) data['CuisineType'] = cuisineType;
-    if (paymentMethods != null) data['PaymentMethods'] = paymentMethods;
+    }
+    if (cuisineType != null) {
+      data['CuisineType'] = cuisineType;
+    }
+    if (paymentMethods != null) {
+      data['PaymentMethods'] = paymentMethods;
+    }
     return data;
   }
 }

@@ -579,10 +579,11 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
           Navigator.pop(context, true);
         }
       } catch (e) {
-        if (context.mounted)
+        if (context.mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        }
       }
     }
   }
@@ -624,10 +625,11 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
           Navigator.pop(context, true);
         }
       } catch (e) {
-        if (context.mounted)
+        if (context.mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        }
       }
     }
   }

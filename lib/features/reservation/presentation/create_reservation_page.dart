@@ -508,8 +508,9 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   Future<void> _submitReservation() async {
     if (_selectedTable == null ||
         _selectedTime == null ||
-        _selectedDate == null)
+        _selectedDate == null) {
       return;
+    }
 
     setState(() => _isLoading = true);
     try {

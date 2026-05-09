@@ -35,12 +35,18 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   String? _validateNewPassword(String? value) {
-    if (value == null || value.isEmpty)
+    if (value == null || value.isEmpty) {
       return "Le mot de passe est obligatoire";
-    if (value.length < 8) return "Il doit contenir au moins 8 caractères";
-    if (!RegExp(r'[A-Z]').hasMatch(value))
+    }
+    if (value.length < 8) {
+      return "Il doit contenir au moins 8 caractères";
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(value)) {
       return "Il faut au moins une majuscule";
-    if (!RegExp(r'[0-9]').hasMatch(value)) return "Il faut au moins un chiffre";
+    }
+    if (!RegExp(r'[0-9]').hasMatch(value)) {
+      return "Il faut au moins un chiffre";
+    }
     return null;
   }
 
@@ -127,8 +133,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
               ),
               validator: (value) {
-                if (value != _newPasswordController.text)
+                if (value != _newPasswordController.text) {
                   return "Les mots de passe ne correspondent pas";
+                }
                 return null;
               },
             ),
