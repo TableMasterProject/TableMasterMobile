@@ -160,10 +160,9 @@ jobs:
         env:
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          ORACLE_MOBILE_WEB_PATH: ${{ secrets.ORACLE_MOBILE_WEB_PATH }}
         run: |
           set -e
-          REMOTE_APP_DIR="${ORACLE_MOBILE_WEB_PATH:-/opt/tablemaster/prod/TableMasterMobile}"
+          REMOTE_APP_DIR="/opt/tablemaster/prod/TableMasterMobile"
           test -n "$ORACLE_USER"
           test -n "$ORACLE_HOST"
 
@@ -174,13 +173,12 @@ jobs:
         env:
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          ORACLE_MOBILE_WEB_PATH: ${{ secrets.ORACLE_MOBILE_WEB_PATH }}
           GHCR_OWNER: ${{ github.repository_owner }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
         run: |
           set -e
-          REMOTE_APP_DIR="${ORACLE_MOBILE_WEB_PATH:-/opt/tablemaster/prod/TableMasterMobile}"
+          REMOTE_APP_DIR="/opt/tablemaster/prod/TableMasterMobile"
 
           test -n "$ORACLE_USER"
           test -n "$ORACLE_HOST"
