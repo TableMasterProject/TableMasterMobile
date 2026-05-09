@@ -1,6 +1,5 @@
 import 'package:table_master_mobile/features/user/data/models/user_in.dart';
 
-import '../../../restaurant/data/models/restaurant_out.dart';
 
 class UserOut extends UserIn {
   int id;
@@ -30,7 +29,7 @@ class UserOut extends UserIn {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      restaurantId: json['restaurantId'] ?? null,
+      restaurantId: json['restaurantId'],
     );
   }
 }

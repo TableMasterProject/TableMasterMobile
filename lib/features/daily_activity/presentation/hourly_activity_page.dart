@@ -102,8 +102,8 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
       final activity = DailyActivityIn(
         restaurantId: widget.restaurantId,
         dayOfWeek: _selectedDay!,
-        startTime: "${finalOpening}:00", // Format HH:mm:ss pour l'API
-        endTime: "${finalClosing}:00",
+        startTime: "$finalOpening:00", // Format HH:mm:ss pour l'API
+        endTime: "$finalClosing:00",
       );
 
       await _repo.create(activity);
@@ -172,7 +172,7 @@ class _HourlyActivityPageState extends State<HourlyActivityPage> {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<int>(
-                          value: _selectedDay,
+                          initialValue: _selectedDay,
                           items: List.generate(7, (index) {
                             return DropdownMenuItem(
                               value: index + 1,

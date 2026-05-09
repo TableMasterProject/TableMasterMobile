@@ -144,7 +144,7 @@ class AppSettingTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
+        side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: ListTile(
         onTap: onTap,

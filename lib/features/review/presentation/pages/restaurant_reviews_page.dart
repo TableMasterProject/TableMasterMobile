@@ -56,10 +56,6 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
     }
   }
 
-  void _addReview() {
-    _showReviewDialog(null);
-  }
-
   void _editReview(ReviewOut review) {
     if (review.userId != _currentUserId) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,19 +81,19 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('Supprimer l\'avis'),
             content: const Text(
               'Êtes-vous sûr de vouloir supprimer cet avis ?',
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   try {
                     await _reviewRepository.deleteReview(review.id);
                     if (mounted) {
@@ -135,7 +131,7 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: Text(
               review == null ? 'Ajouter un avis' : 'Modifier l\'avis',
             ),
@@ -167,12 +163,12 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   try {
                     final rating = int.tryParse(ratingController.text) ?? 0;
                     if (rating < 0 || rating > 5) {

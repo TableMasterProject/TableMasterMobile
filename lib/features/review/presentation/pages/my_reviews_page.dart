@@ -49,19 +49,19 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: const Text('Supprimer l\'avis'),
             content: const Text(
               'Êtes-vous sûr de vouloir supprimer cet avis ?',
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   try {
                     await _repository.deleteReview(review.id);
                     if (mounted) {
@@ -99,7 +99,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             title: Text(
               review == null ? 'Ajouter un avis' : 'Modifier l\'avis',
             ),
@@ -131,12 +131,12 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   try {
                     final rating = int.tryParse(ratingController.text) ?? 0;
                     if (rating < 0 || rating > 5) {

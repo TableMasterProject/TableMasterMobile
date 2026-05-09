@@ -27,7 +27,6 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
 
   RestaurantOut? _fullRestaurant;
   bool _isLoading = true;
-  GoogleMapController? _mapController;
 
   @override
   void initState() {
@@ -82,7 +81,6 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     final dateFormat = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
     final timeFormat = DateFormat('HH:mm');
 
-    final bool isPast = res.reservationDate.isBefore(DateTime.now());
     final bool canReview = res.status == ReservationStatus.finie;
     final bool isEnAttente = res.status == ReservationStatus.enAttente;
     final bool isValidee = res.status == ReservationStatus.validee;
@@ -128,10 +126,9 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                       myLocationEnabled: true,
                       myLocationButtonEnabled: true,
                       mapToolbarEnabled: true,
-                      onMapCreated: (c) => _mapController = c,
                     )
                   else
-                    Container(color: colors.primaryContainer, child: Icon(Icons.restaurant, size: 80, color: colors.onPrimaryContainer.withOpacity(0.3))),
+                    Container(color: colors.primaryContainer, child: Icon(Icons.restaurant, size: 80, color: colors.onPrimaryContainer.withValues(alpha: 0.3))),
                   const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black38, Colors.transparent, Colors.black87]))),
                 ],
               ),
@@ -187,7 +184,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                     const SizedBox(height: 24),
                     const Text("À propos", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    Text(restau!.description, style: TextStyle(color: colors.onSurfaceVariant, height: 1.5)),
+                    Text(restau.description, style: TextStyle(color: colors.onSurfaceVariant, height: 1.5)),
                   ],
 
                   if (res.specialRequest != null && res.specialRequest!.isNotEmpty) ...[
@@ -197,7 +194,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: colors.surfaceVariant.withOpacity(0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant)),
+                      decoration: BoxDecoration(color: colors.surfaceContainerHighest.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: colors.outlineVariant)),
                       child: Text(res.specialRequest!, style: const TextStyle(fontStyle: FontStyle.italic)),
                     ),
                   ],
@@ -212,7 +209,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
         ),
         child: SafeArea(
           child: Column(
@@ -303,7 +300,7 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color, width: 1.5)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: color, width: 1.5)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -354,12 +351,12 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     if (should == true) {
       try {
         await _resRepo.deleteReservation(widget.reservation.id);
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demande supprimée')));
           Navigator.pop(context, true);
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
@@ -383,12 +380,12 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
     if (should == true) {
       try {
         await _resRepo.updateReservationStatus(widget.reservation.id, ReservationStatus.annuleeClient);
-        if (mounted) {
+        if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Réservation annulée')));
           Navigator.pop(context, true);
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }

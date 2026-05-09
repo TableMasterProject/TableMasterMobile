@@ -25,7 +25,6 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
   RestaurantOut? _fullRestaurant;
   bool _isLoading = true;
   late TabController _tabController;
-  GoogleMapController? _mapController;
 
   @override
   void initState() {
@@ -126,7 +125,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                 children: [
                   if (restaurant.latitude != null)
                     GoogleMap(
-                      initialCameraPosition: CameraPosition(target: LatLng(restaurant!.latitude!, restaurant.longitude!), zoom: 16),
+                      initialCameraPosition: CameraPosition(target: LatLng(restaurant.latitude!, restaurant.longitude!), zoom: 16),
                       markers: {
                         Marker(
                           markerId: const MarkerId('res'),
@@ -137,10 +136,9 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                       myLocationEnabled: true,
                       myLocationButtonEnabled: true,
                       mapToolbarEnabled: true,
-                      onMapCreated: (c) => _mapController = c,
                     )
                   else
-                    Container(color: colors.primaryContainer, child: Icon(Icons.restaurant, size: 80, color: colors.onPrimaryContainer.withOpacity(0.3))),
+                    Container(color: colors.primaryContainer, child: Icon(Icons.restaurant, size: 80, color: colors.onPrimaryContainer.withValues(alpha: 0.3))),
                   const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black38, Colors.transparent, Colors.black87]))),
                 ],
               ),
@@ -235,7 +233,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
               String schedule = '$day: $start - $end';
 
               return Text(schedule, style: textTheme.bodyMedium);
-            }).toList(),
+            }),
           const SizedBox(height: 24),
 
           // Exceptional Closures
@@ -252,7 +250,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                 '$period: ${exception.reason}',
                 style: textTheme.bodyMedium,
               );
-            }).toList(),
+            }),
             const SizedBox(height: 24),
           ],
         ],

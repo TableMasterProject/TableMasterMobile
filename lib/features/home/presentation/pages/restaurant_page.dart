@@ -310,7 +310,7 @@ class _TabButton extends StatelessWidget {
         FilledButton(
           onPressed: () => onChanged(index),
           style: FilledButton.styleFrom(
-            backgroundColor: isSelected ? colors.primary : colors.surfaceVariant,
+            backgroundColor: isSelected ? colors.primary : colors.surfaceContainerHighest,
             foregroundColor: isSelected ? colors.onPrimary : colors.onSurfaceVariant,
           ),
           child: Text(label),
@@ -594,9 +594,9 @@ class _TableBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -765,7 +765,7 @@ class _MenuView extends StatelessWidget {
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: colors.outlineVariant.withOpacity(0.5)),
+                          side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.5)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -775,7 +775,7 @@ class _MenuView extends StatelessWidget {
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                                 child: Container(
                                   width: double.infinity,
-                                  color: colors.secondaryContainer.withOpacity(0.3),
+                                  color: colors.secondaryContainer.withValues(alpha: 0.3),
                                   child: const Icon(Icons.restaurant_menu, size: 40),
                                 ),
                               ),

@@ -56,7 +56,7 @@ class _AccountPageState extends State<AccountPage> {
                   end: Alignment.bottomRight,
                   colors: [
                     colors.primary,
-                    colors.primary.withOpacity(0.8),
+                    colors.primary.withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -64,7 +64,7 @@ class _AccountPageState extends State<AccountPage> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: colors.onPrimary.withOpacity(0.2),
+                    backgroundColor: colors.onPrimary.withValues(alpha: 0.2),
                     child: Text(
                       "${_currentUser.firstName[0].toUpperCase()}${_currentUser.lastName[0].toUpperCase()}",
                       style: textTheme.headlineMedium?.copyWith(
@@ -85,16 +85,16 @@ class _AccountPageState extends State<AccountPage> {
                   Text(
                     _currentUser.email,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colors.onPrimary.withOpacity(0.8),
+                      color: colors.onPrimary.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: colors.onPrimary.withOpacity(0.15),
+                      color: colors.onPrimary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.onPrimary.withOpacity(0.3)),
+                      border: Border.all(color: colors.onPrimary.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       _currentUser.accountType == 0 ? "Compte Client" : "Compte Restaurateur",
@@ -192,7 +192,7 @@ class _AccountPageState extends State<AccountPage> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5)),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       color: Theme.of(context).colorScheme.surfaceContainerLow,
       child: Column(children: children),
@@ -228,7 +228,7 @@ class _AccountPageState extends State<AccountPage> {
             height: 1,
             indent: 56,
             endIndent: 16,
-            color: colors.outlineVariant.withOpacity(0.3),
+            color: colors.outlineVariant.withValues(alpha: 0.3),
           ),
       ],
     );
@@ -253,9 +253,11 @@ class _AccountPageState extends State<AccountPage> {
             onNext: (updatedUser) async {
               try {
                 await userRepo.updateProfile(updatedUser);
+                if (!context.mounted) return;
                 Navigator.pop(context);
                 _refreshProfile();
               } catch (e) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Erreur: $e')),
                 );
@@ -277,6 +279,7 @@ class _AccountPageState extends State<AccountPage> {
             onConfirm: (oldPwd, newPwd) async {
               try {
                 final success = await userRepo.changePassword(oldPwd, newPwd);
+                if (!context.mounted) return;
                 if (success) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -284,6 +287,7 @@ class _AccountPageState extends State<AccountPage> {
                   );
                 }
               } catch (e) {
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Erreur: $e')),
                 );
@@ -324,8 +328,8 @@ class _AccountPageState extends State<AccountPage> {
   void _showDeleteAccountDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        final colors = Theme.of(context).colorScheme;
+      builder: (BuildContext dialogContext) {
+        final colors = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
           title: const Text("Supprimer le compte"),
           content: const Text(
@@ -334,20 +338,22 @@ class _AccountPageState extends State<AccountPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Annuler"),
             ),
             FilledButton(
               onPressed: () async {
                 try {
                   final success = await userRepo.deleteAccount();
+                  if (!dialogContext.mounted) return;
                   if (success) {
-                    Navigator.pop(context);
+                    Navigator.pop(dialogContext);
                     widget.onLogout();
                   }
                 } catch (e) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!dialogContext.mounted) return;
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
                     SnackBar(content: Text('Erreur: $e')),
                   );
                 }

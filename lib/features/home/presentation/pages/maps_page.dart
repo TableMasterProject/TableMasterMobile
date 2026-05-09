@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -30,12 +29,9 @@ class _MapsPageState extends State<MapsPage> {
   bool _isInitializing = true;
   LatLng _mapCenter = const LatLng(48.8566, 2.3522);
   LatLng? _lastSearchCenter;
-  GoogleMapController? _controller;
   StreamSubscription<Position>? _positionStream;
   bool _userMovedMap = false;
   static const double _searchDistanceThreshold = 500; // meters
-
-  String _statusMessage = 'Demande d\'autorisation de localisation...';
 
   bool _loading = false;
   String? _error;
@@ -66,8 +62,10 @@ class _MapsPageState extends State<MapsPage> {
 
       // 2. Tente de récupérer la position
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 7),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 7),
+        ),
       );
 
       _mapCenter = LatLng(pos.latitude, pos.longitude);
@@ -215,7 +213,7 @@ class _MapsPageState extends State<MapsPage> {
         children: [
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedCuisine,
+              initialValue: _selectedCuisine,
               decoration: const InputDecoration(
                 labelText: 'Cuisine',
                 border: OutlineInputBorder(),
@@ -232,7 +230,7 @@ class _MapsPageState extends State<MapsPage> {
           const SizedBox(width: 8),
           Expanded(
             child: DropdownButtonFormField<String>(
-              value: _selectedPayment,
+              initialValue: _selectedPayment,
               decoration: const InputDecoration(
                 labelText: 'Payment',
                 border: OutlineInputBorder(),
@@ -304,7 +302,6 @@ class _MapsPageState extends State<MapsPage> {
               ),
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
-              onMapCreated: (c) => _controller = c,
               onCameraMove: _onCameraMove,
               onCameraIdle: _onCameraIdle,
               markers: _markers,

@@ -48,7 +48,7 @@ class RoomPlanCanvas extends StatelessWidget {
 
           return DecoratedBox(
             decoration: BoxDecoration(
-              color: colors.surfaceContainerHighest.withOpacity(0.35),
+              color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
               border: Border.all(color: colors.outlineVariant),
               borderRadius: BorderRadius.circular(8),
             ),
@@ -176,7 +176,7 @@ class RoomPlanCanvas extends StatelessWidget {
                   boxShadow: [
                     if (isSelected)
                       BoxShadow(
-                        color: colors.primary.withOpacity(0.2),
+                        color: colors.primary.withValues(alpha: 0.2),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
@@ -266,9 +266,9 @@ class RoomPlanCanvas extends StatelessWidget {
     bool isAvailable,
   ) {
     if (isSelected) return colors.primaryContainer;
-    if (pendingCount > 0) return Colors.orange.withOpacity(0.12);
-    if (validatedCount > 0) return Colors.blue.withOpacity(0.12);
-    return isAvailable ? colors.surface : colors.surfaceVariant;
+    if (pendingCount > 0) return Colors.orange.withValues(alpha: 0.12);
+    if (validatedCount > 0) return Colors.blue.withValues(alpha: 0.12);
+    return isAvailable ? colors.surface : colors.surfaceContainerHighest;
   }
 
   Widget _buildBoundaryHandle(
@@ -309,7 +309,7 @@ class RoomPlanCanvas extends StatelessWidget {
                 border: Border.all(color: colors.onPrimary, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: colors.shadow.withOpacity(0.18),
+                    color: colors.shadow.withValues(alpha: 0.18),
                     blurRadius: 8,
                     spreadRadius: 1,
                   ),
@@ -409,11 +409,11 @@ class _RoomPainter extends CustomPainter {
     }
     path.close();
 
-    canvas.drawPath(path, Paint()..color = color.withOpacity(0.08));
+    canvas.drawPath(path, Paint()..color = color.withValues(alpha: 0.08));
     canvas.drawPath(
       path,
       Paint()
-        ..color = color.withOpacity(0.65)
+        ..color = color.withValues(alpha: 0.65)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );

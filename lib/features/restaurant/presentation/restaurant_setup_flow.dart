@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step4_restaurant_info_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step5_table_management_screen.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
-import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:table_master_mobile/features/room/domain/repositories/room_repository.dart';
 import 'package:table_master_mobile/features/table/data/models/table_changes.dart';
@@ -158,7 +157,7 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
             preferredSize: const Size.fromHeight(6.0),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: colors.surfaceVariant,
+              backgroundColor: colors.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
             ),
           ),
@@ -184,7 +183,7 @@ class _RestaurantSetupFlowState extends State<RestaurantSetupFlow> {
               ),
               if (_isLoading)
                 Container(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   child: const Center(
                     child: Card(
                       child: Padding(

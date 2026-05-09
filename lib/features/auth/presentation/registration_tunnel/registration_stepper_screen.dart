@@ -18,7 +18,6 @@ import '../../../../core/logging/app_logger.dart';
 import '../../../restaurant/data/models/restaurant_in.dart';
 import '../../../restaurant/data/models/restaurant_out.dart';
 import '../../../restaurant/domain/repositories/restaurant_repository.dart';
-import '../../../table/data/models/table_entity_in.dart';
 import '../../../table/data/models/table_entity_out.dart';
 import '../../../user/data/models/user_in.dart';
 
@@ -293,7 +292,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
             preferredSize: const Size.fromHeight(6.0),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: colors.surfaceVariant,
+              backgroundColor: colors.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
             ),
           ),
@@ -312,7 +311,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
               // Overlay de chargement
               if (_isLoading)
                 Container(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   child: const Center(
                     child: Card(
                       child: Padding(

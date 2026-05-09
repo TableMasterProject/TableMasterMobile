@@ -59,7 +59,7 @@ class _Step6ErrorScreenState extends State<Step6ErrorScreen> with SingleTickerPr
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: colors.error.withOpacity(0.1),
+                color: colors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

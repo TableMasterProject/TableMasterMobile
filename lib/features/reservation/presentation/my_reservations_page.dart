@@ -119,7 +119,9 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
           _summaryReservations = list;
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Erreur chargement du résumé des réservations: $e');
+    }
   }
 
   Future<void> _load() async {

@@ -180,7 +180,7 @@ class NotificationService {
         '/DeviceToken',
         data: {'deviceToken': token, 'devicePlatform': _devicePlatform},
       );
-    } on DioError catch (error) {
+    } on DioException catch (error) {
       AppLogger.debug(
         'Erreur enregistrement token FCM',
         error.response?.data ?? error.message,

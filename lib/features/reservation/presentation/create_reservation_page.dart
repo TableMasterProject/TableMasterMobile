@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
-import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart' hide ReservationStatus;
+import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
@@ -333,7 +333,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<TimeOfDay>(
                   decoration: const InputDecoration(border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
-                  value: _selectedTime,
+                  initialValue: _selectedTime,
                   hint: const Text("Sélectionnez l'heure"),
                   items: _availableSlots.map((t) => DropdownMenuItem(value: t, child: Text("${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}"))).toList(),
                   onChanged: (val) => setState(() { _selectedTime = val; _selectedTable = null; }),
@@ -357,27 +357,6 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                   const SizedBox(height: 8),
                   if (_isLoading) const Center(child: CircularProgressIndicator())
                   else _buildRoomSelectionPlan(colors),
-                  if (false) ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: widget.restaurant.tables?.length ?? 0,
-                    itemBuilder: (context, index) {
-                      final table = widget.restaurant.tables![index];
-                      final status = _getTableStatus(table);
-                      final isAvailable = status == "Disponible";
-                      final isSelected = _selectedTable?.id == table.id;
-                      return Card(
-                        color: isSelected ? colors.primaryContainer : null,
-                        child: ListTile(
-                          enabled: isAvailable,
-                          leading: Icon(Icons.table_bar, color: isAvailable ? colors.primary : Colors.grey),
-                          title: Text("Table n°${table.tableNumber} (${table.numberOfSeats} places)"),
-                          subtitle: Text(status, style: TextStyle(color: isAvailable ? Colors.green : Colors.red, fontWeight: isAvailable ? FontWeight.bold : null)),
-                          onTap: () => setState(() => _selectedTable = table),
-                        ),
-                      );
-                    },
-                  ),
                 ],
 
                 const SizedBox(height: 24),

@@ -9,7 +9,7 @@ class ApiClient {
   late Dio _dio;
 
   // Configuration de base
-  static const String baseUrl = AppConfig.apiUrl + "/api";
+  static const String baseUrl = "${AppConfig.apiUrl}/api";
   static const String apiVersion = "1.0";
 
   ApiClient() {
