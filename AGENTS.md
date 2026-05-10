@@ -1,23 +1,22 @@
-# TableMasterMobile Agent Instructions
+# TableMasterMobile - Instructions Agent
 
-These instructions apply to `TableMasterMobile/`.
+Ces instructions s'appliquent au projet `TableMasterMobile/`. Repondre a l'utilisateur en francais.
 
-## Project
+## Projet
 
-- Flutter/Dart app with SDK constraint `^3.7.0`.
-- HTTP client: Dio through `lib/core/api_client.dart`.
-- Dependency injection: GetIt through `lib/core/injection.dart`.
-- Secure storage: `flutter_secure_storage`.
-- Notifications: Firebase Messaging and local notifications.
-- Realtime: `signalr_netcore`.
-- Maps/location: Google Maps and Geolocator.
-- Linting: `analysis_options.yaml` and `flutter_lints`.
+- Application Flutter/Dart, SDK Dart `^3.7.0`.
+- UI mobile et web Flutter pour TableMaster.
+- Client HTTP centralise : `lib/core/api_client.dart` avec Dio.
+- Injection de dependances : GetIt dans `lib/core/injection.dart`.
+- Stockage securise : `flutter_secure_storage`.
+- Notifications : Firebase Messaging et notifications locales.
+- Temps reel : `signalr_netcore`.
+- Cartes/localisation : Google Maps et Geolocator.
+- Lint : `analysis_options.yaml` avec `flutter_lints`.
 
-Answer the user in French and keep changes aligned with the existing app structure.
+## Commandes
 
-## Commands
-
-Run from this directory:
+Executer depuis ce dossier :
 
 ```bash
 flutter pub get
@@ -29,50 +28,55 @@ flutter build apk --dart-define-from-file=config/prod.json
 flutter build appbundle --dart-define-from-file=config/prod.json
 ```
 
-Use `config/android-emulate-dev.json` for Android emulator API access and `config/dev.json` for normal local development.
+Utiliser `config/android-emulate-dev.json` pour l'emulateur Android et `config/dev.json` pour le developpement local classique.
 
 ## Architecture
 
-- `lib/core/`: shared infrastructure such as API client, config, DI, localization, notifications, and SignalR.
-- `lib/features/<feature>/domain/repositories/`: repository interfaces.
-- `lib/features/<feature>/data/datasources/`: remote/local data sources.
-- `lib/features/<feature>/data/models/`: DTOs/models.
-- `lib/features/<feature>/data/repositories/`: repository implementations.
-- `lib/features/<feature>/presentation/`: screens, pages, and widgets.
+- `lib/core/` : infrastructure commune, configuration, API, DI, navigation, localisation, notifications, SignalR, erreurs et widgets partages.
+- `lib/features/<feature>/domain/repositories/` : interfaces de repositories.
+- `lib/features/<feature>/data/datasources/` : appels API et stockage local eventuel.
+- `lib/features/<feature>/data/models/` : DTO et modeles de transport.
+- `lib/features/<feature>/data/repositories/` : implementations des repositories.
+- `lib/features/<feature>/presentation/` : pages, ecrans, widgets et controllers de presentation.
 
-Follow the existing Clean Architecture style. Presentation calls repositories; repositories call datasources; datasources use `ApiClient`.
+Respecter le style Clean Architecture existant : la presentation appelle les repositories, les repositories appellent les datasources, les datasources utilisent `ApiClient`.
 
-## Dependency Injection
+## API et Auth
 
-- Register new datasources and repositories in `lib/core/injection.dart`.
-- Reuse the singleton `ApiClient` so auth headers and token refresh stay centralized.
-- Do not create independent Dio clients except for tightly scoped cases like the existing refresh-token retry flow.
+- Base API : `AppConfig.apiUrl + "/api"`.
+- Header de version : `x-api-version: 1.0`.
+- Cle du token d'acces : `access_token`.
+- Cle du refresh token : `refresh_token`.
+- Ne pas dupliquer la logique de token, refresh ou headers hors de `ApiClient` et du repository auth.
+- En cas de changement de route, modele, statut HTTP ou comportement auth cote API, mettre a jour le datasource, le modele et le repository correspondants.
 
-## Dart Conventions
+## Injection
 
-- Use snake_case file names.
-- Use PascalCase for classes and widgets.
-- Use camelCase for variables, parameters, and methods.
-- Use a leading underscore for private members.
-- Keep UI text in French unless the surrounding screen already uses another convention.
-- Prefer explicit error handling for `DioException`.
-- Do not duplicate token storage or refresh logic outside `ApiClient` and auth repository code.
+- Enregistrer les nouveaux datasources et repositories dans `lib/core/injection.dart`.
+- Reutiliser le singleton `ApiClient` pour conserver les headers, l'authentification et le refresh centralises.
+- Ajouter les dependances dans le meme ordre logique que les features existantes.
+- Eviter les clients Dio independants, sauf cas tres localise et justifie.
 
-## API Contract
+## Conventions Dart/Flutter
 
-- Base API path is `AppConfig.apiUrl + "/api"`.
-- API version header is `x-api-version: 1.0`.
-- Access token storage key: `access_token`.
-- Refresh token storage key: `refresh_token`.
-- If an API model, route, status code, or auth behavior changes, update the matching datasource/model/repository in this app.
+- Fichiers en `snake_case.dart`.
+- Classes et widgets en PascalCase.
+- Variables, parametres et methodes en camelCase.
+- Membres prives avec `_`.
+- Textes d'interface en francais, sauf si l'ecran suit deja une autre convention.
+- Gerer explicitement les `DioException` quand le code touche aux appels API.
+- Garder les widgets lisibles : extraire un widget quand une page devient difficile a parcourir, sans sur-abstraire.
+- Preserver les assets declares dans `pubspec.yaml` et eviter les chemins codifies en dur si un helper ou une constante existe.
 
-## Testing
+## Tests
 
-- Run `flutter analyze` before finishing mobile changes when feasible.
-- Run `flutter test` for logic, repository, auth, API integration, and widget changes.
-- Keep tests deterministic and avoid real network calls.
+- Lancer `flutter analyze` avant de terminer si possible.
+- Lancer `flutter test` pour les changements de logique, repositories, auth, API ou widgets.
+- Garder les tests deterministes, sans vrai appel reseau.
+- Preferer des tests cibles autour du comportement modifie plutot qu'une grande suite fragile.
 
-## Safety
+## Securite
 
-- Do not commit or display Firebase private config, signing credentials, API secrets, or local machine paths from generated config.
-- Avoid editing generated/build directories: `build/`, `.dart_tool/`, `.gradle/`, platform generated plugin files, and IDE metadata.
+- Ne pas afficher ni commiter les configs Firebase privees, cles de signature, secrets API ou chemins locaux sensibles.
+- Eviter les dossiers generes : `build/`, `.dart_tool/`, `.gradle/`, fichiers plugins generes et metadonnees IDE.
+- Ne pas modifier les fichiers de plateforme Android/iOS generes sauf besoin explicite.
