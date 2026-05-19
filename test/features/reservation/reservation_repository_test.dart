@@ -24,7 +24,7 @@ void main() {
     repository = ReservationRepositoryImpl(dataSource);
   });
 
-  ReservationOut _buildReservation({
+  ReservationOut buildReservation({
     int id = 1,
     ReservationStatus status = ReservationStatus.enAttente,
   }) =>
@@ -41,7 +41,7 @@ void main() {
 
   group('ReservationRepositoryImpl', () {
     test('getReservations délègue au datasource et retourne la liste', () async {
-      final expected = [_buildReservation(), _buildReservation(id: 2)];
+      final expected = [buildReservation(), buildReservation(id: 2)];
       when(() => dataSource.getReservations(any())).thenAnswer((_) async => expected);
 
       final result = await repository.getReservations(SearchReservations());
@@ -53,7 +53,7 @@ void main() {
 
     test('getMyReservations délègue au datasource', () async {
       when(() => dataSource.getMyReservations(any()))
-          .thenAnswer((_) async => [_buildReservation()]);
+          .thenAnswer((_) async => [buildReservation()]);
 
       final result = await repository.getMyReservations(SearchReservations());
 
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('createReservation envoie la map et renvoie la réservation créée', () async {
-      final created = _buildReservation(id: 99);
+      final created = buildReservation(id: 99);
       when(() => dataSource.createReservation(any())).thenAnswer((_) async => created);
 
       final result = await repository.createReservation({
@@ -80,7 +80,7 @@ void main() {
     });
 
     test('updateReservationStatus transmet l\'id et le statut', () async {
-      final updated = _buildReservation(id: 7, status: ReservationStatus.validee);
+      final updated = buildReservation(id: 7, status: ReservationStatus.validee);
       when(() => dataSource.updateReservationStatus(7, ReservationStatus.validee))
           .thenAnswer((_) async => updated);
 

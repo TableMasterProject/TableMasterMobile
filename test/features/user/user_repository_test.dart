@@ -23,7 +23,7 @@ void main() {
     repository = UserRepositoryImpl(dataSource);
   });
 
-  UserOut _buildUser({int id = 1}) => UserOut(
+  UserOut buildUser({int id = 1}) => UserOut(
         id: id,
         email: 'lea@example.com',
         password: '',
@@ -35,7 +35,7 @@ void main() {
 
   group('UserRepositoryImpl', () {
     test('getUserProfile renvoie l\'utilisateur depuis le datasource', () async {
-      when(() => dataSource.getUserById(7)).thenAnswer((_) async => _buildUser(id: 7));
+      when(() => dataSource.getUserById(7)).thenAnswer((_) async => buildUser(id: 7));
 
       final u = await repository.getUserProfile(7);
 
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('updateProfile délègue la mise à jour au datasource', () async {
-      when(() => dataSource.updateUser(any())).thenAnswer((_) async => _buildUser());
+      when(() => dataSource.updateUser(any())).thenAnswer((_) async => buildUser());
 
       final u = await repository.updateProfile(_FakeUserIn());
 

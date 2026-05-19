@@ -27,7 +27,7 @@ void main() {
     repository = RestaurantRepositoryImpl(dataSource);
   });
 
-  RestaurantOut _build({int id = 1, String name = 'Le Comptoir'}) => RestaurantOut(
+  RestaurantOut buildRestaurant({int id = 1, String name = 'Le Comptoir'}) => RestaurantOut(
         userId: 1,
         restaurantName: name,
         streetNumber: '12',
@@ -50,7 +50,7 @@ void main() {
   group('RestaurantRepositoryImpl', () {
     test('getAllRestaurants délègue au datasource', () async {
       when(() => dataSource.getRestaurants(any()))
-          .thenAnswer((_) async => [_build(), _build(id: 2)]);
+          .thenAnswer((_) async => [buildRestaurant(), buildRestaurant(id: 2)]);
 
       final result = await repository.getAllRestaurants(SearchRestaurant());
 
@@ -60,7 +60,7 @@ void main() {
 
     test('getRestaurantDetails passe bien l\'id', () async {
       when(() => dataSource.getRestaurantById(42))
-          .thenAnswer((_) async => _build(id: 42));
+          .thenAnswer((_) async => buildRestaurant(id: 42));
 
       final r = await repository.getRestaurantDetails(42);
 
@@ -70,7 +70,7 @@ void main() {
 
     test('createRestaurant délègue au datasource', () async {
       when(() => dataSource.postRestaurant(any()))
-          .thenAnswer((_) async => _build(id: 99));
+          .thenAnswer((_) async => buildRestaurant(id: 99));
 
       final r = await repository.createRestaurant(_FakeRestaurantIn());
 
@@ -88,7 +88,7 @@ void main() {
 
   group('RestaurantOut.addressString', () {
     test("formate l'adresse complète", () {
-      final r = _build();
+      final r = buildRestaurant();
       expect(r.addressString(), '12 rue Lafayette, 69001 Lyon');
     });
   });

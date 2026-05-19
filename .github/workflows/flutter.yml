@@ -45,6 +45,9 @@ jobs:
       - name: Run Flutter Analyze
         run: flutter analyze
 
+      - name: Run Flutter Tests
+        run: flutter test --reporter expanded
+
       - name: Run Flutter Format Check
         run: dart format --set-exit-if-changed .
         continue-on-error: true
