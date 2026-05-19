@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/menu/data/models/menu_in.dart';
@@ -23,9 +24,25 @@ import 'package:table_master_mobile/features/table/domain/repositories/table_rep
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 
 void main() {
-  // RestaurantController instancie un AudioPlayer dans son constructeur (sons de notif),
-  // ce qui nécessite que le binding Flutter soit initialisé même hors testWidgets.
+  // RestaurantController instancie un AudioPlayer dans son constructeur (sons de notif).
+  // En environnement de test, le plugin natif `audioplayers` n'est pas disponible :
+  // 1. on initialise le binding pour exposer `defaultBinaryMessenger`,
+  // 2. on enregistre des handlers no-op sur les channels du plugin pour intercepter
+  //    les appels init/listen et éviter `MissingPluginException`.
   TestWidgetsFlutterBinding.ensureInitialized();
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  for (final channelName in const [
+    'xyz.luan/audioplayers.global',
+    'xyz.luan/audioplayers.global/events',
+    'xyz.luan/audioplayers',
+    'xyz.luan/audioplayers/events',
+  ]) {
+    messenger.setMockMethodCallHandler(
+      MethodChannel(channelName),
+      (_) async => null,
+    );
+  }
 
   test(
     'saveRestaurantSettings met à jour le restaurant via le repository',
