@@ -23,6 +23,10 @@ import 'package:table_master_mobile/features/table/domain/repositories/table_rep
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 
 void main() {
+  // RestaurantController instancie un AudioPlayer dans son constructeur (sons de notif),
+  // ce qui nécessite que le binding Flutter soit initialisé même hors testWidgets.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test(
     'saveRestaurantSettings met à jour le restaurant via le repository',
     () async {
