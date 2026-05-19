@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TableMaster Mobile — Maquette interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<style>
+:root{
+  --primary:#4655A9; --on-primary:#fff; --primary-container:#DFE0FF; --on-primary-container:#00105C;
+  --secondary-container:#E1E0F9; --on-secondary-container:#181A2C;
+  --surface:#FBF8FD; --surface-1:#F5F2F7; --surface-2:#EFEDF1; --surface-3:#E9E7EC; --surface-4:#E4E1E6;
+  --on-surface:#1B1B1F; --on-surface-variant:#46464F; --outline:#777680; --outline-variant:#C8C5D0;
+  --error:#BA1A1A; --on-error:#fff; --error-container:#FFDAD6;
+  --green:#2e7d32; --orange:#ef6c00; --blue:#1565c0; --amber:#ffb300; --red:#c62828;
+  --shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',system-ui,sans-serif;background:#11131a;color:#e7e7ee;
+  display:flex;min-height:100vh;align-items:flex-start;gap:28px;padding:28px;flex-wrap:wrap;justify-content:center}
+.material-icons-round{font-family:'Material Icons Round';font-weight:normal;font-style:normal;line-height:1;
+  display:inline-block;vertical-align:middle;-webkit-font-smoothing:antialiased}
+
+/* ---------- INDEX SIDEBAR ---------- */
+#sidebar{width:300px;flex-shrink:0;position:sticky;top:28px}
+#sidebar h1{font-size:19px;font-weight:800;letter-spacing:.3px;margin-bottom:4px}
+#sidebar .sub{font-size:12.5px;color:#8d8fa6;margin-bottom:18px;line-height:1.5}
+.role-switch{display:flex;background:#1c1f2b;border:1px solid #2c3040;border-radius:30px;padding:4px;margin-bottom:18px}
+.role-switch button{flex:1;border:0;background:transparent;color:#9ea0b8;font-family:inherit;font-size:13px;
+  font-weight:600;padding:9px;border-radius:24px;cursor:pointer;transition:.2s}
+.role-switch button.active{background:var(--primary);color:#fff}
+.idx-group{margin-bottom:14px}
+.idx-group>.lbl{font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#71748d;
+  margin:14px 0 7px;padding-left:4px}
+.idx-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;font-size:13px;
+  color:#c4c5d6;cursor:pointer;transition:.15s;border:1px solid transparent}
+.idx-item:hover{background:#1c1f2b}
+.idx-item.active{background:#262a3a;border-color:#3a3f55;color:#fff}
+.idx-item .material-icons-round{font-size:18px;color:#7e81a0}
+.idx-item.active .material-icons-round{color:#9fa5ff}
+.idx-item .n{margin-left:auto;font-size:10.5px;color:#5f627c;font-weight:600}
+.hint{font-size:11.5px;color:#71748d;margin-top:18px;line-height:1.6;border-top:1px solid #262a3a;padding-top:14px}
+.hint b{color:#9fa5ff}
+
+/* ---------- PHONE ---------- */
+#stage{display:flex;flex-direction:column;align-items:center;gap:14px}
+.phone{width:390px;height:844px;background:var(--surface);border-radius:46px;overflow:hidden;position:relative;
+  box-shadow:0 0 0 11px #0a0b10,0 0 0 13px #23262f,0 30px 70px -10px rgba(0,0,0,.7);display:flex;flex-direction:column}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:148px;height:30px;background:#0a0b10;
+  border-radius:0 0 19px 19px;z-index:60}
+.statusbar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;
+  font-size:13px;font-weight:600;color:var(--on-surface);flex-shrink:0;z-index:55;position:relative}
+.statusbar .r{display:flex;gap:6px;align-items:center}
+.statusbar .material-icons-round{font-size:16px}
+.appbar{height:60px;display:flex;align-items:center;gap:6px;padding:0 6px 0 8px;flex-shrink:0;
+  background:var(--surface);position:relative;z-index:40}
+.appbar .ic{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:50%;
+  cursor:pointer;color:var(--on-surface)}
+.appbar .ic:hover{background:rgba(0,0,0,.05)}
+.appbar .title{font-size:20px;font-weight:500;color:var(--on-surface);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .user{text-align:right;padding-right:10px;line-height:1.25}
+.appbar .user .n{font-size:12px;color:var(--on-surface)}
+.appbar .user .t{font-size:11px;color:var(--on-surface-variant)}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;-webkit-overflow-scrolling:touch}
+.screen::-webkit-scrollbar{width:0}
+.bottomnav{height:78px;display:flex;background:var(--surface-2);flex-shrink:0;border-top:1px solid var(--outline-variant);
+  padding-bottom:14px}
+.bottomnav .it{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  cursor:pointer;color:var(--on-surface-variant);font-size:11px;font-weight:500;position:relative;padding-top:8px}
+.bottomnav .it .pill{width:64px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:16px;transition:.2s}
+.bottomnav .it.active{color:var(--on-surface)}
+.bottomnav .it.active .pill{background:var(--secondary-container)}
+.bottomnav .it.active .material-icons-round{color:var(--on-secondary-container)}
+.bottomnav .material-icons-round{font-size:22px}
+.caption{font-size:12px;color:#8d8fa6;text-align:center;max-width:390px;line-height:1.5}
+
+/* ---------- MATERIAL HELPERS ---------- */
+.pad{padding:24px}
+.pad16{padding:16px}
+.h-title{font-size:24px;font-weight:700;color:var(--on-surface)}
+.h-sub{font-size:14px;color:var(--on-surface-variant);margin-top:6px;line-height:1.5}
+.tf{position:relative;margin-top:16px}
+.tf input,.tf textarea,.tf .fake{width:100%;font-family:inherit;font-size:15px;color:var(--on-surface);
+  background:transparent;border:1px solid var(--outline);border-radius:12px;padding:16px 14px 16px 46px;outline:none}
+.tf textarea{min-height:90px;resize:none;padding-top:14px}
+.tf .lbl{position:absolute;top:-8px;left:38px;background:var(--surface);padding:0 5px;font-size:12px;color:var(--on-surface-variant)}
+.tf .li{position:absolute;left:14px;top:16px;color:var(--on-surface-variant);font-size:20px}
+.tf .ti{position:absolute;right:12px;top:15px;color:var(--on-surface-variant);font-size:20px;cursor:pointer}
+.tf.nolead input,.tf.nolead .fake,.tf.nolead textarea{padding-left:14px}
+.tf.nolead .lbl{left:10px}
+.btn{width:100%;height:54px;border:0;border-radius:14px;background:var(--primary);color:#fff;font-family:inherit;
+  font-size:16px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:24px;transition:.15s}
+.btn:hover{filter:brightness(1.07)}
+.btn.tonal{background:var(--secondary-container);color:var(--on-secondary-container)}
+.btn.outline{background:transparent;border:1px solid var(--primary);color:var(--primary)}
+.btn.err{background:var(--error)}
+.btn.outerr{background:transparent;border:2px solid var(--error);color:var(--error)}
+.btn.sm{height:46px;font-size:14px;margin-top:0;width:auto;padding:0 20px}
+.txtbtn{background:none;border:0;color:var(--primary);font-family:inherit;font-size:14px;font-weight:500;
+  cursor:pointer;padding:12px;width:100%;margin-top:8px}
+.card{background:var(--surface);border:1px solid rgba(200,197,208,.5);border-radius:16px;overflow:hidden}
+.card.flat{background:var(--surface-1)}
+.tile{display:flex;align-items:center;gap:16px;padding:14px 16px;cursor:pointer}
+.tile:hover{background:rgba(0,0,0,.03)}
+.tile .li{color:var(--on-surface-variant);font-size:22px}
+.tile .tx{flex:1;min-width:0}
+.tile .tx .t{font-size:15px;font-weight:600;color:var(--on-surface)}
+.tile .tx .s{font-size:12.5px;color:var(--on-surface-variant);margin-top:2px}
+.tile .ch{color:var(--on-surface-variant);font-size:20px}
+.divider{height:1px;background:rgba(200,197,208,.4);margin-left:56px}
+.section-lbl{font-size:12px;font-weight:700;letter-spacing:1.2px;color:var(--outline);margin:24px 4px 8px;text-transform:uppercase}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;border:1px solid var(--outline);
+  font-size:13px;color:var(--on-surface-variant);cursor:pointer;background:transparent}
+.chip.sel{background:var(--secondary-container);border-color:var(--secondary-container);color:var(--on-secondary-container)}
+.chip .material-icons-round{font-size:16px}
+.fab{position:absolute;right:18px;bottom:20px;height:56px;padding:0 20px;border-radius:18px;background:var(--primary-container);
+  color:var(--on-primary-container);border:0;font-family:inherit;font-size:15px;font-weight:600;display:flex;
+  align-items:center;gap:10px;cursor:pointer;box-shadow:var(--shadow);z-index:30}
+.badge{min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.snack{position:absolute;left:16px;right:16px;bottom:18px;background:#322F35;color:#F4EFF4;padding:14px 16px;
+  border-radius:10px;font-size:13.5px;display:flex;align-items:center;gap:10px;z-index:50;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);animation:up .3s ease}
+@keyframes up{from{transform:translateY(20px);opacity:0}}
+.seg{display:flex;border:1px solid var(--outline);border-radius:24px;overflow:hidden;margin:12px 0}
+.seg .s{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:11px 6px;font-size:12.5px;
+  font-weight:600;color:var(--on-surface);cursor:pointer;border-right:1px solid var(--outline)}
+.seg .s:last-child{border-right:0}
+.seg .s.on{background:var(--secondary-container)}
+.seg .s .material-icons-round{font-size:17px}
+.seg .cb{min-width:18px;height:18px;border-radius:9px;color:#fff;font-size:10px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+.tabbar{display:flex;border-bottom:1px solid var(--outline-variant);background:var(--surface)}
+.tabbar .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 4px;font-size:12px;
+  font-weight:600;color:var(--on-surface-variant);cursor:pointer;border-bottom:3px solid transparent}
+.tabbar .tb.on{color:var(--primary);border-bottom-color:var(--primary)}
+.tabbar .tb .material-icons-round{font-size:20px}
+.pills{display:flex;gap:8px;overflow-x:auto;padding:8px 0}
+.pills::-webkit-scrollbar{height:0}
+.pillbtn{flex-shrink:0;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;
+  background:var(--surface-4);color:var(--on-surface-variant);border:0;font-family:inherit;position:relative}
+.pillbtn.on{background:var(--primary);color:#fff}
+.statusbadge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;font-size:10px;
+  font-weight:700;letter-spacing:.5px}
+.gmap{background:linear-gradient(135deg,#dfe3e8 0,#c8d2c4 40%,#aebfb0 100%);position:relative;overflow:hidden}
+.gmap::after{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px);
+  background-size:38px 38px}
+.gmap .pin{position:absolute;color:#c62828;font-size:30px;z-index:2;filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
+.roomplan{aspect-ratio:1.25;background:rgba(228,225,230,.4);border:1px solid var(--outline-variant);
+  border-radius:8px;position:relative;overflow:hidden}
+.tableico{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:#fff;cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.lg{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;font-size:11px;font-weight:700}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  padding:48px 24px;color:var(--on-surface-variant);gap:14px;height:100%}
+.empty .material-icons-round{font-size:64px;color:var(--primary)}
+.empty .m{font-size:17px}
+.progress{height:5px;background:var(--surface-4);overflow:hidden}
+.progress .v{height:100%;background:var(--primary);transition:.4s}
+.stars{display:flex;gap:2px;color:var(--amber)}
+.stars .material-icons-round{font-size:18px}
+.flow-note{background:#fffbe6;border:1px solid #ffe58f;color:#7a5b00;font-size:11px;padding:6px 10px;
+  border-radius:8px;margin:10px 16px 0;display:flex;gap:6px;align-items:center}
+.dialog-scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:70;display:flex;align-items:center;
+  justify-content:center;padding:30px}
+.dialog{background:var(--surface-1);border-radius:28px;padding:24px;width:100%;max-width:320px}
+.dialog h3{font-size:20px;color:var(--on-surface);font-weight:500}
+.dialog p{font-size:14px;color:var(--on-surface-variant);margin-top:14px;line-height:1.5}
+.dialog .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
+.dialog .acts button{background:none;border:0;font-family:inherit;font-size:14px;font-weight:600;
+  padding:10px 14px;border-radius:20px;cursor:pointer;color:var(--primary)}
+.dialog .acts .fill{background:var(--primary);color:#fff;padding:10px 22px}
+.dialog .acts .fill.err{background:var(--error)}
+.confetti{position:absolute;width:9px;height:9px;top:-12px;animation:fall 2.6s linear infinite}
+@keyframes fall{to{transform:translateY(560px) rotate(540deg);opacity:.2}}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>TableMaster Mobile</h1>
+  <div class="sub">Maquette interactive — fidèle au code Flutter source. Cliquez les écrans, les boutons et la navigation.</div>
+  <div class="role-switch">
+    <button id="rClient" class="active" onclick="setRole('client')">👤 Client</button>
+    <button id="rResto" onclick="setRole('resto')">🍴 Restaurateur</button>
+  </div>
+  <div id="idx"></div>
+  <div class="hint">Astuce : la plupart des éléments sont <b>cliquables</b> (boutons, onglets, cartes, navigation basse). Le bouton retour <b>←</b> et la barre d'onglets fonctionnent comme dans l'app réelle.</div>
+</div>
+
+<div id="stage">
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span class="r"><span class="material-icons-round">signal_cellular_alt</span><span class="material-icons-round">wifi</span><span class="material-icons-round">battery_full</span></span>
+    </div>
+    <div id="appbar"></div>
+    <div class="screen" id="screen"></div>
+    <div id="bnav"></div>
+  </div>
+  <div class="caption" id="cap">Écran : Splash</div>
+</div>
+
+<script>
+const LOGO="data:image/png;base64,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QlXQp24/cq1vTulNP2JUoI5Fx0iBIIDUVCjL+uAvzfHMIyGqdQa7/PliiG8wfAvnTw8TC0AoBihpGlAauDRIGB5j8KWDYoIVBVExuMKgBuDG6hgd6mB+CXnXobQyADwxMq1RTEwQ4oZjOA0FcCrdraFZSFSsFFQhtVfEIDikm3cZCo4EVqVavgxCfpuiXAmI4IU706Veka1ipHZvdNcDk2r8yGRwyuWzPMdLbp5X04SJaG7bg+72r45ifJWDiwlWbDZHSEJgId8wpPTEZ4AYJD7YSHLSEwg2ix1JBCHrT35K/3kNASb4xwBBOUFfCVxtPSZn5jBXEo7KAPDEskUcXV6FSRAoFCAUiPLOwGAY0Uxg5XxA8Ik0SRIQCJSo8ggJSFQi9eWpHBaAojRQaCjE/hYiEGL4ZZ4WEa9SE81r+/9+80nhaTJp1j0TlhWr7t/c7XZ+ZDVOmrSwsXdkThzYCcCJwwIWIM5cO05eA63ICzQAV8xaSOAXDhNICCQxYrD/3bUDa4JjwLUU+o/ux/5uebWUGMATOvCeilObCo0hCzQEqqahjIbSDKUITpLUWYzxNb2zio0X6/QZfwHpT7GCvOZPAUJNKqnj08o7SL5/zO5duKjy/GdBMHxH9LWrhzBRB2LYDGh0kj5eeuKvrOEHSwCbvuYBi5EKk4jyAc+AYIWBSEP6At0BbLsGXtyLvb3y0igDwInwng84ylPx1GARuubQqTF0TSEMK5DQgYwGKwZphtIarFLgDwYgS0ImqbGtkAUQGBJYwJo0MPj7xSZ9cu/IIYw5aI90CF0ex7q6T/lJUnf2pzSQlyPFMAKkXYi48LkgTgBLKwTHDsoRnHPQVoGtg0QW6NcQdBRanf3Y3y9r/TIAnOjv/X/Q957Wl+IoPYR+oNGtaEgYQBuAwxgUmFBrFymtAjIaZEhgIrDSVisHK9poBUsCP+evBEIK2glYMVhpKE1QjsEcJwCebzHGGarvoNggztJ7BcTpSU+w7MDWwjkNY2M4G0CiGDa20N0quvE6rItvxa3uP3D0sv9fBoDS8D9jxxEwrZ6Kh9UxHNMRVqsxdFWEpmqgr2LUVISe5qxdyBQi0B0ABCXp9whdISjRMNxFjzUMawQcoM3z0GJQ4SF07AhG+Fbcmq4e4O/S71haGQDKv9UKk/L1lVYGgNK+m3/X0qlLK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK6200korrbTSSiuttNJKK62077j9/9sh9plmmQZWAAAAAElFTkSuQmCC";
+let ROLE='client';
+let homeTab=0;            // bottom nav index
+let restoView=0;          // resto sub-tab (Tables/Resa/Menu/Param)
+let detailTab=0;          // restaurant detail tab
+let resaFilter=0;         // segmented filter
+let stack=[];             // navigation stack
+let dialog=null;
+
+/* ---------- SAMPLE DATA (issu des libellés du code) ---------- */
+const USER={fn:'Camille',ln:'Durand',email:'camille.durand@email.fr',type:ROLE==='resto'?1:0};
+const CUISINES=["Français","Italien","Japonais","Burger","Indien","Végétarien","Chinois","Mexicain"];
+const PAYMENTS=["Carte Bancaire","Espèces","Tickets Resto","Apple Pay","Google Pay"];
+const RESTOS=[
+ {id:1,name:"Le Petit Gourmet",cuisine:"Français",addr:"12 Rue de la Paix, 75002 Paris",dist:"340 m",phone:"01 42 86 17 22",rating:4.6,reviews:128,desc:"Bistrot français traditionnel au cœur de Paris. Cuisine de saison, produits frais du marché.",lat:1},
+ {id:2,name:"Sakura Sushi",cuisine:"Japonais",addr:"8 Bd Haussmann, 75009 Paris",dist:"1.2 km",phone:"01 48 74 09 55",rating:4.8,reviews:213,desc:"Sushi bar authentique, poissons livrés chaque matin.",lat:1},
+ {id:3,name:"Trattoria Bella",cuisine:"Italien",addr:"45 Av. des Ternes, 75017 Paris",dist:"2.4 km",phone:"01 45 72 33 18",rating:4.4,reviews:96,desc:"Pâtes fraîches maison et pizza au feu de bois.",lat:1}
+];
+const MENU=[
+ {cat:"Entrées",name:"Foie gras maison",desc:"Chutney de figues, pain brioché",price:18.0},
+ {cat:"Entrées",name:"Velouté de potimarron",desc:"Crème de châtaigne, huile de noisette",price:11.0},
+ {cat:"Plats",name:"Filet de bœuf Rossini",desc:"Sauce périgueux, pommes grenaille",price:32.0},
+ {cat:"Plats",name:"Risotto aux cèpes",desc:"Parmesan 24 mois, persillade",price:24.0},
+ {cat:"Desserts",name:"Tarte fine aux pommes",desc:"Glace vanille de Madagascar",price:9.5}
+];
+const RESAS=[
+ {id:1,who:'Camille',rest:'Le Petit Gourmet',date:'2026-05-21',time:'20:00',ppl:2,table:4,status:'enAttente',note:"Table près de la fenêtre si possible"},
+ {id:2,who:'Camille',rest:'Sakura Sushi',date:'2026-05-19',time:'12:30',ppl:4,table:7,status:'validee',note:''},
+ {id:3,who:'Camille',rest:'Trattoria Bella',date:'2026-05-10',time:'19:30',ppl:3,table:2,status:'finie',note:''},
+];
+const REVIEWS=[
+ {rating:5,comment:"Service impeccable et cuisine raffinée. Une adresse à recommander.",date:"12 mai 2026",own:true},
+ {rating:4,comment:"Très bon moment, un peu bruyant en salle.",date:"3 mai 2026",own:false},
+ {rating:5,comment:"Le filet de bœuf était parfait.",date:"28 avr. 2026",own:false}
+];
+const HOURS=[["Lundi","12:00","14:30"],["Mardi","12:00","14:30"],["Mercredi","12:00","14:30"],
+ ["Jeudi","12:00","22:30"],["Vendredi","12:00","23:00"],["Samedi","19:00","23:30"]];
+const STATUS={
+ enAttente:{c:'var(--orange)',l:'EN ATTENTE',i:'pending'},
+ validee:{c:'var(--green)',l:'CONFIRMÉE',i:'verified'},
+ finie:{c:'var(--blue)',l:'TERMINÉE',i:'check_circle'},
+ annuleeResto:{c:'var(--red)',l:'ANNULÉE PAR LE RESTO',i:'cancel'},
+ annuleeClient:{c:'var(--red)',l:'ANNULÉE PAR VOUS',i:'person_off'}
+};
+
+/* ---------- SCREEN INDEX ---------- */
+const INDEX={
+ client:[
+  {g:'Démarrage',items:[['splash','Splash','flatware'],['login','Connexion','login'],['reg1','Inscription — étapes','app_registration']]},
+  {g:'Accueil (navigation basse)',items:[['home_resa','Mes Réservations','event_note'],['home_maps','Trouver des restaurants','location_on'],['home_account','Mon Compte','person']]},
+  {g:'Parcours réservation',items:[['resto_detail','Fiche restaurant','storefront'],['create_resa','Réserver une table','event_available'],['resa_detail','Détail réservation','receipt_long']]},
+  {g:'Avis & profil',items:[['add_review','Noter le restaurant','star'],['my_reviews','Mes avis','reviews'],['edit_profile','Modifier le profil','edit'],['change_pwd','Mot de passe','lock']]}
+ ],
+ resto:[
+  {g:'Démarrage',items:[['splash','Splash','flatware'],['login','Connexion','login'],['reg1','Inscription — étapes','app_registration']]},
+  {g:'Accueil (navigation basse)',items:[['home_resa','Mes Réservations','event_note'],['home_maps','Trouver des restaurants','location_on'],['home_account','Mon Compte','person'],['home_resto','Mon Restaurant','restaurant']]},
+  {g:'Mon Restaurant (sous-onglets)',items:[['rv_tables','Plan des tables','table_bar'],['rv_resa','Réservations reçues','event_note'],['rv_menu','Menu (aperçu)','restaurant_menu'],['rv_param','Paramètres','settings']]},
+  {g:'Gestion',items:[['menu_manage','Gérer le menu','menu_book'],['hours','Gérer les horaires','schedule'],['exceptions','Fermetures except.','event_busy'],['resto_reviews','Avis clients','star'],['table_resa','Réservations d\'une table','table_restaurant']]},
+  {g:'Profil',items:[['edit_profile','Modifier le profil','edit'],['change_pwd','Mot de passe','lock']]}
+ ]
+};
+
+function buildIndex(){
+ const idx=document.getElementById('idx');idx.innerHTML='';
+ INDEX[ROLE].forEach(grp=>{
+  const g=document.createElement('div');g.className='idx-group';
+  g.innerHTML=`<div class="lbl">${grp.g}</div>`;
+  grp.items.forEach(it=>{
+   const d=document.createElement('div');d.className='idx-item';d.dataset.s=it[0];
+   d.innerHTML=`<span class="material-icons-round">${it[2]}</span><span>${it[1]}</span>`;
+   d.onclick=()=>{stack=[];go(it[0])};
+   g.appendChild(d);
+  });
+  idx.appendChild(g);
+ });
+}
+function setRole(r){
+ ROLE=r;USER.type=r==='resto'?1:0;
+ document.getElementById('rClient').classList.toggle('active',r==='client');
+ document.getElementById('rResto').classList.toggle('active',r==='resto');
+ buildIndex();stack=[];homeTab=0;go('splash');
+}
+
+/* ---------- NAV CORE ---------- */
+let cur='splash';
+function go(s,push=false){
+ if(push&&cur)stack.push(cur);
+ cur=s;dialog=null;render();
+}
+function back(){ if(stack.length){cur=stack.pop();dialog=null;render();} }
+
+function appbar(title,opts={}){
+ const ab=document.getElementById('appbar');
+ if(opts.none){ab.innerHTML='';ab.style.display='none';return;}
+ ab.style.display='flex';ab.className='appbar';
+ let lead=opts.back?`<div class="ic" onclick="back()"><span class="material-icons-round">arrow_back</span></div>`
+   :`<div style="width:8px"></div>`;
+ let user=opts.user?`<div class="user"><div class="n">${USER.fn} ${USER.ln}</div><div class="t">${USER.type===1?'Restaurant':'Client'}</div></div>`:'';
+ ab.innerHTML=`${lead}<div class="title">${title}</div>${user}`;
+ if(opts.progress!=null){
+  ab.insertAdjacentHTML('beforeend','');
+ }
+}
+function bnav(active){
+ const bn=document.getElementById('bnav');
+ const items=[['event_note','event_note','Réservations','home_resa'],
+  ['location_on','location_on','Restaurants','home_maps'],
+  ['person','person','Mon Compte','home_account']];
+ if(ROLE==='resto')items.push(['restaurant','restaurant','Mon Restaurant','home_resto']);
+ bn.style.display='flex';bn.className='bottomnav';
+ bn.innerHTML=items.map((it,i)=>`<div class="it ${i===active?'active':''}" onclick="homeTab=${i};stack=[];go('${it[3]}')">
+   <div class="pill"><span class="material-icons-round">${it[0]}</span></div><span>${it[2]}</span></div>`).join('');
+}
+function nobnav(){const bn=document.getElementById('bnav');bn.style.display='none';bn.innerHTML='';}
+
+/* ---------- SCREENS ---------- */
+const S={};
+
+S.splash=()=>{appbar('',{none:true});nobnav();return `
+ <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px">
+  <img src="${LOGO}" style="width:200px;height:200px;object-fit:contain">
+  <div style="font-size:30px;font-weight:800;color:var(--primary)">TableMaster</div>
+  <div class="spin" style="width:34px;height:34px;border:3.5px solid var(--surface-4);border-top-color:var(--primary);border-radius:50%;animation:sp 1s linear infinite"></div>
+ </div>
+ <div onclick="go('login')" style="position:absolute;inset:0;cursor:pointer"></div>
+ <style>@keyframes sp{to{transform:rotate(360deg)}}</style>`;};
+
+S.login=()=>{appbar('',{none:true});nobnav();return `
+ <div class="pad" style="display:flex;flex-direction:column;align-items:center;min-height:100%;justify-content:center">
+  <img src="${LOGO}" style="width:170px;height:170px;object-fit:contain">
+  <div style="font-size:25px;font-weight:800;color:var(--primary);margin-top:6px">TableMaster</div>
+  <div style="font-size:28px;font-weight:700;color:var(--on-surface);margin-top:24px">Bienvenue</div>
+  <div style="color:var(--on-surface-variant);margin-top:8px">Connectez-vous pour continuer</div>
+  <div style="width:100%;margin-top:32px">
+   <div class="tf"><span class="lbl">Email</span><span class="material-icons-round li">mail</span><div class="fake">camille.durand@email.fr</div></div>
+   <div class="tf"><span class="lbl">Mot de passe</span><span class="material-icons-round li">password</span><div class="fake">••••••••</div></div>
+   <button class="btn" onclick="stack=[];go('home_resa')">Se connecter</button>
+   <button class="txtbtn">Mot de passe oublié ?</button>
+   <button class="btn outline" style="margin-top:10px" onclick="go('reg1',true)">Créer un compte</button>
+  </div>
+ </div>`;};
+
+/* ----- REGISTRATION STEPPER ----- */
+let regStep=1;
+const regTotal=()=>ROLE==='resto'?6:4;
+function regHeader(){
+ const tot=regTotal();
+ appbar(`Étape ${regStep} sur ${tot}`,{back:true});
+ const ab=document.getElementById('appbar');
+ ab.insertAdjacentHTML('beforeend',
+  `<div class="progress" style="position:absolute;left:0;right:0;bottom:0"><div class="v" style="width:${regStep/tot*100}%"></div></div>`);
+}
+function regNext(){const tot=regTotal();
+ if(regStep<(ROLE==='resto'?5:3)){regStep++;go('reg'+regStep);}
+ else{go('reg_success');}
+}
+S.reg1=()=>{regStep=1;nobnav();regHeader();return `
+ <div class="pad">
+  <div class="h-title">Informations personnelles</div>
+  <div class="h-sub">Veuillez renseigner vos informations pour créer votre profil.</div>
+  <div class="tf"><span class="lbl">Prénom</span><span class="material-icons-round li">person</span><div class="fake">Camille</div></div>
+  <div class="tf"><span class="lbl">Nom</span><span class="material-icons-round li">person</span><div class="fake">Durand</div></div>
+  <div class="tf"><span class="lbl">Email</span><span class="material-icons-round li">mail</span><div class="fake">camille.durand@email.fr</div></div>
+  <button class="btn" onclick="regStep=2;go('reg2')">Continuer</button>
+ </div>`;};
+S.reg2=()=>{regStep=2;nobnav();regHeader();return `
+ <div class="pad">
+  <div class="h-title">Sécurité du compte</div>
+  <div class="h-sub">Choisissez un mot de passe robuste pour protéger votre accès.</div>
+  <div class="tf"><span class="lbl">Mot de passe</span><span class="material-icons-round li">lock</span><div class="fake">••••••••</div><span class="material-icons-round ti">visibility_off</span></div>
+  <div class="tf"><span class="lbl">Confirmer le mot de passe</span><span class="material-icons-round li">lock_reset</span><div class="fake">••••••••</div><span class="material-icons-round ti">visibility_off</span></div>
+  <div style="margin-top:20px">
+   ${[['Au moins 8 caractères',1],['Au moins une majuscule',1],['Au moins un chiffre',1]].map(r=>
+    `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;color:var(--green);font-size:13px"><span class="material-icons-round" style="font-size:16px">check_circle</span>${r[0]}</div>`).join('')}
+  </div>
+  <button class="btn" onclick="regStep=3;go('reg3')">Continuer</button>
+ </div>`;};
+S.reg3=()=>{regStep=3;nobnav();regHeader();
+ const card=(t,d,ic,role)=>`<div class="card" style="padding:20px;display:flex;align-items:center;gap:16px;margin-top:16px;cursor:pointer;border-width:2px"
+   onclick="ROLE='${role}';USER.type=${role==='resto'?1:0};${role==='resto'?'regStep=4;go(\'reg4\')':'go(\'reg_success\')'}">
+   <div style="width:56px;height:56px;border-radius:50%;background:var(--primary-container);color:var(--on-primary-container);display:flex;align-items:center;justify-content:center"><span class="material-icons-round" style="font-size:30px">${ic}</span></div>
+   <div style="flex:1"><div style="font-size:18px;font-weight:700;color:var(--on-surface)">${t}</div><div style="font-size:14px;color:var(--on-surface-variant);margin-top:4px">${d}</div></div>
+   <span class="material-icons-round" style="color:var(--primary)">chevron_right</span></div>`;
+ return `<div class="pad">
+  <div class="h-title" style="font-size:22px">Quel type de compte souhaitez-vous créer ?</div>
+  <div class="h-sub">Cela nous aidera à personnaliser votre expérience.</div>
+  ${card('Je suis un Client','Je souhaite réserver des tables et consulter les menus.','person','client')}
+  ${card('Je suis un Restaurateur','Je souhaite gérer mes réservations, mes tables et mon menu.','restaurant','resto')}
+ </div>`;};
+S.reg4=()=>{regStep=4;nobnav();regHeader();return `
+ <div class="pad">
+  <div class="h-title">Votre Restaurant</div>
+  <div class="h-sub">Complétez les détails de votre établissement.</div>
+  <div class="tf"><span class="lbl">Nom du restaurant</span><span class="material-icons-round li">restaurant</span><div class="fake">Le Petit Gourmet</div></div>
+  <div class="tf"><span class="lbl">Téléphone</span><span class="material-icons-round li">phone</span><div class="fake">01 42 86 17 22</div></div>
+  <div style="display:flex;gap:12px">
+   <div class="tf nolead" style="flex:2"><span class="lbl">N°</span><div class="fake">12</div></div>
+   <div class="tf nolead" style="flex:5"><span class="lbl">Nom de la rue</span><div class="fake">Rue de la Paix</div></div>
+  </div>
+  <div style="display:flex;gap:12px">
+   <div class="tf nolead" style="flex:2"><span class="lbl">CP</span><div class="fake">75002</div></div>
+   <div class="tf nolead" style="flex:3"><span class="lbl">Ville</span><div class="fake">Paris</div></div>
+  </div>
+  <div style="font-weight:700;color:var(--primary);margin-top:24px">Type de cuisine</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">${CUISINES.map((c,i)=>`<span class="chip ${i===0?'sel':''}">${c}</span>`).join('')}</div>
+  <div style="font-weight:700;color:var(--primary);margin-top:24px">Méthodes de paiement</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">${PAYMENTS.map((c,i)=>`<span class="chip ${i<2?'sel':''}">${c}</span>`).join('')}</div>
+  <div class="tf nolead"><span class="lbl">Description</span><textarea class="fake" style="border:1px solid var(--outline)">Bistrot français traditionnel, cuisine de saison.</textarea></div>
+  <div class="tile" style="padding-left:0;margin-top:8px"><div class="tx"><div class="t">Validation automatique</div><div class="s">Accepter les réservations sans confirmation manuelle</div></div>
+   <div style="width:42px;height:24px;border-radius:12px;background:var(--surface-4);position:relative"><div style="width:18px;height:18px;border-radius:50%;background:var(--outline);position:absolute;top:3px;left:3px"></div></div></div>
+  <button class="btn" onclick="regStep=5;go('reg5')">Continuer</button>
+ </div>`;};
+S.reg5=()=>{regStep=5;nobnav();regHeader();return `
+ <div class="pad16">
+  <div class="h-title">Gestion des tables</div>
+  <div class="h-sub">Placez vos tables dans le plan de la salle.</div>
+  <div class="roomplan" style="margin-top:16px">
+   ${tableEl(12,18,58,46,'#90A4AE','T1 · 2p')}
+   ${tableEl(40,18,58,46,'#90A4AE','T2 · 4p')}
+   ${tableEl(68,20,70,52,'#90A4AE','T3 · 6p')}
+   ${tableEl(16,55,58,46,'#90A4AE','T4 · 2p')}
+   ${tableEl(48,55,70,52,'#90A4AE','T5 · 4p')}
+  </div>
+  <div style="display:flex;gap:10px;margin-top:16px">
+   <button class="btn tonal sm"><span class="material-icons-round" style="font-size:18px">add</span> Ajouter une table</button>
+   <button class="btn tonal sm"><span class="material-icons-round" style="font-size:18px">add_business</span> Ajouter une salle</button>
+  </div>
+  <button class="btn" onclick="go('reg_success')">Terminer l'inscription</button>
+ </div>`;};
+S.reg_success=()=>{nobnav();appbar('',{none:true});
+ let conf='';for(let i=0;i<26;i++){const cs=['#2e7d32','#1565c0','#e91e63','#ef6c00','#7b1fa2'];
+  conf+=`<div class="confetti" style="left:${Math.random()*100}%;background:${cs[i%5]};animation-delay:${Math.random()*2}s"></div>`;}
+ return `<div style="position:relative;height:100%;overflow:hidden">${conf}
+  <div class="pad" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+   <div style="width:140px;height:140px;border-radius:50%;background:rgba(46,125,50,.12);display:flex;align-items:center;justify-content:center">
+    <span class="material-icons-round" style="font-size:100px;color:var(--green)">check_circle</span></div>
+   <div style="font-size:28px;font-weight:700;color:var(--on-surface);margin-top:32px">Félicitations !</div>
+   <div style="color:var(--on-surface-variant);margin-top:16px;line-height:1.6">Votre compte a été créé avec succès. Vous pouvez maintenant profiter de toutes les fonctionnalités de TableMaster.</div>
+   <button class="btn" style="margin-top:36px" onclick="stack=[];go('home_resa')"><span class="material-icons-round">rocket_launch</span> Commencer l'aventure</button>
+   <button class="txtbtn" onclick="go('reg_error')">(voir l'écran d'erreur)</button>
+  </div></div>`;};
+S.reg_error=()=>{nobnav();appbar('',{none:true});return `
+ <div class="pad" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+  <div style="width:140px;height:140px;border-radius:50%;background:var(--error-container);display:flex;align-items:center;justify-content:center">
+   <span class="material-icons-round" style="font-size:100px;color:var(--error)">error_outline</span></div>
+  <div style="font-size:26px;font-weight:700;color:var(--on-surface);margin-top:32px">Oups ! Une erreur est survenue</div>
+  <div style="color:var(--on-surface-variant);margin-top:16px;line-height:1.6">Nous n'avons pas pu finaliser votre inscription. Veuillez vérifier votre connexion ou réessayer plus tard.</div>
+  <button class="btn err" style="margin-top:36px" onclick="regStep=1;go('reg1')"><span class="material-icons-round">refresh</span> Réessayer</button>
+  <button class="txtbtn" onclick="go('login')">Retourner à l'accueil</button>
+ </div>`;};
+
+/* ----- HOME : RESERVATIONS ----- */
+function resaCard(r,resto){
+ const st=STATUS[r.status];
+ const ic=r.status==='validee'?['check','var(--green)']:r.status==='enAttente'?['timer','var(--orange)']
+   :r.status==='finie'?['done_all','var(--blue)']:['close','var(--red)'];
+ let act='';
+ if(resto&&r.status==='enAttente')act=`<div style="display:flex;flex-direction:column"><span class="material-icons-round" style="color:var(--green);font-size:24px;cursor:pointer" onclick="event.stopPropagation();snack('Réservation validée')">check_circle</span><span class="material-icons-round" style="color:var(--error);font-size:24px;cursor:pointer;margin-top:8px" onclick="event.stopPropagation();snack('Réservation annulée')">cancel</span></div>`;
+ else if(resto&&r.status==='validee')act=`<div style="display:flex;flex-direction:column"><span class="material-icons-round" style="color:var(--blue);font-size:24px;cursor:pointer" onclick="event.stopPropagation();snack('Marquée comme terminée')">done_all</span><span class="material-icons-round" style="color:var(--error);font-size:24px;cursor:pointer;margin-top:8px" onclick="event.stopPropagation();snack('Réservation annulée')">cancel</span></div>`;
+ return `<div class="card" style="margin-bottom:12px;cursor:pointer" onclick="go('resa_detail',true)">
+  <div style="display:flex;gap:12px;padding:14px">
+   <div style="width:36px;height:36px;border-radius:50%;background:${ic[1]};display:flex;align-items:center;justify-content:center;flex-shrink:0"><span class="material-icons-round" style="color:#fff;font-size:18px">${ic[0]}</span></div>
+   <div style="flex:1;min-width:0">
+    <div style="font-weight:700;font-size:16px;color:var(--on-surface)">${resto?r.who:r.rest}</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--on-surface)"><span class="material-icons-round" style="font-size:14px;color:var(--outline)">calendar_today</span>${fdate(r.date)} à ${r.time}</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:var(--on-surface)"><span class="material-icons-round" style="font-size:14px;color:var(--outline)">people_outline</span>${r.ppl} convives</div>
+    ${r.note?`<div style="display:flex;align-items:flex-start;gap:6px;margin-top:4px;font-size:13px;color:var(--primary);font-style:italic"><span class="material-icons-round" style="font-size:14px;color:var(--outline)">note</span>Demande : ${r.note}</div>`:''}
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;color:var(--on-surface)"><span class="material-icons-round" style="font-size:14px;color:var(--outline)">table_restaurant</span>Table : ${r.table}</div>
+    <div style="margin-top:8px"><span class="statusbadge" style="background:color-mix(in srgb,${st.c} 12%,transparent);color:${st.c};border:1px solid ${st.c}">${st.l}</span></div>
+   </div>
+   ${act}
+  </div></div>`;
+}
+function fdate(d){const[y,m,da]=d.split('-');const M=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];return `${+da} ${M[+m-1]} ${y}`;}
+S.home_resa=()=>{appbar(ROLE==='resto'?'Mes Réservations':'Mes Réservations',{user:true});bnav(0);
+ const filtered=resaFilter===0?RESAS.filter(r=>r.status==='validee')
+   :resaFilter===1?RESAS.filter(r=>r.status==='enAttente'):RESAS.filter(r=>['finie','annuleeResto','annuleeClient'].includes(r.status));
+ const pend=RESAS.filter(r=>r.status==='enAttente').length, today=RESAS.filter(r=>r.status==='validee').length;
+ let list=filtered.length?'':`<div class="empty"><span class="material-icons-round">event_busy</span><div class="m">Aucune réservation</div></div>`;
+ if(filtered.length){
+  const grp={};filtered.forEach(r=>{(grp[r.date]=grp[r.date]||[]).push(r)});
+  list=Object.keys(grp).sort().map(d=>`<div style="font-size:13px;font-weight:700;color:var(--primary);letter-spacing:1px;margin:8px 4px">${d==='2026-05-19'?"AUJOURD'HUI":fdate(d).toUpperCase()}</div>${grp[d].map(r=>resaCard(r,false)).join('')}`).join('');
+ }
+ return `<div class="pad16">
+  <div class="seg">
+   <div class="s ${resaFilter===0?'on':''}" onclick="resaFilter=0;render()"><span class="material-icons-round">check_circle</span>Validées ${today?`<span class="cb" style="background:var(--blue)">${today}</span>`:''}</div>
+   <div class="s ${resaFilter===1?'on':''}" onclick="resaFilter=1;render()"><span class="material-icons-round">pending_actions</span>Attente ${pend?`<span class="cb" style="background:var(--orange)">${pend}</span>`:''}</div>
+   <div class="s ${resaFilter===2?'on':''}" onclick="resaFilter=2;render()"><span class="material-icons-round">history</span>Historique</div>
+  </div>
+  ${list}
+ </div>`;};
+
+/* ----- HOME : MAPS ----- */
+S.home_maps=()=>{appbar('Trouver des Restaurants',{user:true});bnav(1);return `
+ <div style="display:flex;flex-direction:column;height:100%">
+  <div style="padding:8px;display:flex;gap:8px;align-items:center">
+   <div class="tf nolead" style="flex:1;margin-top:0"><span class="lbl">Cuisine</span><div class="fake" style="padding:13px 10px">Français</div></div>
+   <div class="tf nolead" style="flex:1;margin-top:0"><span class="lbl">Paiement</span><div class="fake" style="padding:13px 10px">Carte Bancaire</div></div>
+   <div class="appbar" style="height:auto"><div class="ic" onclick="snack('Filtres appliqués')"><span class="material-icons-round">search</span></div></div>
+  </div>
+  <div class="gmap" style="flex:2;min-height:200px">
+   <span class="material-icons-round pin" style="left:30%;top:35%">location_on</span>
+   <span class="material-icons-round pin" style="left:58%;top:50%">location_on</span>
+   <span class="material-icons-round pin" style="left:44%;top:68%">location_on</span>
+   <div style="position:absolute;right:12px;bottom:12px;width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow);color:var(--primary)"><span class="material-icons-round">my_location</span></div>
+  </div>
+  <div style="flex:3;overflow-y:auto;border-top:1px solid var(--outline-variant)">
+   ${RESTOS.map(r=>`<div class="tile" onclick="go('resto_detail',true)" style="border-bottom:1px solid rgba(200,197,208,.3)">
+     <div class="tx"><div class="t">${r.name}</div><div class="s">${r.addr}</div></div>
+     <div style="font-size:13px;color:var(--on-surface-variant);font-weight:600">${r.dist}</div></div>`).join('')}
+  </div>
+ </div>`;};
+
+/* ----- HOME : ACCOUNT ----- */
+S.home_account=()=>{appbar('Mon Compte',{user:true});bnav(2);
+ const tile=(ic,t,s,col,act)=>`<div class="tile" ${act?`onclick="${act}"`:''}>
+  <span class="material-icons-round li" ${col?`style="color:${col}"`:''}>${ic}</span>
+  <div class="tx"><div class="t" ${col?`style="color:${col}"`:''}>${t}</div>${s?`<div class="s">${s}</div>`:''}</div>
+  <span class="material-icons-round ch">chevron_right</span></div>`;
+ return `<div>
+  <div style="background:linear-gradient(135deg,var(--primary),color-mix(in srgb,var(--primary) 80%,#000));padding:40px 24px 32px;text-align:center;color:#fff">
+   <div style="width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:32px;font-weight:700">${USER.fn[0]}${USER.ln[0]}</div>
+   <div style="font-size:22px;font-weight:700;margin-top:16px">${USER.fn} ${USER.ln}</div>
+   <div style="opacity:.85;margin-top:4px">${USER.email}</div>
+   <div style="display:inline-block;margin-top:12px;padding:5px 14px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);border-radius:20px;font-size:12px;font-weight:600">${USER.type===0?'Compte Client':'Compte Restaurateur'}</div>
+  </div>
+  <div class="pad16">
+   <div class="section-lbl">Paramètres du profil</div>
+   <div class="card flat">${tile('person','Modifier mes informations','Nom, prénom et email','',"go('edit_profile',true)")}<div class="divider"></div>${tile('lock','Mot de passe','Sécurisez votre accès','',"go('change_pwd',true)")}</div>
+   <div class="section-lbl">Activités</div>
+   <div class="card flat">${tile('star_outline','Mes Avis',"Consulter vos retours d'expérience",'',"go('my_reviews',true)")}</div>
+   <div class="section-lbl">Sécurité</div>
+   <div class="card flat">${tile('logout','Se déconnecter','','var(--primary)',"showDialog('logout')")}<div class="divider"></div>${tile('delete_forever','Supprimer le compte','','var(--error)',"showDialog('delacc')")}</div>
+   <div style="height:30px"></div>
+  </div>
+ </div>`;};
+
+/* ----- HOME : RESTAURANT (resto) ----- */
+S.home_resto=()=>{appbar('Mon Restaurant',{user:true});bnav(3);
+ const pend=RESAS.filter(r=>r.status==='enAttente').length;
+ const tabs=['Tables','Réservations','Menu','Paramètres'];
+ const tb=`<div class="pills" style="padding:8px 12px">${tabs.map((t,i)=>`<button class="pillbtn ${i===restoView?'on':''}" onclick="restoView=${i};render()">${t}${i===1&&pend?` <span class="badge" style="position:absolute;top:-6px;right:-6px">${pend}</span>`:''}</button>`).join('')}</div><div style="height:1px;background:var(--outline-variant)"></div>`;
+ let body='';
+ if(restoView===0)body=rvTables();
+ else if(restoView===1)body=rvResa();
+ else if(restoView===2)body=rvMenu();
+ else body=rvParam();
+ return tb+body;};
+function tableEl(x,y,w,h,color,label){
+ return `<div class="tableico" style="left:${x}%;top:${y}%;width:${w}px;height:${h}px;background:${color};border-radius:${h>50?'10px':'8px'}">${label}</div>`;}
+function rvTables(){return `<div class="pad16">
+  <div style="font-size:20px;font-weight:700;color:var(--on-surface);margin-bottom:12px">Gestion des tables</div>
+  <div style="font-weight:700;color:var(--on-surface);margin:6px 0">Salle principale <span style="float:right;color:var(--on-surface-variant);font-weight:600">5 tables</span></div>
+  <div class="roomplan">
+   ${tableEl(12,16,56,44,'#42A5F5','T1 1 valid.')}
+   ${tableEl(42,16,56,44,'#FFB74D','T2 1 att.')}
+   ${tableEl(70,18,68,50,'#90A4AE','T3')}
+   ${tableEl(16,56,56,44,'#90A4AE','T4')}
+   ${tableEl(48,56,68,50,'#42A5F5','T5 2 valid.')}
+  </div>
+  <div class="legend">
+   <span class="lg" style="background:rgba(21,101,192,.1);color:var(--blue);border:1px solid rgba(21,101,192,.5)"><span class="material-icons-round" style="font-size:14px">event</span>validées aujourd'hui</span>
+   <span class="lg" style="background:rgba(239,108,0,.1);color:var(--orange);border:1px solid rgba(239,108,0,.5)"><span class="material-icons-round" style="font-size:14px">pending_actions</span>en attente</span>
+  </div>
+  <div class="card flat" style="margin-top:18px;cursor:pointer" onclick="go('table_resa',true)"><div class="tile"><span class="material-icons-round li">table_restaurant</span><div class="tx"><div class="t">Voir les réservations d'une table</div><div class="s">Touchez une table du plan</div></div><span class="material-icons-round ch">chevron_right</span></div></div>
+ </div>`;}
+function rvResa(){
+ const filtered=resaFilter===0?RESAS.filter(r=>r.status==='validee'):resaFilter===1?RESAS.filter(r=>r.status==='enAttente'):RESAS.filter(r=>['finie','annuleeResto','annuleeClient'].includes(r.status));
+ const pend=RESAS.filter(r=>r.status==='enAttente').length;
+ return `<div class="pad16">
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+   <span class="chip ${resaFilter===0?'sel':''}" onclick="resaFilter=0;render()">Validées</span>
+   <span class="chip ${resaFilter===1?'sel':''}" onclick="resaFilter=1;render()">En attente (${pend})</span>
+   <span class="chip ${resaFilter===2?'sel':''}" onclick="resaFilter=2;render()">Historique</span>
+  </div>
+  ${filtered.length?filtered.map(r=>resaCard(r,true)).join(''):`<div class="empty"><span class="material-icons-round">event_busy</span><div class="m">Aucune réservation</div><div style="font-size:13px">Les réservations apparaîtront ici.</div></div>`}
+ </div>`;}
+function rvMenu(){return `<div class="pad16">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+   <div style="font-size:20px;font-weight:700;color:var(--on-surface)">Votre menu</div>
+   <div style="width:40px;height:40px;border-radius:50%;background:var(--secondary-container);display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="go('menu_manage',true)"><span class="material-icons-round" style="color:var(--on-secondary-container)">edit</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+   ${MENU.map(m=>`<div class="card"><div style="height:90px;background:color-mix(in srgb,var(--secondary-container) 40%,transparent);display:flex;align-items:center;justify-content:center"><span class="material-icons-round" style="font-size:40px;color:var(--on-surface-variant)">restaurant_menu</span></div>
+    <div style="padding:12px"><div style="font-weight:700;font-size:14px;color:var(--on-surface);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</div><div style="color:var(--primary);font-weight:700;margin-top:4px">${m.price.toFixed(2)} €</div></div></div>`).join('')}
+  </div>
+ </div>`;}
+function rvParam(){
+ const t=(ic,ti,s,act)=>`<div class="card flat" style="margin-bottom:12px;cursor:pointer" ${act?`onclick="${act}"`:''}><div class="tile"><span class="material-icons-round li">${ic}</span><div class="tx"><div class="t">${ti}</div><div class="s">${s}</div></div><span class="material-icons-round ch">chevron_right</span></div></div>`;
+ return `<div class="pad16">
+  <div style="font-size:20px;font-weight:700;color:var(--on-surface);margin-bottom:24px">Paramètres du restaurant</div>
+  ${t('storefront','Informations du restaurant','Nom, adresse, type de cuisine...',"go('reg4',true)")}
+  ${t('table_bar','Gestion des tables','Ajouter ou modifier vos tables',"go('reg5',true)")}
+  ${t('schedule',"Horaires d'ouverture","Gérer vos créneaux quotidiens","go('hours',true)")}
+  ${t('event_busy','Fermetures exceptionnelles','Gérer les jours fériés et vacances',"go('exceptions',true)")}
+  ${t('star_outline','Avis clients','Consulter les notes et commentaires',"go('resto_reviews',true)")}
+ </div>`;}
+S.rv_tables=()=>{restoView=0;return S.home_resto();};
+S.rv_resa=()=>{restoView=1;return S.home_resto();};
+S.rv_menu=()=>{restoView=2;return S.home_resto();};
+S.rv_param=()=>{restoView=3;return S.home_resto();};
+
+/* ----- RESTAURANT DETAIL (client) ----- */
+S.resto_detail=()=>{appbar('',{none:true});nobnav();
+ const r=RESTOS[0];
+ let tab='';
+ if(detailTab===0)tab=`<div class="pad16">
+   <div style="display:flex;align-items:center;gap:8px"><span class="material-icons-round" style="color:var(--amber);font-size:28px">star</span><span style="font-size:24px;font-weight:700;color:var(--on-surface)">${r.rating}</span><span style="color:var(--on-surface-variant)">(${r.reviews} avis)</span></div>
+   <div style="margin-top:20px">
+    <div class="tile" style="padding-left:0"><span class="material-icons-round li" style="color:var(--primary)">location_on</span><div class="tx"><div class="t">Adresse</div><div class="s">${r.addr}</div></div><span class="material-icons-round ch">chevron_right</span></div>
+    <div class="tile" style="padding-left:0"><span class="material-icons-round li" style="color:var(--primary)">phone</span><div class="tx"><div class="t">Téléphone</div><div class="s">${r.phone}</div></div><span class="material-icons-round ch">chevron_right</span></div>
+    <div class="tile" style="padding-left:0"><span class="material-icons-round li" style="color:var(--primary)">restaurant</span><div class="tx"><div class="t">Cuisine</div><div class="s">${r.cuisine}</div></div></div>
+   </div>
+   <div style="height:1px;background:var(--outline-variant);margin:16px 0"></div>
+   <div style="font-size:20px;font-weight:500;color:var(--on-surface)">À propos de ${r.name}</div>
+   <div style="margin-top:8px;color:var(--on-surface);line-height:1.6">${r.desc}</div>
+   <div style="font-size:20px;font-weight:500;color:var(--on-surface);margin-top:24px">Horaires d'ouverture</div>
+   <div style="margin-top:8px">${HOURS.map(h=>`<div style="font-size:14px;color:var(--on-surface);padding:2px 0">${h[0]}: ${h[1]} - ${h[2]}</div>`).join('')}</div>
+   <div style="height:120px"></div></div>`;
+ else if(detailTab===1)tab=`<div style="padding:8px">${['Entrées','Plats','Desserts'].map(cat=>`<div class="card" style="margin:8px 0">
+   <div style="padding:12px;font-size:20px;font-weight:500;color:var(--on-surface)">${cat}</div>
+   ${MENU.filter(m=>m.cat===cat).map(m=>`<div style="padding:12px 16px;display:flex;gap:12px;align-items:flex-start"><div style="flex:1"><div style="font-weight:600;color:var(--on-surface)">${m.name}</div><div style="font-size:13px;color:var(--on-surface-variant);margin-top:2px">${m.desc}</div></div><div style="color:var(--primary);font-weight:600">${m.price.toFixed(2)} €</div></div>`).join('')}
+  </div>`).join('')}<div style="height:110px"></div></div>`;
+ else tab=`<div style="padding:8px">${REVIEWS.map(rv=>`<div style="padding:14px 12px;border-bottom:1px solid var(--outline-variant)">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:600;color:var(--on-surface)">Avis d'un utilisateur</div><div class="stars">${stars(rv.rating,16)}</div></div>
+   <div style="font-size:14px;color:var(--on-surface-variant);margin-top:6px">${rv.comment}<br>${rv.date}</div></div>`).join('')}<div style="height:110px"></div></div>`;
+ return `<div style="position:relative;height:100%">
+  <div class="gmap" style="height:300px;position:relative">
+   <div style="position:absolute;top:14px;left:10px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5" onclick="back()"><span class="material-icons-round" style="color:#fff">arrow_back</span></div>
+   <span class="material-icons-round pin" style="left:46%;top:42%">location_on</span>
+   <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.25),transparent 40%,rgba(0,0,0,.7))"></div>
+   <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-size:20px;font-weight:600;text-shadow:0 2px 6px rgba(0,0,0,.6)">${r.name}</div>
+  </div>
+  <div class="tabbar">
+   <div class="tb ${detailTab===0?'on':''}" onclick="detailTab=0;render()"><span class="material-icons-round">info</span>À propos</div>
+   <div class="tb ${detailTab===1?'on':''}" onclick="detailTab=1;render()"><span class="material-icons-round">restaurant_menu</span>Menu</div>
+   <div class="tb ${detailTab===2?'on':''}" onclick="detailTab=2;render()"><span class="material-icons-round">reviews</span>Avis</div>
+  </div>
+  ${tab}
+  <button class="fab" onclick="go('create_resa',true)"><span class="material-icons-round">event_available</span>Faire une réservation</button>
+ </div>`;};
+
+/* ----- CREATE RESERVATION ----- */
+S.create_resa=()=>{appbar('Réserver une table',{back:true});nobnav();
+ return `<div class="pad16">
+  <div style="font-size:24px;font-weight:500;color:var(--on-surface)">Le Petit Gourmet</div>
+  <div class="card" style="margin-top:16px"><div class="tile"><span class="material-icons-round li" style="color:var(--primary)">calendar_today</span><div class="tx"><div class="t">Jeudi 21 mai</div></div></div></div>
+  <div style="font-weight:700;color:var(--on-surface);margin-top:20px">Heure de début (blocage 1h30 avant/après)</div>
+  <div class="tf nolead"><span class="material-icons-round li" style="left:14px">access_time</span><div class="fake" style="padding-left:46px">20:00</div></div>
+  <div style="font-weight:700;color:var(--on-surface);margin-top:20px">Nombre de personnes</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-top:8px">
+   <div style="width:44px;height:44px;border-radius:50%;background:var(--secondary-container);display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="material-icons-round">remove</span></div>
+   <div style="font-size:24px;font-weight:700">2</div>
+   <div style="width:44px;height:44px;border-radius:50%;background:var(--secondary-container);display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="material-icons-round">add</span></div>
+  </div>
+  <div style="height:1px;background:var(--outline-variant);margin:24px 0"></div>
+  <div style="font-weight:700;color:var(--on-surface)">Choisir une table</div>
+  <div class="pills" style="margin-top:8px"><span class="chip sel">Salle principale</span><span class="chip">Terrasse</span></div>
+  <div class="roomplan" style="margin-top:12px">
+   ${tableEl(12,16,56,44,'#90A4AE','T1')}
+   ${tableEl(42,16,56,44,'#9E9E9E','T2 ✕')}
+   ${tableEl(70,18,68,50,'var(--primary)','T3 ✓')}
+   ${tableEl(16,56,56,44,'#90A4AE','T4')}
+   ${tableEl(48,56,68,50,'#90A4AE','T5')}
+  </div>
+  <div style="color:var(--primary);font-weight:700;margin-top:8px">Table n°3 sélectionnée (6 places)</div>
+  <div class="tf nolead"><span class="lbl">Demande spéciale</span><textarea class="fake" style="border:1px solid var(--outline)">Table près de la fenêtre si possible</textarea></div>
+  <button class="btn" onclick="snack('Réservation réussie !');setTimeout(()=>{stack=[];go('home_resa')},900)">Confirmer la réservation</button>
+ </div>`;};
+
+/* ----- RESERVATION DETAIL ----- */
+S.resa_detail=()=>{appbar('',{none:true});nobnav();
+ const r=RESAS[0],st=STATUS[r.status];
+ return `<div style="position:relative;height:100%">
+  <div class="gmap" style="height:300px;position:relative">
+   <div style="position:absolute;top:14px;left:10px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5" onclick="back()"><span class="material-icons-round" style="color:#fff">arrow_back</span></div>
+   <span class="material-icons-round pin" style="left:46%;top:42%">location_on</span>
+   <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.25),transparent 40%,rgba(0,0,0,.8))"></div>
+   <div style="position:absolute;bottom:14px;left:16px;color:#fff"><div style="font-size:18px;font-weight:700;text-shadow:0 2px 6px rgba(0,0,0,.7)">${r.rest}</div><div style="font-size:11px;opacity:.85"><span class="material-icons-round" style="font-size:11px;color:var(--amber)">star</span> 4.6 • Français</div></div>
+  </div>
+  <div class="pad">
+   <div style="text-align:center"><span class="statusbadge" style="background:color-mix(in srgb,${st.c} 12%,transparent);color:${st.c};border:1.5px solid ${st.c};font-size:12px;padding:8px 16px"><span class="material-icons-round" style="font-size:16px">${st.i}</span>${st.l}</span></div>
+   <div style="display:flex;justify-content:space-evenly;margin-top:24px">
+    ${['directions:Itinéraire','phone:Appeler'].map(a=>`<div style="text-align:center"><div style="width:48px;height:48px;border-radius:50%;background:var(--secondary-container);display:flex;align-items:center;justify-content:center;color:var(--on-secondary-container);cursor:pointer"><span class="material-icons-round">${a.split(':')[0]}</span></div><div style="font-size:12px;font-weight:600;margin-top:4px">${a.split(':')[1]}</div></div>`).join('')}
+   </div>
+   <div style="font-size:18px;font-weight:700;margin-top:32px">Détails de la réservation</div>
+   <div style="margin-top:16px">
+    ${[['calendar_today','Date',fdate(r.date)],['access_time','Heure',r.time],['people','Couverts',r.ppl+' personnes'],['table_bar','Table','Table n°'+r.table]].map(x=>`<div style="display:flex;gap:16px;margin-bottom:16px;align-items:center"><span class="material-icons-round" style="color:var(--primary);font-size:22px">${x[0]}</span><div><div style="font-size:12px;color:var(--outline)">${x[1]}</div><div style="font-size:16px;font-weight:700">${x[2]}</div></div></div>`).join('')}
+   </div>
+   <div style="font-size:18px;font-weight:700;margin-top:16px">Note spéciale pour le restaurateur</div>
+   <div style="background:rgba(228,225,230,.3);border:1px solid var(--outline-variant);border-radius:12px;padding:16px;margin-top:8px;font-style:italic;color:var(--on-surface)">${r.note}</div>
+   <div style="height:120px"></div>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;background:var(--surface);padding:18px;box-shadow:0 -4px 10px rgba(0,0,0,.05)">
+   <button class="btn outerr" style="margin-top:0" onclick="showDialog('delresa')"><span class="material-icons-round">delete_forever</span>SUPPRIMER LA DEMANDE</button>
+  </div>
+ </div>`;};
+
+/* ----- ADD REVIEW ----- */
+S.add_review=()=>{appbar('Noter le restaurant',{back:true});nobnav();return `
+ <div class="pad" style="text-align:center">
+  <div style="font-size:24px;font-weight:700;color:var(--on-surface)">Le Petit Gourmet</div>
+  <div style="color:var(--on-surface);margin-top:16px">Quelle note donneriez-vous à votre expérience ?</div>
+  <div class="stars" style="justify-content:center;margin-top:28px">${[1,2,3,4,5].map(i=>`<span class="material-icons-round" style="font-size:46px;color:var(--amber);cursor:pointer">${i<=5?'star':'star_border'}</span>`).join('')}</div>
+  <div style="font-size:24px;font-weight:700;margin-top:14px">5 / 5</div>
+  <div class="tf nolead" style="margin-top:36px"><span class="lbl">Votre commentaire (facultatif)</span><textarea class="fake" style="border:1px solid var(--outline);min-height:120px">Racontez-nous votre expérience...</textarea></div>
+  <button class="btn" onclick="snack('Merci pour votre avis !');setTimeout(back,900)">Publier mon avis</button>
+ </div>`;};
+
+/* ----- MY REVIEWS ----- */
+S.my_reviews=()=>{appbar('Mes avis',{back:true});nobnav();return `
+ <div style="padding:8px">${REVIEWS.map(rv=>`<div class="card" style="margin:8px 12px;padding:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center"><div class="stars">${stars(rv.rating,18)}</div>
+   <div><span class="material-icons-round" style="font-size:18px;color:var(--on-surface-variant);cursor:pointer">edit</span> <span class="material-icons-round" style="font-size:18px;color:var(--on-surface-variant);cursor:pointer;margin-left:8px">delete</span></div></div>
+  <div style="margin-top:8px;color:var(--on-surface)">${rv.comment}</div>
+  <div style="margin-top:8px;font-size:12px;color:var(--outline)">${rv.date}</div></div>`).join('')}</div>`;};
+
+/* ----- MENU MANAGE ----- */
+S.menu_manage=()=>{appbar('Gérer le menu',{back:true});nobnav();return `
+ <div>
+  <div class="pad16">
+   <div style="font-weight:700;color:var(--on-surface)">Ajouter un plat</div>
+   <div class="tf nolead"><span class="lbl"> </span><div class="fake">Nom du plat</div></div>
+   <div class="tf nolead"><div class="fake">Catégorie (Entrée, Plat, Dessert...)</div></div>
+   <div class="tf nolead"><div class="fake">Description</div></div>
+   <div class="tf nolead"><div class="fake">Prix (€)</div></div>
+   <button class="btn" onclick="snack('Menu ajouté')">Ajouter</button>
+  </div>
+  <div style="height:1px;background:var(--outline-variant)"></div>
+  ${MENU.map(m=>`<div class="tile" style="border-bottom:1px solid rgba(200,197,208,.3)"><div class="tx"><div class="t">${m.name}</div><div class="s">Catégorie: ${m.cat}<br>${m.desc}<br>Prix: ${m.price.toFixed(2)}€</div></div><span class="material-icons-round" style="color:var(--error);cursor:pointer">delete</span></div>`).join('')}
+ </div>`;};
+
+/* ----- HOURS ----- */
+S.hours=()=>{appbar('Gérer les horaires',{back:true});nobnav();return `
+ <div>
+  <div class="pad16">
+   <div style="font-weight:700;color:var(--on-surface)">Ajouter/modifier un horaire</div>
+   <div class="tf nolead"><span class="lbl">Jour de la semaine</span><div class="fake">Jeudi</div></div>
+   <div style="display:flex;gap:8px">
+    <div class="tf nolead" style="flex:1"><span class="lbl">Ouverture</span><div class="fake">12:00</div></div>
+    <div class="tf nolead" style="flex:1"><span class="lbl">Fermeture</span><div class="fake">22:30</div></div>
+   </div>
+   <button class="btn" onclick="snack('Horaire enregistré avec succès')"><span class="material-icons-round">save</span>Enregistrer</button>
+  </div>
+  <div style="height:1px;background:var(--outline-variant)"></div>
+  <div style="font-weight:700;color:var(--on-surface);padding:14px 16px">Horaires actuels</div>
+  ${HOURS.map(h=>`<div class="tile" style="border-bottom:1px solid rgba(200,197,208,.3)"><span class="material-icons-round li">access_time</span><div class="tx"><div class="t">${h[0]}</div><div class="s">${h[1]} - ${h[2]}</div></div><span class="material-icons-round" style="color:var(--error);cursor:pointer">delete_outline</span></div>`).join('')}
+ </div>`;};
+
+/* ----- EXCEPTIONS ----- */
+S.exceptions=()=>{appbar('Fermetures exceptionnelles',{back:true});nobnav();return `
+ <div>
+  <div class="pad16">
+   <div style="font-weight:700;color:var(--on-surface)">Ajouter une période de fermeture</div>
+   <button class="btn outline" style="justify-content:flex-start;gap:10px;height:50px;margin-top:14px"><span class="material-icons-round">calendar_today</span>Du 14/07/2026 au 18/07/2026</button>
+   <div class="tf nolead"><span class="lbl">Motif de la fermeture</span><div class="fake">Congés annuels</div></div>
+   <button class="btn" onclick="snack('Fermeture exceptionnelle ajoutée')"><span class="material-icons-round">add</span>Enregistrer la fermeture</button>
+  </div>
+  <div style="height:1px;background:var(--outline-variant)"></div>
+  <div style="font-weight:700;color:var(--on-surface);padding:14px 16px">Fermetures prévues</div>
+  ${[['Congés annuels','14/07/2026','18/07/2026',0],['Travaux cuisine','02/06/2026','04/06/2026',0],['Jour férié','01/05/2026','01/05/2026',1]].map(e=>`<div class="tile" style="border-bottom:1px solid rgba(200,197,208,.3)"><span class="material-icons-round li" style="color:${e[3]?'var(--outline)':'var(--error)'}">event_busy</span><div class="tx"><div class="t" style="${e[3]?'text-decoration:line-through;color:var(--outline)':''}">${e[0]}</div><div class="s">Du ${e[1]} au ${e[2]}</div></div><span class="material-icons-round" style="color:var(--error);cursor:pointer">delete_outline</span></div>`).join('')}
+ </div>`;};
+
+/* ----- RESTO REVIEWS ----- */
+S.resto_reviews=()=>{appbar('Avis du restaurant',{back:true});nobnav();return `
+ <div style="padding:8px">${REVIEWS.map(rv=>`<div class="card" style="margin:8px 12px;padding:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center"><div class="stars">${stars(rv.rating,18)}</div>
+   ${rv.own?`<div><span class="material-icons-round" style="font-size:18px;color:var(--on-surface-variant);cursor:pointer">edit</span> <span class="material-icons-round" style="font-size:18px;color:var(--on-surface-variant);cursor:pointer;margin-left:8px">delete</span></div>`:''}</div>
+  <div style="margin-top:8px;color:var(--on-surface)">${rv.comment}</div>
+  <div style="margin-top:8px;font-size:12px;color:var(--outline)">${rv.date}</div></div>`).join('')}</div>`;};
+
+/* ----- TABLE RESERVATIONS ----- */
+S.table_resa=()=>{appbar('Table 4',{back:true});nobnav();
+ const pend=RESAS.filter(r=>r.status==='enAttente').length;
+ return `<div class="pad16">
+  <div class="seg">
+   <div class="s on"><span class="material-icons-round">check_circle</span>Validées</div>
+   <div class="s"><span class="material-icons-round">pending_actions</span>Attente <span class="cb" style="background:var(--orange)">${pend}</span></div>
+   <div class="s"><span class="material-icons-round">history</span>Historique</div>
+  </div>
+  <div style="font-size:13px;font-weight:700;color:var(--primary);letter-spacing:1px;margin:8px 4px">AUJOURD'HUI</div>
+  ${resaCard(RESAS[1],true)}
+ </div>`;};
+
+/* ----- EDIT PROFILE / CHANGE PWD ----- */
+S.edit_profile=()=>{appbar('Modifier le profil',{back:true});nobnav();return `
+ <div class="pad">
+  <div class="h-title">Informations personnelles</div>
+  <div class="h-sub">Veuillez renseigner vos informations.</div>
+  <div class="tf"><span class="lbl">Prénom</span><span class="material-icons-round li">person</span><div class="fake">${USER.fn}</div></div>
+  <div class="tf"><span class="lbl">Nom</span><span class="material-icons-round li">person</span><div class="fake">${USER.ln}</div></div>
+  <div class="tf"><span class="lbl">Email</span><span class="material-icons-round li">mail</span><div class="fake">${USER.email}</div></div>
+  <button class="btn" onclick="snack('Profil mis à jour');setTimeout(back,800)">Continuer</button>
+ </div>`;};
+S.change_pwd=()=>{appbar('Mot de passe',{back:true});nobnav();return `
+ <div class="pad">
+  <div class="h-title">Changer de mot de passe</div>
+  <div class="tf"><span class="lbl">Ancien mot de passe</span><span class="material-icons-round li">lock_open</span><div class="fake">••••••••</div><span class="material-icons-round ti">visibility_off</span></div>
+  <div class="tf"><span class="lbl">Nouveau mot de passe</span><span class="material-icons-round li">lock</span><div class="fake">••••••••</div><span class="material-icons-round ti">visibility_off</span></div>
+  <div class="tf"><span class="lbl">Confirmer le nouveau mot de passe</span><span class="material-icons-round li">lock_reset</span><div class="fake">••••••••</div><span class="material-icons-round ti">visibility_off</span></div>
+  <div style="margin-top:20px">${['Au moins 8 caractères','Au moins une majuscule','Au moins un chiffre'].map(r=>`<div style="display:flex;align-items:center;gap:8px;padding:3px 0;color:var(--green);font-size:13px"><span class="material-icons-round" style="font-size:16px">check_circle</span>${r}</div>`).join('')}</div>
+  <button class="btn" onclick="snack('Mot de passe mis à jour !');setTimeout(back,800)">Mettre à jour</button>
+ </div>`;};
+
+S.reg1=S.reg1;
+/* aliases for index reuse */
+
+function stars(n,sz){let h='';for(let i=0;i<5;i++)h+=`<span class="material-icons-round" style="font-size:${sz}px;color:${i<n?'var(--amber)':'var(--outline-variant)'}">${i<n?'star':'star_border'}</span>`;return h;}
+
+/* ---------- DIALOGS / SNACK ---------- */
+function showDialog(type){dialog=type;render();}
+function closeDialog(){dialog=null;render();}
+const DIALOGS={
+ logout:{t:'Se déconnecter',m:'Souhaitez-vous vraiment vous déconnecter de votre compte ?',ok:'Se déconnecter',act:"stack=[];go('login')"},
+ delacc:{t:'Supprimer le compte',m:'Cette action est irréversible. Toutes vos données seront définitivement supprimées.',ok:'Supprimer',err:1,act:"stack=[];go('login')"},
+ delresa:{t:'Supprimer la demande ?',m:"Votre demande de réservation n'a pas encore été traitée. Souhaitez-vous la retirer définitivement ?",ok:'Supprimer définitivement',err:1,act:"snack('Demande supprimée');back()"}
+};
+function snack(msg){
+ const sc=document.getElementById('screen');
+ const old=sc.querySelector('.snack');if(old)old.remove();
+ const d=document.createElement('div');d.className='snack';
+ d.innerHTML=`<span class="material-icons-round" style="font-size:18px">check_circle</span>${msg}`;
+ sc.appendChild(d);setTimeout(()=>d.remove(),2600);
+}
+
+/* ---------- RENDER ---------- */
+function render(){
+ const fn=S[cur]||S.splash;
+ document.getElementById('screen').innerHTML=fn();
+ // dialog overlay
+ if(dialog&&DIALOGS[dialog]){
+  const dg=DIALOGS[dialog];
+  document.getElementById('screen').insertAdjacentHTML('beforeend',
+   `<div class="dialog-scrim" onclick="if(event.target===this)closeDialog()"><div class="dialog">
+     <h3>${dg.t}</h3><p>${dg.m}</p>
+     <div class="acts"><button onclick="closeDialog()">Annuler</button>
+     <button class="fill ${dg.err?'err':''}" onclick="closeDialog();${dg.act}">${dg.ok}</button></div>
+   </div></div>`);
+ }
+ // index highlight
+ document.querySelectorAll('.idx-item').forEach(el=>{
+  const map={home_resa:'home_resa',rv_tables:'home_resto',rv_resa:'home_resto',rv_menu:'home_resto',rv_param:'home_resto'};
+  el.classList.toggle('active',el.dataset.s===cur||
+   (['rv_tables','rv_resa','rv_menu','rv_param'].includes(el.dataset.s)&&cur==='home_resto'&&['rv_tables','rv_resa','rv_menu','rv_param'][restoView]===el.dataset.s));
+ });
+ // caption
+ const names={splash:'Splash',login:'Connexion',reg1:'Inscription · Étape 1 — Infos perso',reg2:'Inscription · Étape 2 — Mot de passe',
+  reg3:'Inscription · Étape 3 — Type de compte',reg4:'Inscription · Étape 4 — Restaurant',reg5:'Inscription · Étape 5 — Tables',
+  reg_success:'Inscription · Succès',reg_error:'Inscription · Erreur',home_resa:'Accueil · Mes Réservations',
+  home_maps:'Accueil · Trouver des restaurants',home_account:'Accueil · Mon Compte',home_resto:'Mon Restaurant · '+['Tables','Réservations','Menu','Paramètres'][restoView],
+  resto_detail:'Fiche restaurant · '+['À propos','Menu','Avis'][detailTab],create_resa:'Réserver une table',resa_detail:'Détail réservation',
+  add_review:'Noter le restaurant',my_reviews:'Mes avis',menu_manage:'Gérer le menu',hours:'Gérer les horaires',
+  exceptions:'Fermetures exceptionnelles',resto_reviews:'Avis du restaurant',table_resa:"Réservations d'une table",
+  edit_profile:'Modifier le profil',change_pwd:'Changer de mot de passe'};
+ document.getElementById('cap').textContent='Écran : '+(names[cur]||cur);
+}
+buildIndex();render();
+</script>
+</body>
+</html>
