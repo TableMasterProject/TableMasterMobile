@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/responsive/breakpoints.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
@@ -176,7 +177,11 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text('Table ${widget.table.tableNumber}')),
-      body: Column(
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.maxListWidth),
+          child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(12.0),
@@ -235,6 +240,8 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
                     ),
           ),
         ],
+          ),
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/responsive/breakpoints.dart';
 import 'package:table_master_mobile/core/widgets/table_master_logo.dart';
 import 'package:table_master_mobile/features/home/presentation/home_screen.dart';
 import '../../../../core/injection.dart';
@@ -36,7 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final credentials = LoginUserIn(email: email, password: password);
-      // Le repository gère maintenant la sauvegarde des tokens, du user_id et du token FCM
       LoginUserOut result = await _authRepo.login(credentials);
 
       if (mounted) {
@@ -64,111 +64,215 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final showSidePanel = context.isDesktop;
+
+    final form = _LoginForm(
+      colors: colors,
+      isLoading: _isLoading,
+      emailController: _emailController,
+      passwordController: _passwordController,
+      onLogin: _handleLogin,
+      onRegister: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const RegistrationStepperScreen(),
+          ),
+        );
+      },
+    );
 
     return Scaffold(
       backgroundColor: colors.surface,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const TableMasterLogo(size: 190),
-              const SizedBox(height: 28),
-              Text(
-                "Bienvenue",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Connectez-vous pour continuer",
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-              const SizedBox(height: 40),
-
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: "Mot de passe",
-                  prefixIcon: const Icon(Icons.password_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: FilledButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child:
-                      _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                            "Se connecter",
-                            style: TextStyle(fontSize: 16),
-                          ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {},
-                child: const Text("Mot de passe oublié ?"),
-              ),
-              const SizedBox(height: 10),
-
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RegistrationStepperScreen(),
+      body: SafeArea(
+        child: showSidePanel
+            ? Row(
+                children: [
+                  Expanded(child: _SidePanel(colors: colors)),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: Breakpoints.maxFormWidth,
+                        ),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: form,
+                        ),
                       ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: colors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    "Créer un compte",
+                ],
+              )
+            : Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: Breakpoints.maxFormWidth,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: form,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+class _LoginForm extends StatelessWidget {
+  final ColorScheme colors;
+  final bool isLoading;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final VoidCallback onLogin;
+  final VoidCallback onRegister;
+
+  const _LoginForm({
+    required this.colors,
+    required this.isLoading,
+    required this.emailController,
+    required this.passwordController,
+    required this.onLogin,
+    required this.onRegister,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Center(child: TableMasterLogo(size: 160)),
+        const SizedBox(height: 28),
+        Text(
+          "Bienvenue",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: colors.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "Connectez-vous pour continuer",
+          textAlign: TextAlign.center,
+          style: TextStyle(color: colors.onSurfaceVariant),
+        ),
+        const SizedBox(height: 32),
+        TextField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.email],
+          decoration: const InputDecoration(
+            labelText: "Email",
+            prefixIcon: Icon(Icons.email_outlined),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: passwordController,
+          obscureText: true,
+          autofillHints: const [AutofillHints.password],
+          onSubmitted: (_) => onLogin(),
+          decoration: const InputDecoration(
+            labelText: "Mot de passe",
+            prefixIcon: Icon(Icons.password_rounded),
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 52,
+          child: FilledButton(
+            onPressed: isLoading ? null : onLogin,
+            child: isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : const Text(
+                    "Se connecter",
                     style: TextStyle(fontSize: 16),
                   ),
-                ),
-              ),
-            ],
           ),
+        ),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: () {},
+          child: const Text("Mot de passe oublié ?"),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 52,
+          child: OutlinedButton(
+            onPressed: onRegister,
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: colors.primary),
+            ),
+            child: const Text(
+              "Créer un compte",
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SidePanel extends StatelessWidget {
+  final ColorScheme colors;
+  const _SidePanel({required this.colors});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.primary,
+            colors.primaryContainer,
+          ],
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.restaurant_menu_rounded,
+              size: 72,
+              color: colors.onPrimary,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              "Table Master",
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.w800,
+                color: colors.onPrimary,
+                letterSpacing: -1,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Réservez vos tables. Gérez votre salle.\nLe tout depuis une seule interface.",
+              style: TextStyle(
+                fontSize: 18,
+                color: colors.onPrimary.withValues(alpha: 0.85),
+                height: 1.4,
+              ),
+            ),
+          ],
         ),
       ),
     );

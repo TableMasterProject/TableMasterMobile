@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "PowerShell(flutter analyze --no-pub 2>&1)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\src\\\\flutter\\\\bin\",\"C:\\\\flutter\\\\bin\",\"$env:LOCALAPPDATA\\\\flutter\\\\bin\",\"$env:USERPROFILE\\\\flutter\\\\bin\",\"$env:USERPROFILE\\\\fvm\\\\default\\\\bin\" -Filter \"flutter.bat\" -ErrorAction SilentlyContinue | Select-Object -First 5 FullName)"
+    ]
+  }
+}

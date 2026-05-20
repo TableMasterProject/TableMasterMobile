@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:table_master_mobile/core/responsive/breakpoints.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/search_restaurant.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
@@ -290,26 +291,47 @@ class _MapsPageState extends State<MapsPage> {
       );
     }
 
+    final mapSection = GoogleMap(
+      initialCameraPosition: CameraPosition(
+        target: _mapCenter,
+        zoom: 12,
+      ),
+      myLocationEnabled: true,
+      myLocationButtonEnabled: true,
+      onCameraMove: _onCameraMove,
+      onCameraIdle: _onCameraIdle,
+      markers: _markers,
+    );
+
+    final useSplitView = !context.isMobile;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Carte')),
       body: Column(
         children: [
           filterSection,
           Expanded(
-            flex: 2,
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: _mapCenter,
-                zoom: 12,
-              ),
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              onCameraMove: _onCameraMove,
-              onCameraIdle: _onCameraIdle,
-              markers: _markers,
-            ),
+            child: useSplitView
+                ? Row(
+                    children: [
+                      Expanded(flex: 3, child: mapSection),
+                      const VerticalDivider(width: 1),
+                      Expanded(
+                        flex: 2,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 520),
+                          child: listSection,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      Expanded(flex: 2, child: mapSection),
+                      Expanded(flex: 3, child: listSection),
+                    ],
+                  ),
           ),
-          Expanded(flex: 3, child: listSection),
         ],
       ),
     );

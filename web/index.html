@@ -18,7 +18,14 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Table Master, l'application de réservation et de gestion de tables pour clients et restaurateurs.">
+  <meta name="theme-color" content="#3F51B5">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Table Master">
+  <meta property="og:description" content="Réservation et gestion de tables pour clients et restaurateurs.">
+  <meta property="og:type" content="website">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,9 +38,29 @@
 
   <title>Table Master</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; background-color: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      html, body { background-color: #121212; }
+    }
+    #splash {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background-color: #3F51B5; color: white; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 1.2rem; letter-spacing: 0.04em;
+    }
+  </style>
+
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAjNUGYNxvg_R5o9I4FZi-FziKucF0C2W4&loading=async" async></script>
 </head>
 <body>
+  <div id="splash">Table Master</div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var splash = document.getElementById('splash');
+      if (splash) splash.remove();
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

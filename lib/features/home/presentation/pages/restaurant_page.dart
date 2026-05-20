@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/navigation/app_navigation.dart';
+import 'package:table_master_mobile/core/responsive/breakpoints.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step4_restaurant_info_screen.dart';
@@ -453,37 +454,42 @@ class _TablesViewState extends State<_TablesView> {
     final rooms = _roomsForPlan();
     final now = DateTime.now();
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Gestion des tables",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: colors.onSurface,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child:
-                tables.isEmpty
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Gestion des tables",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: tables.isEmpty
                     ? const AppEmptyState(
-                      icon: Icons.table_bar_outlined,
-                      message: "Aucune table configurée",
-                    )
+                        icon: Icons.table_bar_outlined,
+                        message: "Aucune table configurée",
+                      )
                     : _RoomTablePlan(
-                      rooms: rooms,
-                      reservationsForTable: _reservationsForTable,
-                      now: now,
-                      onTableSelected: _openTable,
-                      tablesForRoom: _tablesForRoom,
-                      tableStatusLabel: _tableStatusLabel,
-                    ),
+                        rooms: rooms,
+                        reservationsForTable: _reservationsForTable,
+                        now: now,
+                        onTableSelected: _openTable,
+                        tablesForRoom: _tablesForRoom,
+                        tableStatusLabel: _tableStatusLabel,
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -702,64 +708,68 @@ class _ReservationsView extends StatelessWidget {
             )
             .length;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              _FilterChip(
-                label: "Validées",
-                index: 0,
-                selectedFilter: selectedFilter,
-                onChanged: onFilterChanged,
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: "En attente ($pendingTotal)",
-                index: 1,
-                selectedFilter: selectedFilter,
-                onChanged: onFilterChanged,
-              ),
-              const SizedBox(width: 8),
-              _FilterChip(
-                label: "Historique",
-                index: 2,
-                selectedFilter: selectedFilter,
-                onChanged: onFilterChanged,
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child:
-              reservations.isEmpty
-                  ? AppEmptyState(
-                    icon: Icons.event_busy,
-                    message: "Aucune réservation",
-                    action: Text(
-                      "Les réservations apparaîtront ici.",
-                      style: TextStyle(color: colors.onSurfaceVariant),
-                    ),
-                  )
-                  : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: reservations.length,
-                    itemBuilder: (context, index) {
-                      final reservation = reservations[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: ReservationCard(
-                          reservation: reservation,
-                          onStatusUpdate:
-                              (newStatus) =>
-                                  onStatusUpdate(reservation.id, newStatus),
-                        ),
-                      );
-                    },
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Breakpoints.maxListWidth),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _FilterChip(
+                    label: "Validées",
+                    index: 0,
+                    selectedFilter: selectedFilter,
+                    onChanged: onFilterChanged,
                   ),
+                  _FilterChip(
+                    label: "En attente ($pendingTotal)",
+                    index: 1,
+                    selectedFilter: selectedFilter,
+                    onChanged: onFilterChanged,
+                  ),
+                  _FilterChip(
+                    label: "Historique",
+                    index: 2,
+                    selectedFilter: selectedFilter,
+                    onChanged: onFilterChanged,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: reservations.isEmpty
+                  ? AppEmptyState(
+                      icon: Icons.event_busy,
+                      message: "Aucune réservation",
+                      action: Text(
+                        "Les réservations apparaîtront ici.",
+                        style: TextStyle(color: colors.onSurfaceVariant),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: reservations.length,
+                      itemBuilder: (context, index) {
+                        final reservation = reservations[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: ReservationCard(
+                            reservation: reservation,
+                            onStatusUpdate: (newStatus) =>
+                                onStatusUpdate(reservation.id, newStatus),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -804,7 +814,11 @@ class _MenuView extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    return Padding(
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Breakpoints.maxGridWidth),
+        child: Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
@@ -841,8 +855,8 @@ class _MenuView extends StatelessWidget {
                     )
                     : GridView.builder(
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 240,
                             childAspectRatio: 0.8,
                             crossAxisSpacing: 12,
                             mainAxisSpacing: 12,
@@ -911,6 +925,8 @@ class _MenuView extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 }
@@ -928,7 +944,11 @@ class _SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+        child: ListView(
       padding: const EdgeInsets.all(16),
       children: [
         Text(
@@ -983,6 +1003,8 @@ class _SettingsView extends StatelessWidget {
               ),
         ),
       ],
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:table_master_mobile/core/responsive/breakpoints.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
@@ -190,7 +191,11 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
             )
             .length;
 
-    return Column(
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Breakpoints.maxListWidth),
+        child: Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(12.0),
@@ -249,6 +254,8 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
                   ),
         ),
       ],
+        ),
+      ),
     );
   }
 

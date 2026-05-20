@@ -6,7 +6,7 @@
     "background_color": "#3F51B5",
     "theme_color": "#3F51B5",
     "description": "TableMaster, l'application de réservation et de gestion de tables pour clients et restaurateurs.",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

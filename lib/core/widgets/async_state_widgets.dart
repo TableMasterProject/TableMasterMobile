@@ -17,20 +17,26 @@ class AppEmptyState extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 72, color: colors.primary),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: TextStyle(fontSize: 18, color: colors.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            if (action != null) ...[const SizedBox(height: 24), action!],
-          ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 88, color: colors.primary.withValues(alpha: 0.7)),
+              const SizedBox(height: 20),
+              Text(
+                message,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: colors.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              if (action != null) ...[const SizedBox(height: 24), action!],
+            ],
+          ),
         ),
       ),
     );
@@ -48,27 +54,30 @@ class AppErrorState extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 56, color: colors.error),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: TextStyle(color: colors.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            if (onRetry != null) ...[
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: colors.error),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh),
-                label: const Text("Réessayer"),
+              Text(
+                message,
+                style: TextStyle(color: colors.onSurfaceVariant),
+                textAlign: TextAlign.center,
               ),
+              if (onRetry != null) ...[
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("Réessayer"),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
