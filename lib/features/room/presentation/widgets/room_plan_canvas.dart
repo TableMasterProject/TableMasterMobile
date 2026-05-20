@@ -342,8 +342,7 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
             ),
           ),
         ),
-      ),
-    ;
+      );
 
     return Positioned(
       left: left,
