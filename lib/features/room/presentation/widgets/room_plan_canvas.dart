@@ -62,7 +62,8 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
 
   void _setScale(double scale) {
     final clamped = scale.clamp(_minScale, _maxScale).toDouble();
-    _controller.value = Matrix4.identity()..scale(clamped);
+    _controller.value =
+        Matrix4.identity()..scaleByDouble(clamped, clamped, clamped, 1);
   }
 
   double get _currentScale {
