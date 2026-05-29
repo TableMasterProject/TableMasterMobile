@@ -10,8 +10,14 @@ import 'package:table_master_mobile/features/review/presentation/pages/my_review
 class AccountPage extends StatefulWidget {
   final UserOut user;
   final VoidCallback onLogout;
+  final VoidCallback onReplayTutorial;
 
-  const AccountPage({super.key, required this.user, required this.onLogout});
+  const AccountPage({
+    super.key,
+    required this.user,
+    required this.onLogout,
+    required this.onReplayTutorial,
+  });
 
   @override
   State<AccountPage> createState() => _AccountPageState();
@@ -122,6 +128,12 @@ class _AccountPageState extends State<AccountPage> {
                 children: [
                   _buildSectionTitle("Paramètres du profil"),
                   _buildMenuCard([
+                    _buildMenuTile(
+                      icon: Icons.school_outlined,
+                      title: "Revoir le tutoriel",
+                      subtitle: "Redécouvrir les actions principales",
+                      onTap: widget.onReplayTutorial,
+                    ),
                     _buildMenuTile(
                       icon: Icons.person_outline,
                       title: "Modifier mes informations",

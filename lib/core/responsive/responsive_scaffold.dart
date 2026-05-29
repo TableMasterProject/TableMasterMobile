@@ -7,11 +7,13 @@ class NavDestination {
   final IconData icon;
   final IconData? activeIcon;
   final String label;
+  final GlobalKey? tutorialKey;
 
   const NavDestination({
     required this.icon,
     required this.label,
     this.activeIcon,
+    this.tutorialKey,
   });
 }
 
@@ -56,15 +58,23 @@ class ResponsiveScaffold extends StatelessWidget {
           currentIndex: selectedIndex,
           onTap: onDestinationSelected,
           type: BottomNavigationBarType.fixed,
-          items: destinations
-              .map(
-                (d) => BottomNavigationBarItem(
-                  icon: Icon(d.icon),
-                  activeIcon: d.activeIcon != null ? Icon(d.activeIcon) : null,
-                  label: d.label,
-                ),
-              )
-              .toList(),
+          items:
+              destinations.asMap().entries.map((entry) {
+                final index = entry.key;
+                final destination = entry.value;
+                final icon =
+                    index == selectedIndex
+                        ? destination.activeIcon ?? destination.icon
+                        : destination.icon;
+
+                return BottomNavigationBarItem(
+                  icon: _TutorialTarget(
+                    targetKey: destination.tutorialKey,
+                    child: Icon(icon),
+                  ),
+                  label: destination.label,
+                );
+              }).toList(),
         ),
       );
     }
@@ -115,20 +125,45 @@ class _Rail extends StatelessWidget {
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
       extended: extended,
-      labelType: extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+      labelType:
+          extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
       minWidth: 72,
       minExtendedWidth: 220,
       leading: leading,
       trailing: trailing,
-      destinations: destinations
-          .map(
-            (d) => NavigationRailDestination(
-              icon: Icon(d.icon),
-              selectedIcon: d.activeIcon != null ? Icon(d.activeIcon) : null,
-              label: Text(d.label),
-            ),
-          )
-          .toList(),
+      destinations:
+          destinations.asMap().entries.map((entry) {
+            final index = entry.key;
+            final destination = entry.value;
+            final icon =
+                index == selectedIndex
+                    ? destination.activeIcon ?? destination.icon
+                    : destination.icon;
+
+            return NavigationRailDestination(
+              icon: _TutorialTarget(
+                targetKey: destination.tutorialKey,
+                child: Icon(icon),
+              ),
+              label: Text(destination.label),
+            );
+          }).toList(),
     );
+  }
+}
+
+class _TutorialTarget extends StatelessWidget {
+  final GlobalKey? targetKey;
+  final Widget child;
+
+  const _TutorialTarget({required this.targetKey, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (targetKey == null) {
+      return child;
+    }
+
+    return KeyedSubtree(key: targetKey, child: child);
   }
 }

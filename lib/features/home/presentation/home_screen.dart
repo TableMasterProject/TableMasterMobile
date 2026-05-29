@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/tutorial/tutorial_service.dart';
 import 'package:table_master_mobile/features/auth/presentation/login/login_screen.dart';
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../auth/domain/repositories/auth_repository.dart';
 import '../../reservation/presentation/my_reservations_page.dart';
 import '../../../core/injection.dart';
@@ -25,11 +29,22 @@ class _HomeScreenState extends State<HomeScreen> {
   late List<NavDestination> _destinations;
   late List<String> _titles;
   final _authRepo = getIt<IAuthRepository>();
+  final _tutorialService = const TutorialService();
+  final _reservationsTutorialKey = GlobalKey(
+    debugLabel: 'reservationsTutorial',
+  );
+  final _restaurantsTutorialKey = GlobalKey(debugLabel: 'restaurantsTutorial');
+  final _accountTutorialKey = GlobalKey(debugLabel: 'accountTutorial');
+  final _restaurantTutorialKey = GlobalKey(debugLabel: 'restaurantTutorial');
+  bool _tutorialVisible = false;
 
   @override
   void initState() {
     super.initState();
     _initializeNavigation();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_showInitialTutorialIfNeeded());
+    });
   }
 
   void _initializeNavigation() {
@@ -43,26 +58,30 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     _destinations = [
-      const NavDestination(
+      NavDestination(
         icon: Icons.event_note_outlined,
         activeIcon: Icons.event_note,
         label: 'Réservations',
+        tutorialKey: _reservationsTutorialKey,
       ),
-      const NavDestination(
+      NavDestination(
         icon: Icons.location_on_outlined,
         activeIcon: Icons.location_on,
         label: 'Restaurants',
+        tutorialKey: _restaurantsTutorialKey,
       ),
-      const NavDestination(
+      NavDestination(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
         label: 'Mon Compte',
+        tutorialKey: _accountTutorialKey,
       ),
       if (isRestaurant)
-        const NavDestination(
+        NavDestination(
           icon: Icons.restaurant_outlined,
           activeIcon: Icons.restaurant,
           label: 'Mon Restaurant',
+          tutorialKey: _restaurantTutorialKey,
         ),
     ];
 
@@ -76,10 +95,133 @@ class _HomeScreenState extends State<HomeScreen> {
     _pages[index] = switch (index) {
       0 => MyReservationsPage(userId: widget.user.id),
       1 => const MapsPage(),
-      2 => AccountPage(user: widget.user, onLogout: _logout),
+      2 => AccountPage(
+        user: widget.user,
+        onLogout: _logout,
+        onReplayTutorial: () => unawaited(_showTutorial(force: true)),
+      ),
       3 => RestaurantPage(user: widget.user),
       _ => const SizedBox.shrink(),
     };
+  }
+
+  Future<void> _showInitialTutorialIfNeeded() async {
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+
+    final shouldShow = await _tutorialService.shouldShowHomeTutorial(
+      widget.user,
+    );
+    if (!mounted || !shouldShow) return;
+
+    await _showTutorial();
+  }
+
+  Future<void> _showTutorial({bool force = false}) async {
+    if (_tutorialVisible || !mounted) return;
+    if (!force) {
+      final shouldShow = await _tutorialService.shouldShowHomeTutorial(
+        widget.user,
+      );
+      if (!mounted || !shouldShow) return;
+    }
+
+    final targets = _buildTutorialTargets();
+    if (targets.isEmpty) return;
+
+    _tutorialVisible = true;
+
+    void completeTutorial() {
+      if (!_tutorialVisible) return;
+      _tutorialVisible = false;
+      unawaited(_tutorialService.markHomeTutorialSeen(widget.user));
+    }
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Colors.black,
+      opacityShadow: 0.78,
+      paddingFocus: 8,
+      textSkip: 'Passer',
+      textStyleSkip: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w700,
+      ),
+      alignSkip: Alignment.topRight,
+      pulseEnable: true,
+      useSafeArea: true,
+      onFinish: completeTutorial,
+      onSkip: () {
+        completeTutorial();
+        return true;
+      },
+    ).show(context: context);
+  }
+
+  List<TargetFocus> _buildTutorialTargets() {
+    final contentAlign =
+        context.isMobile ? ContentAlign.top : ContentAlign.right;
+    final targets = <TargetFocus>[
+      _buildTarget(
+        key: _reservationsTutorialKey,
+        identify: 'reservations',
+        title: 'Vos réservations',
+        message:
+            'Suivez vos réservations validées, en attente et votre historique.',
+        align: contentAlign,
+      ),
+      _buildTarget(
+        key: _restaurantsTutorialKey,
+        identify: 'restaurants',
+        title: 'Trouver un restaurant',
+        message:
+            'Explorez les restaurants sur la carte, filtrez et ouvrez les fiches détail.',
+        align: contentAlign,
+      ),
+      _buildTarget(
+        key: _accountTutorialKey,
+        identify: 'account',
+        title: 'Votre compte',
+        message:
+            'Gérez votre profil, vos avis, votre sécurité et relancez ce tutoriel.',
+        align: contentAlign,
+      ),
+      if (widget.user.accountType == 1)
+        _buildTarget(
+          key: _restaurantTutorialKey,
+          identify: 'restaurant',
+          title: 'Espace restaurateur',
+          message:
+              'Administrez votre établissement, vos tables, menus et réservations restaurant.',
+          align: contentAlign,
+        ),
+    ];
+
+    return targets
+        .where((target) => target.keyTarget?.currentContext != null)
+        .toList();
+  }
+
+  TargetFocus _buildTarget({
+    required GlobalKey key,
+    required String identify,
+    required String title,
+    required String message,
+    required ContentAlign align,
+  }) {
+    return TargetFocus(
+      identify: identify,
+      keyTarget: key,
+      shape: ShapeLightFocus.RRect,
+      radius: 12,
+      enableOverlayTab: true,
+      contents: [
+        TargetContent(
+          align: align,
+          child: _TutorialContent(title: title, message: message),
+        ),
+      ],
+    );
   }
 
   Future<void> _logout() async {
@@ -109,13 +251,14 @@ class _HomeScreenState extends State<HomeScreen> {
       destinations: _destinations,
       selectedIndex: _selectedIndex,
       onDestinationSelected: _onDestinationSelected,
-      appBar: showAppBar
-          ? AppBar(
-              title: Text(_titles[_selectedIndex]),
-              elevation: 0,
-              actions: [_UserBadge(user: widget.user)],
-            )
-          : null,
+      appBar:
+          showAppBar
+              ? AppBar(
+                title: Text(_titles[_selectedIndex]),
+                elevation: 0,
+                actions: [_UserBadge(user: widget.user)],
+              )
+              : null,
       railLeading: _RailLeading(user: widget.user),
       railTrailing: const Spacer(),
       body: _DesktopHeader(
@@ -155,12 +298,54 @@ class _UserBadge extends StatelessWidget {
             ),
             Text(
               user.accountType == 0 ? 'Client' : 'Restaurant',
-              style: TextStyle(
-                fontSize: 11,
-                color: colors.onSurfaceVariant,
-              ),
+              style: TextStyle(fontSize: 11, color: colors.onSurfaceVariant),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TutorialContent extends StatelessWidget {
+  final String title;
+  final String message;
+
+  const _TutorialContent({required this.title, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 340),
+      child: Material(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 8,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -232,12 +417,7 @@ class _DesktopHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(32, 24, 24, 16),
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: textTheme.headlineMedium,
-                ),
-              ),
+              Expanded(child: Text(title, style: textTheme.headlineMedium)),
               _UserBadge(user: user),
             ],
           ),
