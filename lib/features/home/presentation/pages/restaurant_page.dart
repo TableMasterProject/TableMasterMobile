@@ -457,7 +457,9 @@ class _TablesViewState extends State<_TablesView> {
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+        constraints: const BoxConstraints(
+          maxWidth: Breakpoints.maxContentWidth,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -473,19 +475,20 @@ class _TablesViewState extends State<_TablesView> {
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: tables.isEmpty
-                    ? const AppEmptyState(
-                        icon: Icons.table_bar_outlined,
-                        message: "Aucune table configurée",
-                      )
-                    : _RoomTablePlan(
-                        rooms: rooms,
-                        reservationsForTable: _reservationsForTable,
-                        now: now,
-                        onTableSelected: _openTable,
-                        tablesForRoom: _tablesForRoom,
-                        tableStatusLabel: _tableStatusLabel,
-                      ),
+                child:
+                    tables.isEmpty
+                        ? const AppEmptyState(
+                          icon: Icons.table_bar_outlined,
+                          message: "Aucune table configurée",
+                        )
+                        : _RoomTablePlan(
+                          rooms: rooms,
+                          reservationsForTable: _reservationsForTable,
+                          now: now,
+                          onTableSelected: _openTable,
+                          tablesForRoom: _tablesForRoom,
+                          tableStatusLabel: _tableStatusLabel,
+                        ),
               ),
             ],
           ),
@@ -515,34 +518,85 @@ class _RoomTablePlan extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        ...rooms.map(
-          (room) => _RoomPlanSection(
-            room: room,
-            roomTables: tablesForRoom(room),
-            reservationsForTable: reservationsForTable,
-            tableStatusLabel: tableStatusLabel,
-            now: now,
-            onTableSelected: onTableSelected,
-          ),
-        ),
-        const SizedBox(height: 4),
-        const Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _TableBadge(
-              text: "validées aujourd'hui",
-              color: Colors.blue,
-              icon: Icons.event,
+    final useTwoColumnLayout = context.isDesktop && rooms.length > 1;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!useTwoColumnLayout) {
+          return ListView(
+            children: [
+              ...rooms.map(_buildRoomSection),
+              const SizedBox(height: 4),
+              const _TableLegend(),
+            ],
+          );
+        }
+
+        const spacing = 16.0;
+        final tileWidth = (constraints.maxWidth - spacing) / 2;
+        final tileHeight = (tileWidth / 1.25) + 86;
+
+        return CustomScrollView(
+          slivers: [
+            SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+                childAspectRatio: tileWidth / tileHeight,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) =>
+                    _buildRoomSection(rooms[index], bottomPadding: 0),
+                childCount: rooms.length,
+              ),
             ),
-            _TableBadge(
-              text: 'en attente',
-              color: Colors.orange,
-              icon: Icons.pending_actions,
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: _TableLegend(),
+              ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildRoomSection(
+    RestaurantRoomOut room, {
+    double bottomPadding = 18,
+  }) {
+    return _RoomPlanSection(
+      room: room,
+      roomTables: tablesForRoom(room),
+      reservationsForTable: reservationsForTable,
+      tableStatusLabel: tableStatusLabel,
+      now: now,
+      onTableSelected: onTableSelected,
+      bottomPadding: bottomPadding,
+    );
+  }
+}
+
+class _TableLegend extends StatelessWidget {
+  const _TableLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _TableBadge(
+          text: "validées aujourd'hui",
+          color: Colors.blue,
+          icon: Icons.event,
+        ),
+        _TableBadge(
+          text: 'en attente',
+          color: Colors.orange,
+          icon: Icons.pending_actions,
         ),
       ],
     );
@@ -557,6 +611,7 @@ class _RoomPlanSection extends StatelessWidget {
   final String Function(TableEntityOut table, DateTime now) tableStatusLabel;
   final DateTime now;
   final ValueChanged<TableEntityOut> onTableSelected;
+  final double bottomPadding;
 
   const _RoomPlanSection({
     required this.room,
@@ -565,6 +620,7 @@ class _RoomPlanSection extends StatelessWidget {
     required this.tableStatusLabel,
     required this.now,
     required this.onTableSelected,
+    this.bottomPadding = 18,
   });
 
   @override
@@ -596,7 +652,7 @@ class _RoomPlanSection extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -742,30 +798,32 @@ class _ReservationsView extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: reservations.isEmpty
-                  ? AppEmptyState(
-                      icon: Icons.event_busy,
-                      message: "Aucune réservation",
-                      action: Text(
-                        "Les réservations apparaîtront ici.",
-                        style: TextStyle(color: colors.onSurfaceVariant),
+              child:
+                  reservations.isEmpty
+                      ? AppEmptyState(
+                        icon: Icons.event_busy,
+                        message: "Aucune réservation",
+                        action: Text(
+                          "Les réservations apparaîtront ici.",
+                          style: TextStyle(color: colors.onSurfaceVariant),
+                        ),
+                      )
+                      : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: reservations.length,
+                        itemBuilder: (context, index) {
+                          final reservation = reservations[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: ReservationCard(
+                              reservation: reservation,
+                              onStatusUpdate:
+                                  (newStatus) =>
+                                      onStatusUpdate(reservation.id, newStatus),
+                            ),
+                          );
+                        },
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: reservations.length,
-                      itemBuilder: (context, index) {
-                        final reservation = reservations[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12.0),
-                          child: ReservationCard(
-                            reservation: reservation,
-                            onStatusUpdate: (newStatus) =>
-                                onStatusUpdate(reservation.id, newStatus),
-                          ),
-                        );
-                      },
-                    ),
             ),
           ],
         ),
@@ -819,112 +877,112 @@ class _MenuView extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: Breakpoints.maxGridWidth),
         child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
             children: [
-              Text(
-                "Votre menu",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Votre menu",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                  IconButton.filledTonal(
+                    onPressed: () async {
+                      await AppNavigation.push<void>(
+                        context,
+                        MenuPage(restaurantId: restaurantId),
+                      );
+                      await onMenuChanged();
+                    },
+                    icon: const Icon(Icons.edit),
+                  ),
+                ],
               ),
-              IconButton.filledTonal(
-                onPressed: () async {
-                  await AppNavigation.push<void>(
-                    context,
-                    MenuPage(restaurantId: restaurantId),
-                  );
-                  await onMenuChanged();
-                },
-                icon: const Icon(Icons.edit),
+              const SizedBox(height: 16),
+              Expanded(
+                child:
+                    menuItems.isEmpty
+                        ? const AppEmptyState(
+                          icon: Icons.restaurant_menu,
+                          message: "Aucun plat ajouté au menu",
+                        )
+                        : GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 240,
+                                childAspectRatio: 0.8,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
+                          itemCount: menuItems.length,
+                          itemBuilder: (context, index) {
+                            final item = menuItems[index];
+                            return Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(
+                                  color: colors.outlineVariant.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(16),
+                                      ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        color: colors.secondaryContainer
+                                            .withValues(alpha: 0.3),
+                                        child: const Icon(
+                                          Icons.restaurant_menu,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.itemName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          "${item.price.toStringAsFixed(2)} €",
+                                          style: TextStyle(
+                                            color: colors.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child:
-                menuItems.isEmpty
-                    ? const AppEmptyState(
-                      icon: Icons.restaurant_menu,
-                      message: "Aucun plat ajouté au menu",
-                    )
-                    : GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 240,
-                            childAspectRatio: 0.8,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                      itemCount: menuItems.length,
-                      itemBuilder: (context, index) {
-                        final item = menuItems[index];
-                        return Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: colors.outlineVariant.withValues(
-                                alpha: 0.5,
-                              ),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
-                                  child: Container(
-                                    width: double.infinity,
-                                    color: colors.secondaryContainer.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                    child: const Icon(
-                                      Icons.restaurant_menu,
-                                      size: 40,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.itemName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      "${item.price.toStringAsFixed(2)} €",
-                                      style: TextStyle(
-                                        color: colors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-          ),
-        ],
-      ),
         ),
       ),
     );
@@ -947,62 +1005,64 @@ class _SettingsView extends StatelessWidget {
     return Align(
       alignment: Alignment.topCenter,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Breakpoints.maxContentWidth),
+        constraints: const BoxConstraints(
+          maxWidth: Breakpoints.maxContentWidth,
+        ),
         child: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          "Paramètres du restaurant",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 24),
-        AppSettingTile(
-          icon: Icons.storefront_outlined,
-          title: "Informations du restaurant",
-          subtitle: "Nom, adresse, type de cuisine...",
-          onTap: onOpenInfo,
-        ),
-        AppSettingTile(
-          icon: Icons.table_bar_outlined,
-          title: "Gestion des tables",
-          subtitle: "Ajouter ou modifier vos tables",
-          onTap: onOpenTables,
-        ),
-        AppSettingTile(
-          icon: Icons.access_time_outlined,
-          title: "Horaires d'ouverture",
-          subtitle: "Gérer vos créneaux quotidiens",
-          onTap:
-              () => AppNavigation.push<void>(
-                context,
-                HourlyActivityPage(restaurantId: restaurant.id),
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              "Paramètres du restaurant",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
-        ),
-        AppSettingTile(
-          icon: Icons.calendar_today_outlined,
-          title: "Fermetures exceptionnelles",
-          subtitle: "Gérer les jours fériés et vacances",
-          onTap:
-              () => AppNavigation.push<void>(
-                context,
-                ExceptionsPage(restaurantId: restaurant.id),
-              ),
-        ),
-        AppSettingTile(
-          icon: Icons.star_outline_rounded,
-          title: "Avis clients",
-          subtitle: "Consulter les notes et commentaires",
-          onTap:
-              () => AppNavigation.push<void>(
-                context,
-                RestaurantReviewsPage(restaurantId: restaurant.id),
-              ),
-        ),
-      ],
+            ),
+            const SizedBox(height: 24),
+            AppSettingTile(
+              icon: Icons.storefront_outlined,
+              title: "Informations du restaurant",
+              subtitle: "Nom, adresse, type de cuisine...",
+              onTap: onOpenInfo,
+            ),
+            AppSettingTile(
+              icon: Icons.table_bar_outlined,
+              title: "Gestion des tables",
+              subtitle: "Ajouter ou modifier vos tables",
+              onTap: onOpenTables,
+            ),
+            AppSettingTile(
+              icon: Icons.access_time_outlined,
+              title: "Horaires d'ouverture",
+              subtitle: "Gérer vos créneaux quotidiens",
+              onTap:
+                  () => AppNavigation.push<void>(
+                    context,
+                    HourlyActivityPage(restaurantId: restaurant.id),
+                  ),
+            ),
+            AppSettingTile(
+              icon: Icons.calendar_today_outlined,
+              title: "Fermetures exceptionnelles",
+              subtitle: "Gérer les jours fériés et vacances",
+              onTap:
+                  () => AppNavigation.push<void>(
+                    context,
+                    ExceptionsPage(restaurantId: restaurant.id),
+                  ),
+            ),
+            AppSettingTile(
+              icon: Icons.star_outline_rounded,
+              title: "Avis clients",
+              subtitle: "Consulter les notes et commentaires",
+              onTap:
+                  () => AppNavigation.push<void>(
+                    context,
+                    RestaurantReviewsPage(restaurantId: restaurant.id),
+                  ),
+            ),
+          ],
         ),
       ),
     );

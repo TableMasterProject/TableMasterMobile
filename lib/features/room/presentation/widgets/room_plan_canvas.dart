@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:table_master_mobile/core/responsive/breakpoints.dart';
@@ -92,12 +93,14 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
     // L'utilisateur peut quand même zoomer via la toolbar (+/-/reset).
     final allowPan = !widget.isEditing;
     final showToolbar = widget.showZoomToolbar && !context.isMobile;
+    final scaleEnabled = !_isDesktopOrWebPlatform;
 
     return LayoutBuilder(
       builder: (context, outerConstraints) {
-        final effectiveMaxWidth = maxWidth == double.infinity
-            ? outerConstraints.maxWidth
-            : math.min(maxWidth, outerConstraints.maxWidth);
+        final effectiveMaxWidth =
+            maxWidth == double.infinity
+                ? outerConstraints.maxWidth
+                : math.min(maxWidth, outerConstraints.maxWidth);
 
         return Center(
           child: ConstrainedBox(
@@ -105,21 +108,27 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (showToolbar) _ZoomToolbar(
-                  onZoomIn: _zoomIn,
-                  onZoomOut: _zoomOut,
-                  onReset: _reset,
-                  isEditing: widget.isEditing,
-                ),
+                if (showToolbar)
+                  _ZoomToolbar(
+                    onZoomIn: _zoomIn,
+                    onZoomOut: _zoomOut,
+                    onReset: _reset,
+                    isEditing: widget.isEditing,
+                  ),
                 AspectRatio(
                   aspectRatio: widget.aspectRatio,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final size = Size(constraints.maxWidth, constraints.maxHeight);
+                      final size = Size(
+                        constraints.maxWidth,
+                        constraints.maxHeight,
+                      );
 
                       final innerCanvas = DecoratedBox(
                         decoration: BoxDecoration(
-                          color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+                          color: colors.surfaceContainerHighest.withValues(
+                            alpha: 0.35,
+                          ),
                           border: Border.all(color: colors.outlineVariant),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -161,7 +170,8 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
                           minScale: _minScale,
                           maxScale: _maxScale,
                           panEnabled: allowPan,
-                          scaleEnabled: true,
+                          scaleEnabled: scaleEnabled,
+                          trackpadScrollCausesScale: false,
                           boundaryMargin: const EdgeInsets.all(40),
                           child: innerCanvas,
                         ),
@@ -177,21 +187,36 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
     );
   }
 
+  bool get _isDesktopOrWebPlatform {
+    if (kIsWeb) return true;
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.linux ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
+      _ => false,
+    };
+  }
+
   Widget _buildTable(BuildContext context, TableEntityIn table, Size size) {
     final colors = Theme.of(context).colorScheme;
     final id = table is TableEntityOut ? table.id : null;
     final status = id == null ? 'Disponible' : widget.tableStatuses[id] ?? '';
     final pendingCount = id == null ? 0 : widget.pendingBadgeCounts[id] ?? 0;
-    final validatedCount = id == null ? 0 : widget.validatedBadgeCounts[id] ?? 0;
+    final validatedCount =
+        id == null ? 0 : widget.validatedBadgeCounts[id] ?? 0;
     final hasBadge = pendingCount > 0 || validatedCount > 0;
-    final isAvailable = !widget.disableUnavailableTables ||
+    final isAvailable =
+        !widget.disableUnavailableTables ||
         status == 'Disponible' ||
         widget.isEditing;
-    final isSelected = widget.selectedDraftTable == table ||
+    final isSelected =
+        widget.selectedDraftTable == table ||
         (id != null && widget.selectedTableId == id);
-    final statusColor = pendingCount > 0
-        ? Colors.orange
-        : validatedCount > 0
+    final statusColor =
+        pendingCount > 0
+            ? Colors.orange
+            : validatedCount > 0
             ? Colors.blue
             : colors.outline;
     final left =
@@ -202,157 +227,171 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
     final height =
         (table.height * size.height).clamp(44.0, size.height).toDouble();
 
-    final tooltipMessage = !context.isMobile && status.isNotEmpty
-        ? 'Table ${table.tableNumber} • ${table.numberOfSeats} places\n$status'
-        : null;
+    final tooltipMessage =
+        !context.isMobile && status.isNotEmpty
+            ? 'Table ${table.tableNumber} • ${table.numberOfSeats} places\n$status'
+            : null;
 
     final inner = _TouchPriority(
-        enabled: widget.isEditing,
-        child: Listener(
-          behavior: HitTestBehavior.opaque,
-          onPointerDown: widget.isEditing && isAvailable
-              ? (_) => widget.onTableSelected?.call(table)
-              : null,
-          onPointerMove: widget.isEditing
-              ? (event) {
+      enabled: widget.isEditing,
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown:
+            widget.isEditing && isAvailable
+                ? (_) => widget.onTableSelected?.call(table)
+                : null,
+        onPointerMove:
+            widget.isEditing
+                ? (event) {
                   final nextX =
-                      (table.positionX + event.delta.dx / size.width / _currentScale)
+                      (table.positionX +
+                              event.delta.dx / size.width / _currentScale)
                           .clamp(0.0, 0.98)
                           .toDouble();
                   final nextY =
-                      (table.positionY + event.delta.dy / size.height / _currentScale)
+                      (table.positionY +
+                              event.delta.dy / size.height / _currentScale)
                           .clamp(0.0, 0.98)
                           .toDouble();
                   widget.onTableMoved?.call(table, nextX, nextY);
                 }
-              : null,
-          child: MouseRegion(
-            cursor: widget.isEditing && isAvailable
-                ? SystemMouseCursors.grab
-                : (isAvailable ? SystemMouseCursors.click : SystemMouseCursors.basic),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: !widget.isEditing && isAvailable
-                  ? () => widget.onTableSelected?.call(table)
-                  : null,
-              child: Transform.rotate(
-                angle: table.rotationDegrees * math.pi / 180,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 120),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _tableColor(
-                      colors,
-                      isSelected,
-                      pendingCount,
-                      validatedCount,
-                      isAvailable,
-                    ),
-                    border: Border.all(
-                      color: isSelected
-                          ? colors.primary
-                          : hasBadge
-                              ? statusColor
-                              : isAvailable
-                                  ? colors.outline
-                                  : colors.outlineVariant,
-                      width: isSelected ? 3 : 1,
-                    ),
-                    borderRadius: table.shape == TableShape.circle
-                        ? BorderRadius.circular(999)
-                        : BorderRadius.circular(
+                : null,
+        child: MouseRegion(
+          cursor:
+              widget.isEditing && isAvailable
+                  ? SystemMouseCursors.grab
+                  : (isAvailable
+                      ? SystemMouseCursors.click
+                      : SystemMouseCursors.basic),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap:
+                !widget.isEditing && isAvailable
+                    ? () => widget.onTableSelected?.call(table)
+                    : null,
+            child: Transform.rotate(
+              angle: table.rotationDegrees * math.pi / 180,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _tableColor(
+                    colors,
+                    isSelected,
+                    pendingCount,
+                    validatedCount,
+                    isAvailable,
+                  ),
+                  border: Border.all(
+                    color:
+                        isSelected
+                            ? colors.primary
+                            : hasBadge
+                            ? statusColor
+                            : isAvailable
+                            ? colors.outline
+                            : colors.outlineVariant,
+                    width: isSelected ? 3 : 1,
+                  ),
+                  borderRadius:
+                      table.shape == TableShape.circle
+                          ? BorderRadius.circular(999)
+                          : BorderRadius.circular(
                             table.shape == TableShape.square ? 6 : 4,
                           ),
-                    boxShadow: [
-                      if (isSelected)
-                        BoxShadow(
-                          color: colors.primary.withValues(alpha: 0.2),
-                          blurRadius: 10,
-                          spreadRadius: 1,
-                        ),
-                    ],
-                  ),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned.fill(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
+                  boxShadow: [
+                    if (isSelected)
+                      BoxShadow(
+                        color: colors.primary.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
+                  ],
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'T${table.tableNumber}',
+                                style: TextStyle(
+                                  color:
+                                      isAvailable
+                                          ? colors.onSurface
+                                          : colors.onSurfaceVariant,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '${table.numberOfSeats}p',
+                                style: TextStyle(
+                                  color:
+                                      isAvailable
+                                          ? colors.onSurfaceVariant
+                                          : colors.outline,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              if (status.isNotEmpty && status != 'Disponible')
                                 Text(
-                                  'T${table.tableNumber}',
+                                  status,
+                                  textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: isAvailable
-                                        ? colors.onSurface
-                                        : colors.onSurfaceVariant,
-                                    fontWeight: FontWeight.bold,
+                                    color: statusColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                Text(
-                                  '${table.numberOfSeats}p',
-                                  style: TextStyle(
-                                    color: isAvailable
-                                        ? colors.onSurfaceVariant
-                                        : colors.outline,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                                if (status.isNotEmpty && status != 'Disponible')
-                                  Text(
-                                    status,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
                       ),
-                      if (pendingCount > 0)
-                        Positioned(
-                          right: -5,
-                          top: -5,
-                          child: _CanvasBadge(
-                            text: pendingCount.toString(),
-                            color: Colors.orange,
-                            icon: Icons.pending_actions,
-                          ),
+                    ),
+                    if (pendingCount > 0)
+                      Positioned(
+                        right: -5,
+                        top: -5,
+                        child: _CanvasBadge(
+                          text: pendingCount.toString(),
+                          color: Colors.orange,
+                          icon: Icons.pending_actions,
                         ),
-                      if (validatedCount > 0)
-                        Positioned(
-                          left: -5,
-                          top: -5,
-                          child: _CanvasBadge(
-                            text: validatedCount.toString(),
-                            color: Colors.blue,
-                            icon: Icons.event,
-                          ),
+                      ),
+                    if (validatedCount > 0)
+                      Positioned(
+                        left: -5,
+                        top: -5,
+                        child: _CanvasBadge(
+                          text: validatedCount.toString(),
+                          color: Colors.blue,
+                          icon: Icons.event,
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
 
     return Positioned(
       left: left,
       top: top,
       width: width,
       height: height,
-      child: tooltipMessage != null
-          ? Tooltip(message: tooltipMessage, child: inner)
-          : inner,
+      child:
+          tooltipMessage != null
+              ? Tooltip(message: tooltipMessage, child: inner)
+              : inner,
     );
   }
 
@@ -381,8 +420,10 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
       if (renderBox is! RenderBox) return;
 
       final local = renderBox.globalToLocal(globalPosition);
-      final nextX = (local.dx / renderBox.size.width).clamp(0.0, 1.0).toDouble();
-      final nextY = (local.dy / renderBox.size.height).clamp(0.0, 1.0).toDouble();
+      final nextX =
+          (local.dx / renderBox.size.width).clamp(0.0, 1.0).toDouble();
+      final nextY =
+          (local.dy / renderBox.size.height).clamp(0.0, 1.0).toDouble();
       widget.onBoundaryPointMoved?.call(index, nextX, nextY);
     }
 
@@ -556,11 +597,11 @@ class _RoomPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (boundaryPoints.length < 3) return;
 
-    final path = Path()
-      ..moveTo(
-        boundaryPoints.first.x * size.width,
-        boundaryPoints.first.y * size.height,
-      );
+    final path =
+        Path()..moveTo(
+          boundaryPoints.first.x * size.width,
+          boundaryPoints.first.y * size.height,
+        );
     for (final point in boundaryPoints.skip(1)) {
       path.lineTo(point.x * size.width, point.y * size.height);
     }
