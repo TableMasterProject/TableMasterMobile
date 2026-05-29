@@ -9,7 +9,6 @@ import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/review/presentation/pages/add_review_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/localisation.dart';
 import '../data/models/reservation_in.dart';
 
 class ReservationDetailPage extends StatefulWidget {
@@ -31,7 +30,6 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
   @override
   void initState() {
     super.initState();
-    Localisation.checkPermission();
     _fetchFullData();
   }
 
@@ -150,8 +148,8 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                           ),
                         ),
                       },
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
+                      myLocationEnabled: false,
+                      myLocationButtonEnabled: false,
                       mapToolbarEnabled: true,
                     )
                   else

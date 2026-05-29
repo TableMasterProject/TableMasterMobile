@@ -6,7 +6,6 @@ import 'package:table_master_mobile/features/restaurant/data/models/restaurant_o
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/localisation.dart';
 import '../../reservation/presentation/create_reservation_page.dart';
 
 class RestaurantClientDetailPage extends StatefulWidget {
@@ -30,7 +29,6 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    Localisation.checkPermission();
     _fetchRestaurantDetails();
   }
 
@@ -151,8 +149,8 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                           ),
                         ),
                       },
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
+                      myLocationEnabled: false,
+                      myLocationButtonEnabled: false,
                       mapToolbarEnabled: true,
                     )
                   else

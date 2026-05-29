@@ -32,6 +32,7 @@ class _MapsPageState extends State<MapsPage> {
   LatLng? _lastSearchCenter;
   StreamSubscription<Position>? _positionStream;
   bool _userMovedMap = false;
+  bool _hasLocationPermission = false;
   static const double _searchDistanceThreshold = 500; // meters
 
   bool _loading = false;
@@ -58,32 +59,30 @@ class _MapsPageState extends State<MapsPage> {
     setState(() => _isInitializing = true);
 
     try {
-      // 1. Demande de permission
-      await Localisation.checkPermission();
+      _hasLocationPermission = await Localisation.requestPermission();
 
-      // 2. Tente de récupérer la position
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 7),
-        ),
-      );
+      if (_hasLocationPermission) {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 7),
+          ),
+        );
 
-      _mapCenter = LatLng(pos.latitude, pos.longitude);
-      _search.latitude = pos.latitude;
-      _search.longitude = pos.longitude;
-      _search.currentUserLatitude = pos.latitude;
-      _search.currentUserLongitude = pos.longitude;
+        _mapCenter = LatLng(pos.latitude, pos.longitude);
+        _search.currentUserLatitude = pos.latitude;
+        _search.currentUserLongitude = pos.longitude;
+      }
     } catch (e) {
       debugPrint(
         "Localisation non disponible (timeout ou refus), repli sur Paris: $e",
       );
-      // Valeurs par défaut déjà réglées sur Paris
-      _search.latitude = _mapCenter.latitude;
-      _search.longitude = _mapCenter.longitude;
     }
 
-    // 3. On charge les restaurants AVANT de retirer le loader
+    _search.latitude = _mapCenter.latitude;
+    _search.longitude = _mapCenter.longitude;
+
+    // On charge les restaurants AVANT de retirer le loader
     await _loadRestaurants();
 
     if (mounted) {
@@ -296,8 +295,8 @@ class _MapsPageState extends State<MapsPage> {
         target: _mapCenter,
         zoom: 12,
       ),
-      myLocationEnabled: true,
-      myLocationButtonEnabled: true,
+      myLocationEnabled: _hasLocationPermission,
+      myLocationButtonEnabled: _hasLocationPermission,
       onCameraMove: _onCameraMove,
       onCameraIdle: _onCameraIdle,
       markers: _markers,

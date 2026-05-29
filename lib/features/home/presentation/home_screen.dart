@@ -21,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  late List<Widget> _pages;
+  late List<Widget?> _pages;
   late List<NavDestination> _destinations;
   late List<String> _titles;
   final _authRepo = getIt<IAuthRepository>();
@@ -34,13 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _initializeNavigation() {
     final isRestaurant = widget.user.accountType == 1;
-
-    _pages = [
-      MyReservationsPage(userId: widget.user.id),
-      const MapsPage(),
-      AccountPage(user: widget.user, onLogout: _logout),
-      if (isRestaurant) RestaurantPage(user: widget.user),
-    ];
 
     _titles = [
       'Mes Réservations',
@@ -72,6 +65,21 @@ class _HomeScreenState extends State<HomeScreen> {
           label: 'Mon Restaurant',
         ),
     ];
+
+    _pages = List<Widget?>.filled(_destinations.length, null);
+    _ensurePageLoaded(_selectedIndex);
+  }
+
+  void _ensurePageLoaded(int index) {
+    if (_pages[index] != null) return;
+
+    _pages[index] = switch (index) {
+      0 => MyReservationsPage(userId: widget.user.id),
+      1 => const MapsPage(),
+      2 => AccountPage(user: widget.user, onLogout: _logout),
+      3 => RestaurantPage(user: widget.user),
+      _ => const SizedBox.shrink(),
+    };
   }
 
   Future<void> _logout() async {
@@ -87,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onDestinationSelected(int index) {
     setState(() {
+      _ensurePageLoaded(index);
       _selectedIndex = index;
     });
   }
@@ -116,7 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
         accentColor: colors.primary,
         child: IndexedStack(
           index: _selectedIndex,
-          children: _pages,
+          children: List.generate(
+            _pages.length,
+            (index) => _pages[index] ?? const SizedBox.shrink(),
+          ),
         ),
       ),
     );

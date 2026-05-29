@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -21,10 +23,13 @@ void main() async {
     await initializeDateFormatting('fr_FR', null);
 
     setupDependencies();
-    await getIt<NotificationService>().init();
     await _captureSentryStartupTestEvent();
 
     runApp(const MyApp());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_initializeNotifications());
+    });
   }
 
   if (AppConfig.sentryDsn.isEmpty) {
@@ -41,6 +46,15 @@ void main() async {
     },
     appRunner: appRunner,
   );
+}
+
+Future<void> _initializeNotifications() async {
+  try {
+    await getIt<NotificationService>().init();
+  } catch (error, stackTrace) {
+    debugPrint('Erreur initialisation notifications: $error');
+    await Sentry.captureException(error, stackTrace: stackTrace);
+  }
 }
 
 Future<void> _captureSentryStartupTestEvent() async {
