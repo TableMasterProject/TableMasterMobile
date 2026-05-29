@@ -26,8 +26,9 @@ Lancer `flutter doctor -v` doit retourner **uniquement** des coches vertes pour 
 | Fichier | Sensible ? | Description |
 | --- | :---: | --- |
 | `config/dev.json` | non | URL API dev + flags |
-| `config/android-emulate-dev.json` | non | URL `10.0.2.2` pour émulateur Android |
+| `config/devEmulator.json` | non | URL `10.0.2.2` pour émulateur Android |
 | `config/prod.json` | non | URL API prod + flags |
+| `SENTRY_DSN` | non secret critique, hors Git | DSN Sentry Flutter injecté au build/run |
 | `lib/firebase_options.dart` | non | Généré par `flutterfire configure` |
 | `android/keystore/*.jks` | **OUI** | Keystore de signature Android — hors Git |
 | `android/key.properties` | **OUI** | Mots de passe keystore — hors Git |
@@ -45,6 +46,7 @@ flutter pub get
 flutter analyze
 flutter test
 flutter build apk --release --dart-define-from-file=config/prod.json \
+                  --dart-define=SENTRY_DSN=<dsn-flutter> \
                   --obfuscate --split-debug-info=build/symbols/
 ```
 
@@ -54,6 +56,7 @@ Sortie : `build/app/outputs/flutter-apk/app-release.apk`
 
 ```bash
 flutter build appbundle --release --dart-define-from-file=config/prod.json \
+                        --dart-define=SENTRY_DSN=<dsn-flutter> \
                         --obfuscate --split-debug-info=build/symbols/
 ```
 
@@ -69,6 +72,7 @@ Publication :
 
 ```bash
 flutter build ipa --release --dart-define-from-file=config/prod.json \
+                  --dart-define=SENTRY_DSN=<dsn-flutter> \
                   --obfuscate --split-debug-info=build/symbols/
 ```
 
@@ -87,6 +91,7 @@ Publication :
 
 ```bash
 flutter build web --release --dart-define-from-file=config/prod.json \
+                  --dart-define=SENTRY_DSN=<dsn-flutter> \
                   --web-renderer canvaskit
 ```
 
@@ -170,6 +175,7 @@ sudo systemctl reload nginx
 | Android | Installer l'APK ou télécharger depuis Play Store → login → créer une résa → recevoir notification push |
 | iOS | TestFlight → login → réservation → push |
 | Web | https://app.tablemaster.lmpe.ovh → login → ouvrir une fiche restaurant → vérifier carte Google Maps |
+| Sentry | Vérifier qu'une erreur/test remonte dans le projet Sentry Flutter |
 
 ### Smoke tests automatiques
 
@@ -188,7 +194,7 @@ flutter drive --target=integration_test/smoke_test.dart \
 | Android | logcat | `adb logcat | grep flutter` |
 | iOS | Console.app | filtre sur `TableMaster` |
 | Web | DevTools | F12 → Console / Network |
-| Toutes plateformes | Sentry (à brancher) | dashboard cloud |
+| Toutes plateformes | Sentry Flutter | dashboard cloud |
 
 ---
 

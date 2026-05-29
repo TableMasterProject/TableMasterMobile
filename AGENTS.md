@@ -12,6 +12,7 @@ Ces instructions s'appliquent au projet `TableMasterMobile/`. Repondre a l'utili
 - Notifications : Firebase Messaging et notifications locales.
 - Temps reel : `signalr_netcore`.
 - Cartes/localisation : Google Maps et Geolocator.
+- Monitoring : Sentry Flutter (`sentry_flutter`).
 - Lint : `analysis_options.yaml` avec `flutter_lints`.
 
 ## Commandes
@@ -23,12 +24,13 @@ flutter pub get
 flutter analyze
 flutter test
 flutter run --dart-define-from-file=config/dev.json
-flutter run --dart-define-from-file=config/android-emulate-dev.json
+flutter run --dart-define-from-file=config/devEmulator.json
 flutter build apk --dart-define-from-file=config/prod.json
 flutter build appbundle --dart-define-from-file=config/prod.json
 ```
 
-Utiliser `config/android-emulate-dev.json` pour l'emulateur Android et `config/dev.json` pour le developpement local classique.
+Utiliser `config/devEmulator.json` pour l'emulateur Android et `config/dev.json` pour le developpement local classique.
+Pour activer Sentry localement, ajouter `--dart-define=SENTRY_DSN=<dsn-flutter>` ; pour le test debug de demarrage, ajouter aussi `--dart-define=SENTRY_ENABLE_STARTUP_TEST_EVENT=true`.
 
 ## Architecture
 
@@ -47,6 +49,7 @@ Respecter le style Clean Architecture existant : la presentation appelle les rep
 - Header de version : `x-api-version: 1.0`.
 - Cle du token d'acces : `access_token`.
 - Cle du refresh token : `refresh_token`.
+- Sentry Flutter est initialise dans `lib/main.dart` seulement si `AppConfig.sentryDsn` est fourni via `SENTRY_DSN`.
 - Ne pas dupliquer la logique de token, refresh ou headers hors de `ApiClient` et du repository auth.
 - En cas de changement de route, modele, statut HTTP ou comportement auth cote API, mettre a jour le datasource, le modele et le repository correspondants.
 
@@ -78,5 +81,6 @@ Respecter le style Clean Architecture existant : la presentation appelle les rep
 ## Securite
 
 - Ne pas afficher ni commiter les configs Firebase privees, cles de signature, secrets API ou chemins locaux sensibles.
+- Ne pas afficher ni commiter le DSN Sentry reel ; utiliser `--dart-define=SENTRY_DSN=...` en local et le secret GitHub Actions `SENTRY_DSN_FLUTTER` en CI.
 - Eviter les dossiers generes : `build/`, `.dart_tool/`, `.gradle/`, fichiers plugins generes et metadonnees IDE.
 - Ne pas modifier les fichiers de plateforme Android/iOS generes sauf besoin explicite.

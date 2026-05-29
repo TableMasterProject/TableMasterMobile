@@ -14,11 +14,11 @@ Ce repo utilise GitHub Actions pour compiler et builder l'app Flutter automatiqu
 1. 🔧 Setup Flutter 3.38.9
 2. 📦 Restaure les dépendances (`flutter pub get`)
 3. 🔍 Analyse Dart (`flutter analyze`)
-4. 📱 Build Web Release (63.5s)
-5. 🤖 Build APK Release (205s, 58 MB)
-6. 📦 Build AAB Release (Google Play)
-7. 🐧 Build Linux Desktop
-8. 💾 Upload tous les artefacts
+4. 🧪 Lance les tests Flutter
+5. 🔎 Injecte `SENTRY_DSN_FLUTTER` dans les builds production
+6. 📱 Build Web Release
+7. 🤖 Build APK Release
+8. 💾 Upload les artefacts
 
 **Durée:** ~5-7 minutes
 
@@ -210,7 +210,10 @@ GOOGLE_PLAY_KEY          # JSON file from Google Play Console
 FIREBASE_CREDENTIALS     # Service account JSON
 NETLIFY_AUTH_TOKEN       # Netlify personal access token
 NETLIFY_SITE_ID          # Netlify site ID
+SENTRY_DSN_FLUTTER       # DSN du projet Sentry Flutter, injecté via --dart-define
 ```
+
+Le DSN Sentry n'est pas stocké dans `config/prod.json` : le workflow `.github/workflows/flutter.yml` le passe à `flutter build web` et `flutter build apk` avec `--dart-define=SENTRY_DSN=...`.
 
 ---
 

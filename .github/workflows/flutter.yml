@@ -39,6 +39,12 @@ jobs:
       - name: Check prod config exists
         run: test -f config/prod.json
 
+      - name: Check Sentry Flutter secret exists
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_FLUTTER }}
+        run: test -n "$SENTRY_DSN"
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -53,7 +59,12 @@ jobs:
         continue-on-error: true
 
       - name: Build Web Production
-        run: flutter build web --release --dart-define-from-file=config/prod.json
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_FLUTTER }}
+        run: >
+          flutter build web --release
+          --dart-define-from-file=config/prod.json
+          --dart-define=SENTRY_DSN="$SENTRY_DSN"
 
       - name: Zip Web Build
         run: |
@@ -61,7 +72,12 @@ jobs:
           zip -r ../../${WEB_ARTIFACT_NAME} .
 
       - name: Build APK Production
-        run: flutter build apk --release --dart-define-from-file=config/prod.json
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_FLUTTER }}
+        run: >
+          flutter build apk --release
+          --dart-define-from-file=config/prod.json
+          --dart-define=SENTRY_DSN="$SENTRY_DSN"
 
       - name: Rename APK
         run: |

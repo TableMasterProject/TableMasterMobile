@@ -6,4 +6,15 @@ class AppConfig {
 
   static const bool isProd = bool.fromEnvironment('IS_PROD');
   static const String appName = String.fromEnvironment('APP_NAME');
+  static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  static const String _sentryTracesSampleRate = String.fromEnvironment(
+    'SENTRY_TRACES_SAMPLE_RATE',
+    defaultValue: '0.1',
+  );
+  static const bool sentryEnableStartupTestEvent = bool.fromEnvironment(
+    'SENTRY_ENABLE_STARTUP_TEST_EVENT',
+  );
+
+  static final double sentryTracesSampleRate =
+      double.tryParse(_sentryTracesSampleRate) ?? 0.1;
 }

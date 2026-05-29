@@ -53,6 +53,7 @@
 **Mesures :**
 - Aucun secret API n'est embarqué dans l'app (clés Firebase publiques par nature).
 - Les configs `config/*.json` ne contiennent **que** des URLs et des feature flags publics.
+- Le DSN Sentry est injecté au build/run via `--dart-define=SENTRY_DSN=...` ou le secret CI `SENTRY_DSN_FLUTTER`, jamais écrit en dur.
 
 ## M5 — Cryptographie
 
@@ -65,6 +66,7 @@
 **Mesures :**
 - Configuration injectée au build via `--dart-define-from-file` — aucune valeur sensible dans le code.
 - Pas de "debug menu" dans le binaire `release`.
+- Sentry Flutter est activé seulement si `SENTRY_DSN` est fourni ; `SENTRY_ENABLE_STARTUP_TEST_EVENT` sert uniquement au test local debug.
 
 ## M7 — Qualité du code client
 
@@ -98,7 +100,8 @@ flutter build ipa --release --obfuscate --split-debug-info=build/symbols/
 **Mesures :**
 - Aucun écran de debug exposé en mode release (vérifié via `kReleaseMode`).
 - Logs `AppLogger` filtrés en release (niveau `info` minimum).
-- Pas d'endpoint réseau additionnel atteint par l'app au-delà de l'API officielle.
+- Sentry collecte les erreurs applicatives et traces avec `sendDefaultPii=false`.
+- Pas d'endpoint réseau additionnel atteint par l'app au-delà de l'API officielle et de Sentry.
 
 ---
 

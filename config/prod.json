@@ -1,5 +1,6 @@
 {
   "APP_NAME": "Table Master",
   "API_URL": "https://api.tablemaster.lmpe.ovh",
-  "IS_PROD": true
+  "IS_PROD": true,
+  "SENTRY_TRACES_SAMPLE_RATE": "0.1"
 }

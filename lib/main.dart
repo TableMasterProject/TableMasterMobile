@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/app_config.dart';
 import 'core/app_constant.dart';
@@ -14,13 +15,45 @@ import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await initializeDateFormatting('fr_FR', null);
 
-  setupDependencies();
-  await getIt<NotificationService>().init();
+  Future<void> appRunner() async {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await initializeDateFormatting('fr_FR', null);
 
-  runApp(const MyApp());
+    setupDependencies();
+    await getIt<NotificationService>().init();
+    await _captureSentryStartupTestEvent();
+
+    runApp(const MyApp());
+  }
+
+  if (AppConfig.sentryDsn.isEmpty) {
+    await appRunner();
+    return;
+  }
+
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = AppConfig.sentryDsn;
+      options.environment = AppConfig.isProd ? 'production' : 'development';
+      options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
+      options.sendDefaultPii = false;
+    },
+    appRunner: appRunner,
+  );
+}
+
+Future<void> _captureSentryStartupTestEvent() async {
+  var shouldCapture = false;
+
+  assert(() {
+    shouldCapture = AppConfig.sentryEnableStartupTestEvent;
+    return true;
+  }());
+
+  if (shouldCapture && AppConfig.sentryDsn.isNotEmpty) {
+    await Sentry.captureMessage('Hello Sentry from TableMasterMobile');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -35,6 +68,9 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       scrollBehavior: const _AppScrollBehavior(),
       navigatorKey: navigatorKey,
+      navigatorObservers: AppConfig.sentryDsn.isEmpty
+          ? const <NavigatorObserver>[]
+          : [SentryNavigatorObserver()],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

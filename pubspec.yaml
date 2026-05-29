@@ -50,6 +50,7 @@ dependencies:
   google_maps_flutter_web: ^0.6.2
   signalr_netcore: ^1.4.4
   audioplayers: ^6.6.0
+  sentry_flutter: ^9.21.0
 
 dev_dependencies:
   flutter_test:
