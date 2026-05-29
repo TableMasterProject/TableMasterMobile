@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
+import '../models/google_auth_check_out.dart';
+import '../models/google_register_in.dart';
 import '../models/login_token_in.dart';
 import '../models/login_user_in.dart';
 import '../models/login_user_out.dart';
@@ -29,6 +31,34 @@ class AuthDataSource {
       final response = await apiClient.dio.post(
         '/Auth/refresh',
         data: tokenModel.toJson(),
+      );
+
+      return LoginUserOut.fromJson(response.data);
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  Future<GoogleAuthCheckOut> checkGoogle(String idToken) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/Auth/google/check',
+        data: {'IdToken': idToken},
+      );
+
+      return GoogleAuthCheckOut.fromJson(response.data);
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  Future<LoginUserOut> registerGoogle(GoogleRegisterIn model) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/Auth/google/register',
+        data: model.toJson(),
       );
 
       return LoginUserOut.fromJson(response.data);

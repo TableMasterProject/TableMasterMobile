@@ -4,6 +4,7 @@ class UserOut extends UserIn {
   int id;
   DateTime createdAt;
   int? restaurantId;
+  String authProvider;
 
   UserOut({
     required super.email,
@@ -14,6 +15,7 @@ class UserOut extends UserIn {
     required this.id,
     required this.createdAt,
     this.restaurantId,
+    this.authProvider = 'Password',
   });
 
   // Constructeur pour transformer le JSON du serveur en objet Dart
@@ -30,6 +32,7 @@ class UserOut extends UserIn {
               ? DateTime.parse(json['createdAt'])
               : DateTime.now(),
       restaurantId: json['restaurantId'],
+      authProvider: json['authProvider'] ?? 'Password',
     );
   }
 }

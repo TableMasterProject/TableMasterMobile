@@ -6,6 +6,9 @@ class AppConfig {
 
   static const bool isProd = bool.fromEnvironment('IS_PROD');
   static const String appName = String.fromEnvironment('APP_NAME');
+  static const String googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+  );
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
   static const String _sentryTracesSampleRate = String.fromEnvironment(
     'SENTRY_TRACES_SAMPLE_RATE',

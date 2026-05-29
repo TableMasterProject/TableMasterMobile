@@ -61,10 +61,12 @@ jobs:
       - name: Build Web Production
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN_FLUTTER }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
         run: >
           flutter build web --release
           --dart-define-from-file=config/prod.json
           --dart-define=SENTRY_DSN="$SENTRY_DSN"
+          --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID"
 
       - name: Zip Web Build
         run: |
@@ -74,10 +76,12 @@ jobs:
       - name: Build APK Production
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN_FLUTTER }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
         run: >
           flutter build apk --release
           --dart-define-from-file=config/prod.json
           --dart-define=SENTRY_DSN="$SENTRY_DSN"
+          --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID"
 
       - name: Rename APK
         run: |

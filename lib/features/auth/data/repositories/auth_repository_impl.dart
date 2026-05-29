@@ -2,6 +2,8 @@ import 'package:table_master_mobile/core/notification_service.dart';
 import 'package:table_master_mobile/core/logging/app_logger.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_datasource.dart';
+import '../models/google_auth_check_out.dart';
+import '../models/google_register_in.dart';
 import '../models/login_user_in.dart';
 import '../models/login_token_in.dart';
 import '../models/login_user_out.dart';
@@ -44,6 +46,23 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
+  Future<GoogleAuthCheckOut> checkGoogle(String idToken) async {
+    final result = await remoteDataSource.checkGoogle(idToken);
+    final login = result.login;
+    if (login != null) {
+      await _saveAuthenticatedUser(login);
+    }
+    return result;
+  }
+
+  @override
+  Future<LoginUserOut> registerGoogle(GoogleRegisterIn model) async {
+    final result = await remoteDataSource.registerGoogle(model);
+    await _saveAuthenticatedUser(result);
+    return result;
+  }
+
+  @override
   Future<void> logout() async {
     // 1. Supprimer le token sur le serveur (API DeviceToken)
     try {
@@ -71,5 +90,19 @@ class AuthRepositoryImpl implements IAuthRepository {
   Future<void> _saveTokens(String access, String refresh) async {
     await storage.write(key: 'access_token', value: access);
     await storage.write(key: 'refresh_token', value: refresh);
+  }
+
+  Future<void> _saveAuthenticatedUser(LoginUserOut result) async {
+    await _saveTokens(result.accessToken, result.refreshToken);
+    await storage.write(key: 'user_id', value: result.user.id.toString());
+
+    try {
+      await notificationService.registerTokenForCurrentUser();
+    } catch (e) {
+      AppLogger.debug(
+        "Erreur lors de l'enregistrement du token de notification",
+        e,
+      );
+    }
   }
 }

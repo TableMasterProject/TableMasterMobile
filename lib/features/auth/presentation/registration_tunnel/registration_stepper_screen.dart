@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:table_master_mobile/features/auth/data/models/google_auth_check_out.dart';
+import 'package:table_master_mobile/features/auth/data/models/google_register_in.dart';
 import 'package:table_master_mobile/features/auth/data/models/login_user_out.dart';
+import 'package:table_master_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step1_user_info_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step2_password_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step3_account_type_screen.dart';
@@ -22,7 +25,14 @@ import '../../../table/data/models/table_entity_out.dart';
 import '../../../user/data/models/user_in.dart';
 
 class RegistrationStepperScreen extends StatefulWidget {
-  const RegistrationStepperScreen({super.key});
+  final GoogleOnboardingData? googleOnboarding;
+  final ValueChanged<LoginUserOut>? onCompleted;
+
+  const RegistrationStepperScreen({
+    super.key,
+    this.googleOnboarding,
+    this.onCompleted,
+  });
 
   @override
   State<RegistrationStepperScreen> createState() =>
@@ -43,6 +53,7 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   final restaurantRepo = getIt<IRestaurantRepository>();
   final tableRepo = getIt<ITableRepository>();
   final roomRepo = getIt<IRoomRepository>();
+  final authRepo = getIt<IAuthRepository>();
 
   // dataOut
   LoginUserOut? loginUserOut;
@@ -54,15 +65,18 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   late RestaurantIn restaurantData;
   TableChanges? tableChanges;
 
+  bool get _isGoogleRegistration => widget.googleOnboarding != null;
+
   @override
   void initState() {
     super.initState();
+    final googleData = widget.googleOnboarding;
     // Initialisation par défaut
     userData = UserIn(
-      email: '',
+      email: googleData?.email ?? '',
       password: '',
-      firstName: '',
-      lastName: '',
+      firstName: googleData?.firstName ?? '',
+      lastName: googleData?.lastName ?? '',
       accountType: 0,
     );
     restaurantData = RestaurantIn(
@@ -98,6 +112,10 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
   }
 
   void _finish() {
+    if (loginUserOut != null && widget.onCompleted != null) {
+      widget.onCompleted!(loginUserOut!);
+      return;
+    }
     Navigator.pop(context);
   }
 
@@ -148,7 +166,17 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     try {
       if (loginUserOut == null) {
         AppLogger.debug("Envoi au serveur le user");
-        loginUserOut = await userRepo.register(userData);
+        final googleData = widget.googleOnboarding;
+        if (googleData != null) {
+          loginUserOut = await authRepo.registerGoogle(
+            GoogleRegisterIn(
+              googleRegistrationToken: googleData.googleRegistrationToken,
+              user: userData,
+            ),
+          );
+        } else {
+          loginUserOut = await userRepo.register(userData);
+        }
 
         // Sauvegarder l'utilisateur
         const storage = FlutterSecureStorage();
@@ -251,11 +279,13 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
 
     // 2. On construit la liste des pages dynamiquement
     final List<Widget> steps = [
-      Step1UserInfoScreen(onNext: _saveUserStep, user: userData),
-      Step2PasswordScreen(
-        onNext: _savePasswordStep,
-        password: userData.password,
-      ),
+      if (!_isGoogleRegistration) ...[
+        Step1UserInfoScreen(onNext: _saveUserStep, user: userData),
+        Step2PasswordScreen(
+          onNext: _savePasswordStep,
+          password: userData.password,
+        ),
+      ],
       Step3AccountTypeScreen(onSelectType: _setAccountType),
 
       if (_isRestaurant) ...[
