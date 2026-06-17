@@ -276,6 +276,25 @@ class _FakeReservationRepository implements IReservationRepository {
   }
 
   @override
+  Future<ReservationOut> createQuickReservation(
+    int restaurantId,
+    QuickReservationIn reservation,
+  ) async {
+    return ReservationOut(
+      id: 1,
+      createdAt: DateTime(2024),
+      userId: 0,
+      tableId: reservation.tableId,
+      restaurantId: restaurantId,
+      reservationDate: reservation.reservationDate,
+      numberOfPeople: reservation.numberOfPeople,
+      guestName: reservation.guestName,
+      guestPhone: reservation.guestPhone,
+      status: ReservationStatus.validee,
+    );
+  }
+
+  @override
   Future<bool> deleteReservation(int id) async => true;
 
   @override

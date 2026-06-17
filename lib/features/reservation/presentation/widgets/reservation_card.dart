@@ -19,6 +19,11 @@ class ReservationCard extends StatelessWidget {
     final dateFormat = DateFormat('dd/MM/yyyy');
     final timeFormat = DateFormat('HH:mm');
     final r = reservation;
+    final guestName = r.guestName?.trim();
+    final displayName =
+        guestName != null && guestName.isNotEmpty
+            ? guestName
+            : r.user?.firstName ?? r.user?.email ?? 'Client';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -31,7 +36,7 @@ class ReservationCard extends StatelessWidget {
         contentPadding: const EdgeInsets.all(12),
         leading: _buildStatusIcon(r.status),
         title: Text(
-          r.user?.firstName ?? r.user?.email ?? 'Client',
+          displayName,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Padding(
@@ -64,6 +69,21 @@ class ReservationCard extends StatelessWidget {
                   Text('${r.numberOfPeople} convives'),
                 ],
               ),
+              if (r.guestPhone != null && r.guestPhone!.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(r.guestPhone!.trim()),
+                    ],
+                  ),
+                ),
               if (r.specialRequest != null && r.specialRequest!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),

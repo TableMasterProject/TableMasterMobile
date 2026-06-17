@@ -7,31 +7,34 @@ import 'package:table_master_mobile/features/reservation/presentation/widgets/re
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 
 UserOut _buildUser({String firstName = 'Léa'}) => UserOut(
-      id: 1,
-      email: 'lea@example.com',
-      password: '',
-      firstName: firstName,
-      lastName: 'Martin',
-      accountType: 0,
-      createdAt: DateTime(2026, 1, 1),
-    );
+  id: 1,
+  email: 'lea@example.com',
+  password: '',
+  firstName: firstName,
+  lastName: 'Martin',
+  accountType: 0,
+  createdAt: DateTime(2026, 1, 1),
+);
 
 ReservationOut _buildReservation({
   ReservationStatus status = ReservationStatus.enAttente,
   String? specialRequest,
-}) =>
-    ReservationOut(
-      id: 1,
-      createdAt: DateTime(2026, 5, 19),
-      userId: 1,
-      tableId: 2,
-      restaurantId: 3,
-      reservationDate: DateTime(2026, 5, 20, 20, 0),
-      numberOfPeople: 4,
-      status: status,
-      specialRequest: specialRequest,
-      user: _buildUser(),
-    );
+  String? guestName,
+  String? guestPhone,
+}) => ReservationOut(
+  id: 1,
+  createdAt: DateTime(2026, 5, 19),
+  userId: 1,
+  tableId: 2,
+  restaurantId: 3,
+  reservationDate: DateTime(2026, 5, 20, 20, 0),
+  numberOfPeople: 4,
+  status: status,
+  specialRequest: specialRequest,
+  guestName: guestName,
+  guestPhone: guestPhone,
+  user: _buildUser(),
+);
 
 Future<void> _pumpCard(
   WidgetTester tester, {
@@ -52,29 +55,47 @@ Future<void> _pumpCard(
 
 void main() {
   group('ReservationCard', () {
-    testWidgets('affiche le prénom du client, le nombre de convives et le statut',
-        (tester) async {
-      await _pumpCard(tester, reservation: _buildReservation());
+    testWidgets(
+      'affiche le prénom du client, le nombre de convives et le statut',
+      (tester) async {
+        await _pumpCard(tester, reservation: _buildReservation());
 
-      expect(find.text('Léa'), findsOneWidget);
-      expect(find.text('4 convives'), findsOneWidget);
-      expect(find.text('EN ATTENTE'), findsOneWidget);
-    });
+        expect(find.text('Léa'), findsOneWidget);
+        expect(find.text('4 convives'), findsOneWidget);
+        expect(find.text('EN ATTENTE'), findsOneWidget);
+      },
+    );
 
     testWidgets('affiche la demande spéciale quand renseignée', (tester) async {
       await _pumpCard(
         tester,
-        reservation: _buildReservation(specialRequest: 'Allergie aux fruits de mer'),
+        reservation: _buildReservation(
+          specialRequest: 'Allergie aux fruits de mer',
+        ),
       );
 
-      expect(
-        find.text('Demande : Allergie aux fruits de mer'),
-        findsOneWidget,
-      );
+      expect(find.text('Demande : Allergie aux fruits de mer'), findsOneWidget);
     });
 
-    testWidgets('change le libellé de statut sur réservation validée',
-        (tester) async {
+    testWidgets(
+      'affiche le nom et téléphone invité pour une réservation rapide',
+      (tester) async {
+        await _pumpCard(
+          tester,
+          reservation: _buildReservation(
+            guestName: 'Martin',
+            guestPhone: '0601020304',
+          ),
+        );
+
+        expect(find.text('Martin'), findsOneWidget);
+        expect(find.text('0601020304'), findsOneWidget);
+      },
+    );
+
+    testWidgets('change le libellé de statut sur réservation validée', (
+      tester,
+    ) async {
       await _pumpCard(
         tester,
         reservation: _buildReservation(status: ReservationStatus.validee),
@@ -83,15 +104,18 @@ void main() {
       expect(find.text('CONFIRMÉE'), findsOneWidget);
     });
 
-    testWidgets("n'affiche aucun bouton d'action quand onStatusUpdate est null",
-        (tester) async {
-      await _pumpCard(tester, reservation: _buildReservation());
+    testWidgets(
+      "n'affiche aucun bouton d'action quand onStatusUpdate est null",
+      (tester) async {
+        await _pumpCard(tester, reservation: _buildReservation());
 
-      expect(find.byType(IconButton), findsNothing);
-    });
+        expect(find.byType(IconButton), findsNothing);
+      },
+    );
 
-    testWidgets('appelle onStatusUpdate(validee) quand on tape sur valider',
-        (tester) async {
+    testWidgets('appelle onStatusUpdate(validee) quand on tape sur valider', (
+      tester,
+    ) async {
       ReservationStatus? captured;
       await _pumpCard(
         tester,

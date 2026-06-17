@@ -14,6 +14,8 @@ class ReservationOut {
   DateTime reservationDate;
   int numberOfPeople;
   String? specialRequest;
+  String? guestName;
+  String? guestPhone;
 
   // Remplacement du bool par l'enum
   ReservationStatus status;
@@ -33,6 +35,8 @@ class ReservationOut {
     required this.numberOfPeople,
     required this.status,
     this.specialRequest,
+    this.guestName,
+    this.guestPhone,
     this.user,
     this.table,
     this.restaurant,
@@ -51,6 +55,8 @@ class ReservationOut {
         json['numberOfPeople'] ?? json['NumberOfPeople'] ?? 1;
     final statusInt = json['status'] ?? json['Status'] ?? 0;
     final specialRequest = json['specialRequest'] ?? json['SpecialRequest'];
+    final guestName = json['guestName'] ?? json['GuestName'];
+    final guestPhone = json['guestPhone'] ?? json['GuestPhone'];
 
     final userJson = json['user'] ?? json['User'];
     final tableJson = json['table'] ?? json['Table'];
@@ -70,6 +76,8 @@ class ReservationOut {
       numberOfPeople: numberOfPeople,
       status: ReservationStatus.values[statusInt],
       specialRequest: specialRequest,
+      guestName: guestName,
+      guestPhone: guestPhone,
       user: userJson != null ? UserOut.fromJson(userJson) : null,
       table: tableJson != null ? TableEntityOut.fromJson(tableJson) : null,
       restaurant:

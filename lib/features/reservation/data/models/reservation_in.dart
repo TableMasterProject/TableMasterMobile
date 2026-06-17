@@ -37,3 +37,32 @@ class ReservationIn {
     };
   }
 }
+
+class QuickReservationIn {
+  int tableId;
+  DateTime reservationDate;
+  int numberOfPeople;
+  String guestName;
+  String? guestPhone;
+  String? specialRequest;
+
+  QuickReservationIn({
+    required this.tableId,
+    required this.reservationDate,
+    required this.numberOfPeople,
+    required this.guestName,
+    this.guestPhone,
+    this.specialRequest,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'TableId': tableId,
+      'ReservationDate': reservationDate.toIso8601String(),
+      'NumberOfPeople': numberOfPeople,
+      'GuestName': guestName,
+      'GuestPhone': guestPhone,
+      'SpecialRequest': specialRequest,
+    };
+  }
+}

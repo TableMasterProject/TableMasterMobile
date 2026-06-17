@@ -167,6 +167,38 @@ class _RestaurantPageState extends State<RestaurantPage> {
     }
   }
 
+  Future<void> _openQuickReservation(RestaurantOut restaurant) async {
+    final tables = restaurant.tables ?? <TableEntityOut>[];
+    if (tables.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ajoutez une table avant de réserver.")),
+      );
+      return;
+    }
+
+    final reservation = await showDialog<QuickReservationIn>(
+      context: context,
+      builder: (context) => _QuickReservationDialog(tables: tables),
+    );
+    if (reservation == null || !mounted) return;
+
+    AppSavingDialog.show(context);
+    try {
+      await _controller.createQuickReservation(reservation);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Réservation rapide créée.")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -229,6 +261,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
             restaurant: restaurant,
             summaryReservations: _controller.summaryReservations,
             onTableChanged: _controller.refreshReservationData,
+            onQuickReservation: () => _openQuickReservation(restaurant),
           ),
         };
 
@@ -365,15 +398,244 @@ class _TabButton extends StatelessWidget {
   }
 }
 
+class _QuickReservationDialog extends StatefulWidget {
+  final List<TableEntityOut> tables;
+
+  const _QuickReservationDialog({required this.tables});
+
+  @override
+  State<_QuickReservationDialog> createState() =>
+      _QuickReservationDialogState();
+}
+
+class _QuickReservationDialogState extends State<_QuickReservationDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _noteController = TextEditingController();
+  late int _tableId;
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+  int _people = 2;
+
+  @override
+  void initState() {
+    super.initState();
+    _tableId = widget.tables.first.id;
+    final now = DateTime.now().add(const Duration(minutes: 15));
+    _selectedDate = DateTime(now.year, now.month, now.day);
+    _selectedTime = TimeOfDay(hour: now.hour, minute: now.minute);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (picked == null) return;
+
+    setState(() {
+      _selectedDate = DateTime(picked.year, picked.month, picked.day);
+    });
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked == null) return;
+
+    setState(() => _selectedTime = picked);
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+
+    final date = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+    final phone = _phoneController.text.trim();
+    final note = _noteController.text.trim();
+
+    Navigator.of(context).pop(
+      QuickReservationIn(
+        tableId: _tableId,
+        reservationDate: date,
+        numberOfPeople: _people,
+        guestName: _nameController.text.trim(),
+        guestPhone: phone.isEmpty ? null : phone,
+        specialRequest: note.isEmpty ? null : note,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final dateLabel = MaterialLocalizations.of(
+      context,
+    ).formatMediumDate(_selectedDate);
+    final timeLabel = _selectedTime.format(context);
+
+    return AlertDialog(
+      title: const Text("Réservation rapide"),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<int>(
+                  initialValue: _tableId,
+                  decoration: const InputDecoration(
+                    labelText: "Table",
+                    prefixIcon: Icon(Icons.table_restaurant_outlined),
+                  ),
+                  items:
+                      widget.tables
+                          .map(
+                            (table) => DropdownMenuItem(
+                              value: table.id,
+                              child: Text(
+                                "Table ${table.tableNumber} · ${table.numberOfSeats} places",
+                              ),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: (value) {
+                    if (value != null) setState(() => _tableId = value);
+                  },
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickDate,
+                        icon: const Icon(Icons.calendar_today_outlined),
+                        label: Text(dateLabel),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickTime,
+                        icon: const Icon(Icons.schedule_outlined),
+                        label: Text(timeLabel),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _nameController,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: "Nom",
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator:
+                      (value) =>
+                          value == null || value.trim().isEmpty
+                              ? "Nom obligatoire"
+                              : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _phoneController,
+                  textInputAction: TextInputAction.next,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: "Téléphone",
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    IconButton.outlined(
+                      tooltip: "Retirer un convive",
+                      onPressed:
+                          _people > 1
+                              ? () => setState(() => _people -= 1)
+                              : null,
+                      icon: const Icon(Icons.remove),
+                    ),
+                    Expanded(
+                      child: Text(
+                        "$_people convive${_people > 1 ? 's' : ''}",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: colors.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton.outlined(
+                      tooltip: "Ajouter un convive",
+                      onPressed: () => setState(() => _people += 1),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _noteController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: "Note",
+                    prefixIcon: Icon(Icons.note_outlined),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Annuler"),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.check),
+          label: const Text("Créer"),
+        ),
+      ],
+    );
+  }
+}
+
 class _TablesView extends StatefulWidget {
   final RestaurantOut restaurant;
   final List<ReservationOut> summaryReservations;
   final Future<void> Function() onTableChanged;
+  final VoidCallback onQuickReservation;
 
   const _TablesView({
     required this.restaurant,
     required this.summaryReservations,
     required this.onTableChanged,
+    required this.onQuickReservation,
   });
 
   @override
@@ -465,13 +727,24 @@ class _TablesViewState extends State<_TablesView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Gestion des tables",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: colors.onSurface,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "Gestion des tables",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: colors.onSurface,
+                      ),
+                    ),
+                  ),
+                  FilledButton.icon(
+                    onPressed: widget.onQuickReservation,
+                    icon: const Icon(Icons.add),
+                    label: const Text("Réservation"),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Expanded(

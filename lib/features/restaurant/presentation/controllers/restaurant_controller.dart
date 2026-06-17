@@ -167,6 +167,22 @@ class RestaurantController extends ChangeNotifier {
     await refreshReservationData();
   }
 
+  Future<void> createQuickReservation(QuickReservationIn reservation) async {
+    final restaurantId = restaurant?.id;
+    if (restaurantId == null) return;
+
+    _setSaving(true);
+    try {
+      await reservationRepository.createQuickReservation(
+        restaurantId,
+        reservation,
+      );
+      await refreshReservationData();
+    } finally {
+      _setSaving(false);
+    }
+  }
+
   Future<void> saveRestaurantSettings(RestaurantIn restaurantData) async {
     final restaurantId = restaurant?.id;
     if (restaurantId == null) return;

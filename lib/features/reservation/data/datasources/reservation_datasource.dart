@@ -37,6 +37,22 @@ class ReservationDataSource {
     }
   }
 
+  Future<ReservationOut> createQuickReservation(
+    int restaurantId,
+    QuickReservationIn reservation,
+  ) async {
+    try {
+      final response = await apiClient.dio.post(
+        '/Reservation/Restaurant/$restaurantId/Quick',
+        data: reservation.toJson(),
+      );
+      return ReservationOut.fromJson(response.data);
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   // GET /api/Reservation/{id}/Validate?IsValidate=true
   Future<ReservationOut> updateReservationStatus(
     int id,

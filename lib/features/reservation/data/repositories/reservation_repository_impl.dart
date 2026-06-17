@@ -22,6 +22,17 @@ class ReservationRepositoryImpl implements IReservationRepository {
   }
 
   @override
+  Future<ReservationOut> createQuickReservation(
+    int restaurantId,
+    QuickReservationIn reservation,
+  ) async {
+    return await remoteDataSource.createQuickReservation(
+      restaurantId,
+      reservation,
+    );
+  }
+
+  @override
   Future<ReservationOut> updateReservationStatus(
     int id,
     ReservationStatus reservationStatus,
