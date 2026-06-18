@@ -54,14 +54,29 @@ jobs:
         run: flutter analyze
 
       - name: Run Flutter Tests
-        run: flutter test --machine > flutter-test-results.json
+        run: |
+          set +e
+          flutter test --machine > flutter-test-output.log 2>&1
+          test_exit_code=$?
+
+          awk '/^\{/ { print }' flutter-test-output.log > flutter-test-results.json
+
+          if [ ! -s flutter-test-results.json ]; then
+            cat flutter-test-output.log
+            echo "No valid Flutter JSON test output was generated."
+            exit 1
+          fi
+
+          exit "$test_exit_code"
 
       - name: Upload Flutter Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: flutter-test-results
-          path: flutter-test-results.json
+          path: |
+            flutter-test-results.json
+            flutter-test-output.log
 
       - name: Test Report
         if: always()
