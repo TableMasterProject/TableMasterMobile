@@ -44,6 +44,16 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
+  Future<void> forgotPassword(String email) async {
+    await remoteDataSource.forgotPassword(email);
+  }
+
+  @override
+  Future<void> resetPassword(String token, String newPassword) async {
+    await remoteDataSource.resetPassword(token, newPassword);
+  }
+
+  @override
   Future<void> logout() async {
     // 1. Supprimer le token sur le serveur (API DeviceToken)
     try {

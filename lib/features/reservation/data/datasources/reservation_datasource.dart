@@ -26,6 +26,16 @@ class ReservationDataSource {
     }
   }
 
+  Future<ReservationOut> getReservationById(int id) async {
+    try {
+      final response = await apiClient.dio.get('/Reservation/$id');
+      return ReservationOut.fromJson(response.data);
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   // POST /api/Reservation
   Future<ReservationOut> createReservation(Map<String, dynamic> data) async {
     try {

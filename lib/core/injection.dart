@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:table_master_mobile/core/deep_link_service.dart';
 import 'package:table_master_mobile/core/notification_service.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import '../features/auth/data/datasources/auth_datasource.dart';
@@ -39,6 +40,7 @@ void setupDependencies() {
   // Client HTTP unique
   getIt.registerLazySingleton<ApiClient>(() => ApiClient());
   getIt.registerLazySingleton<SignalRService>(() => SignalRService());
+  getIt.registerLazySingleton<DeepLinkService>(() => DeepLinkService());
   getIt.registerLazySingleton<NotificationService>(
     () => NotificationService(getIt<ApiClient>()),
   );

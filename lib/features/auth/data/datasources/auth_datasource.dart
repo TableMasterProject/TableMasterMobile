@@ -38,6 +38,33 @@ class AuthDataSource {
     }
   }
 
+  Future<void> forgotPassword(String email) async {
+    try {
+      await apiClient.dio.post(
+        '/Auth/forgot-password',
+        data: {'email': email},
+      );
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  Future<void> resetPassword(String token, String newPassword) async {
+    try {
+      await apiClient.dio.post(
+        '/Auth/reset-password',
+        data: {
+          'token': token,
+          'newPassword': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   /// Gestion des erreurs
   void _handleError(DioException e) {
     if (e.response != null) {

@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/deep_link_service.dart';
 import 'package:table_master_mobile/core/responsive/breakpoints.dart';
 import 'package:table_master_mobile/core/widgets/table_master_logo.dart';
 import 'package:table_master_mobile/features/home/presentation/home_screen.dart';
@@ -6,6 +9,7 @@ import '../../../../core/injection.dart';
 import '../../data/models/login_user_in.dart';
 import '../../data/models/login_user_out.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../forgot_password_screen.dart';
 import '../registration_tunnel/registration_stepper_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -46,6 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           (route) => false,
         );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(getIt<DeepLinkService>().navigatePendingLink());
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -77,6 +84,16 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => const RegistrationStepperScreen(),
+          ),
+        );
+      },
+      onForgotPassword: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ForgotPasswordScreen(
+              initialEmail: _emailController.text.trim(),
+            ),
           ),
         );
       },
@@ -127,6 +144,7 @@ class _LoginForm extends StatelessWidget {
   final TextEditingController passwordController;
   final VoidCallback onLogin;
   final VoidCallback onRegister;
+  final VoidCallback onForgotPassword;
 
   const _LoginForm({
     required this.colors,
@@ -135,6 +153,7 @@ class _LoginForm extends StatelessWidget {
     required this.passwordController,
     required this.onLogin,
     required this.onRegister,
+    required this.onForgotPassword,
   });
 
   @override
@@ -203,7 +222,7 @@ class _LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         TextButton(
-          onPressed: () {},
+          onPressed: isLoading ? null : onForgotPassword,
           child: const Text("Mot de passe oublié ?"),
         ),
         const SizedBox(height: 8),

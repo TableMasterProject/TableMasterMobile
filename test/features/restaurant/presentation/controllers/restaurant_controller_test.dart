@@ -303,6 +303,11 @@ class _FakeReservationRepository implements IReservationRepository {
   ) async => [];
 
   @override
+  Future<ReservationOut> getReservationById(int id) async {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<ReservationOut>> getReservations(
     SearchReservations search,
   ) async => [];

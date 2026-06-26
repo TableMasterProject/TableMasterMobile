@@ -17,6 +17,11 @@ class ReservationRepositoryImpl implements IReservationRepository {
   }
 
   @override
+  Future<ReservationOut> getReservationById(int id) async {
+    return await remoteDataSource.getReservationById(id);
+  }
+
+  @override
   Future<ReservationOut> createReservation(Map<String, dynamic> data) async {
     return await remoteDataSource.createReservation(data);
   }

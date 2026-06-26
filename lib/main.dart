@@ -9,6 +9,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'core/app_config.dart';
 import 'core/app_constant.dart';
+import 'core/deep_link_service.dart';
 import 'core/injection.dart';
 import 'core/notification_service.dart';
 import 'core/theme/app_theme.dart';
@@ -16,19 +17,21 @@ import 'firebase_options.dart';
 import 'splash_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   Future<void> appRunner() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     await initializeDateFormatting('fr_FR', null);
 
     setupDependencies();
+    await getIt<DeepLinkService>().init();
     await _captureSentryStartupTestEvent();
 
     runApp(const MyApp());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_initializeNotifications());
+      unawaited(getIt<DeepLinkService>().navigatePendingLink());
     });
   }
 

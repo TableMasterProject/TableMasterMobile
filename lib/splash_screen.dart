@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:table_master_mobile/core/deep_link_service.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/widgets/table_master_logo.dart';
 import 'package:table_master_mobile/features/user/domain/repositories/user_repository.dart';
@@ -16,6 +17,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final storage = const FlutterSecureStorage();
   final userRepo = getIt<IUserRepository>();
+  final deepLinkService = getIt<DeepLinkService>();
 
   @override
   void initState() {
@@ -25,6 +27,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeApp() async {
     try {
+      final handledDeepLink = await deepLinkService.navigatePendingLink();
+      if (handledDeepLink) {
+        return;
+      }
+
       // Récupérer le token
       String? token = await storage.read(key: 'access_token');
       String? userId = await storage.read(key: 'user_id');

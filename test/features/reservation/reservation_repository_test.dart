@@ -70,6 +70,18 @@ void main() {
       verify(() => dataSource.getMyReservations(any())).called(1);
     });
 
+    test('getReservationById délègue au datasource', () async {
+      final expected = buildReservation(id: 12);
+      when(
+        () => dataSource.getReservationById(12),
+      ).thenAnswer((_) async => expected);
+
+      final result = await repository.getReservationById(12);
+
+      expect(result.id, 12);
+      verify(() => dataSource.getReservationById(12)).called(1);
+    });
+
     test(
       'createReservation envoie la map et renvoie la réservation créée',
       () async {
