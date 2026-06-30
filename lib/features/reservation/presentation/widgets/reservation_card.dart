@@ -154,22 +154,42 @@ class ReservationCard extends StatelessWidget {
       case ReservationStatus.validee:
         return const CircleAvatar(
           backgroundColor: Colors.green,
-          child: Icon(Icons.check, color: Colors.white, size: 18),
+          child: Icon(
+            Icons.check,
+            color: Colors.white,
+            size: 18,
+            semanticLabel: 'Réservation confirmée',
+          ),
         );
       case ReservationStatus.enAttente:
         return const CircleAvatar(
           backgroundColor: Colors.orange,
-          child: Icon(Icons.timer, color: Colors.white, size: 18),
+          child: Icon(
+            Icons.timer,
+            color: Colors.white,
+            size: 18,
+            semanticLabel: 'Réservation en attente',
+          ),
         );
       case ReservationStatus.finie:
         return const CircleAvatar(
           backgroundColor: Colors.blue,
-          child: Icon(Icons.done_all, color: Colors.white, size: 18),
+          child: Icon(
+            Icons.done_all,
+            color: Colors.white,
+            size: 18,
+            semanticLabel: 'Réservation terminée',
+          ),
         );
       default:
         return const CircleAvatar(
           backgroundColor: Colors.red,
-          child: Icon(Icons.close, color: Colors.white, size: 18),
+          child: Icon(
+            Icons.close,
+            color: Colors.white,
+            size: 18,
+            semanticLabel: 'Réservation annulée',
+          ),
         );
     }
   }
