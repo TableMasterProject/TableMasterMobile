@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,6 +7,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+}
+
+val releaseStoreFile = keystoreProperties.getProperty("storeFile")
+val hasReleaseSigning = listOf(
+    releaseStoreFile,
+    keystoreProperties.getProperty("storePassword"),
+    keystoreProperties.getProperty("keyAlias"),
+    keystoreProperties.getProperty("keyPassword"),
+).all { !it.isNullOrBlank() }
 
 android {
     namespace = "com.table_master_mobile.table_master_mobile"
@@ -35,11 +51,27 @@ android {
         versionName = flutter.versionName
     }
 
+    if (hasReleaseSigning) {
+        signingConfigs {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Until Play Store publishing is enabled, CI can build with the debug key.
+            // Adding android/key.properties later automatically enables release signing.
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn("Release keystore not configured; using the debug signing key.")
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

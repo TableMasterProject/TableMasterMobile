@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.table_master_mobile.table_master_mobile",
+      "sha256_cert_fingerprints": [
+        "8D:A9:48:BE:F4:FF:FE:EA:5B:FF:55:7B:F3:C5:7D:0F:82:FC:6F:42:B8:4B:63:E8:47:40:23:7E:B2:1B:60:38"
+      ]
+    }
+  }
+]
