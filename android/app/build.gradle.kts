@@ -1,17 +1,9 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
-}
-
-val keystoreProperties = Properties()
-val keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
 android {
@@ -44,18 +36,6 @@ android {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
     }
 
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storePassword = keystoreProperties["storePassword"] as String?
-            val storeFilePath = keystoreProperties["storeFile"] as String?
-            if (!storeFilePath.isNullOrBlank()) {
-                storeFile = rootProject.file(storeFilePath)
-            }
-        }
-    }
-
     buildTypes {
         debug {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
@@ -67,7 +47,8 @@ android {
 
         release {
             manifestPlaceholders["usesCleartextTraffic"] = "false"
-            signingConfig = signingConfigs.getByName("release")
+            // Temporary debug signing until the original release keystore is recovered.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

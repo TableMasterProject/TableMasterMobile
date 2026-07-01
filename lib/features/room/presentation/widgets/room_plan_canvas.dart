@@ -223,16 +223,29 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
         (table.positionX * size.width).clamp(0.0, size.width - 32).toDouble();
     final top =
         (table.positionY * size.height).clamp(0.0, size.height - 32).toDouble();
-    final width = (table.width * size.width).clamp(44.0, size.width).toDouble();
+    final width = (table.width * size.width).clamp(48.0, size.width).toDouble();
     final height =
-        (table.height * size.height).clamp(44.0, size.height).toDouble();
+        (table.height * size.height).clamp(48.0, size.height).toDouble();
 
     final tooltipMessage =
         !context.isMobile && status.isNotEmpty
             ? 'Table ${table.tableNumber} • ${table.numberOfSeats} places\n$status'
             : null;
+    final semanticParts = <String>[
+      'Table ${table.tableNumber}',
+      '${table.numberOfSeats} place${table.numberOfSeats > 1 ? 's' : ''}',
+      if (status.isNotEmpty) status,
+      if (pendingCount > 0)
+        '$pendingCount réservation${pendingCount > 1 ? 's' : ''} en attente',
+      if (validatedCount > 0)
+        '$validatedCount réservation${validatedCount > 1 ? 's' : ''} validée${validatedCount > 1 ? 's' : ''}',
+    ];
+    final semanticOnTap =
+        isAvailable && widget.onTableSelected != null
+            ? () => widget.onTableSelected!(table)
+            : null;
 
-    final inner = _TouchPriority(
+    final visualTable = _TouchPriority(
       enabled: widget.isEditing,
       child: Listener(
         behavior: HitTestBehavior.opaque,
@@ -382,6 +395,15 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
         ),
       ),
     );
+    final inner = Semantics(
+      label: semanticParts.join(', '),
+      button: semanticOnTap != null,
+      enabled: isAvailable,
+      selected: isSelected,
+      onTap: semanticOnTap,
+      excludeSemantics: true,
+      child: visualTable,
+    );
 
     return Positioned(
       left: left,
@@ -427,7 +449,7 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
       widget.onBoundaryPointMoved?.call(index, nextX, nextY);
     }
 
-    final handleSize = context.isMobile ? 36.0 : 28.0;
+    final handleSize = context.isMobile ? 48.0 : 28.0;
     final dotSize = context.isMobile ? 20.0 : 14.0;
 
     return Positioned(
