@@ -10,7 +10,6 @@ void main() {
     'expose chaque table et son état aux technologies d’assistance',
     (tester) async {
       final semanticsHandle = tester.ensureSemantics();
-      addTearDown(semanticsHandle.dispose);
 
       final table = TableEntityOut(
         id: 12,
@@ -53,12 +52,12 @@ void main() {
 
       await tester.tap(semantics);
       expect(selectedTable, same(table));
+      semanticsHandle.dispose();
     },
   );
 
   testWidgets('annonce une table indisponible sans action', (tester) async {
     final semanticsHandle = tester.ensureSemantics();
-    addTearDown(semanticsHandle.dispose);
 
     final table = TableEntityOut(
       id: 13,
@@ -97,5 +96,6 @@ void main() {
         isSelected: false,
       ),
     );
+    semanticsHandle.dispose();
   });
 }
