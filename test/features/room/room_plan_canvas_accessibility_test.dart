@@ -9,6 +9,9 @@ void main() {
   testWidgets(
     'expose chaque table et son état aux technologies d’assistance',
     (tester) async {
+      final semanticsHandle = tester.ensureSemantics();
+      addTearDown(semanticsHandle.dispose);
+
       final table = TableEntityOut(
         id: 12,
         restaurantId: 1,
@@ -54,6 +57,9 @@ void main() {
   );
 
   testWidgets('annonce une table indisponible sans action', (tester) async {
+    final semanticsHandle = tester.ensureSemantics();
+    addTearDown(semanticsHandle.dispose);
+
     final table = TableEntityOut(
       id: 13,
       restaurantId: 1,
@@ -79,17 +85,17 @@ void main() {
       ),
     );
 
-    final handle = tester.ensureSemantics();
     expect(
       tester.getSemantics(
         find.bySemanticsLabel('Table 5, 1 place, Indisponible'),
       ),
       matchesSemantics(
         label: 'Table 5, 1 place, Indisponible',
+        hasEnabledState: true,
         isEnabled: false,
+        hasSelectedState: true,
         isSelected: false,
       ),
     );
-    handle.dispose();
   });
 }
