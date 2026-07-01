@@ -54,6 +54,7 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
   final TransformationController _controller = TransformationController();
   static const double _minScale = 0.6;
   static const double _maxScale = 4.0;
+  static const double _zoomToolbarHeight = 56.0;
 
   @override
   void dispose() {
@@ -97,10 +98,20 @@ class _RoomPlanCanvasState extends State<RoomPlanCanvas> {
 
     return LayoutBuilder(
       builder: (context, outerConstraints) {
-        final effectiveMaxWidth =
+        final widthLimit =
             maxWidth == double.infinity
                 ? outerConstraints.maxWidth
                 : math.min(maxWidth, outerConstraints.maxWidth);
+        final heightLimit =
+            outerConstraints.hasBoundedHeight
+                ? math.max(
+                      0.0,
+                      outerConstraints.maxHeight -
+                          (showToolbar ? _zoomToolbarHeight : 0.0),
+                    ) *
+                    widget.aspectRatio
+                : double.infinity;
+        final effectiveMaxWidth = math.min(widthLimit, heightLimit);
 
         return Center(
           child: ConstrainedBox(
