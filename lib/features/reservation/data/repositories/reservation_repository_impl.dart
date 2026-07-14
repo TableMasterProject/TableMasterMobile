@@ -2,6 +2,7 @@ import '../../domain/repositories/reservation_repository.dart';
 import '../datasources/reservation_datasource.dart';
 import '../models/reservation_in.dart';
 import '../models/reservation_out.dart';
+import '../models/reservation_availability_out.dart';
 import '../models/search_reservations.dart';
 
 class ReservationRepositoryImpl implements IReservationRepository {
@@ -14,6 +15,13 @@ class ReservationRepositoryImpl implements IReservationRepository {
     SearchReservations search,
   ) async {
     return await remoteDataSource.getReservations(search);
+  }
+
+  @override
+  Future<List<ReservationAvailabilityOut>> getAvailability(
+    SearchReservations search,
+  ) async {
+    return await remoteDataSource.getAvailability(search);
   }
 
   @override

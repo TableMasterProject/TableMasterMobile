@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
-import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_availability_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
@@ -37,7 +37,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   int _selectedRoomIndex = 0;
 
   bool _isLoading = false;
-  List<ReservationOut> _dayReservations = [];
+  List<ReservationAvailabilityOut> _dayReservations = [];
   List<TimeOfDay> _availableSlots = [];
   StreamSubscription? _subUpdate;
   StreamSubscription? _subDeleted;
@@ -171,7 +171,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       searchReservations.minDate = _selectedDate;
       searchReservations.maxDate = _selectedDate;
       searchReservations.statuses = [ReservationStatus.validee];
-      final res = await _reservationRepo.getReservations(searchReservations);
+      final res = await _reservationRepo.getAvailability(searchReservations);
       if (mounted) {
         setState(() {
           _dayReservations = res;

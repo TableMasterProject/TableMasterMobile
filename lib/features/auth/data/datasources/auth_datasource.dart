@@ -65,6 +65,18 @@ class AuthDataSource {
     }
   }
 
+  Future<void> logout(String refreshToken) async {
+    try {
+      await apiClient.dio.post(
+        '/Auth/logout',
+        data: {'refreshToken': refreshToken},
+      );
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   /// Gestion des erreurs
   void _handleError(DioException e) {
     if (e.response != null) {

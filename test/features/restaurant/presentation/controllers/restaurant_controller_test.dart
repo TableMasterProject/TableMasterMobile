@@ -6,6 +6,7 @@ import 'package:table_master_mobile/features/menu/data/models/menu_out.dart';
 import 'package:table_master_mobile/features/menu/domain/repositories/menu_repository.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_availability_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_in.dart';
@@ -270,6 +271,11 @@ class _FakeRestaurantRepository implements IRestaurantRepository {
 }
 
 class _FakeReservationRepository implements IReservationRepository {
+  @override
+  Future<List<ReservationAvailabilityOut>> getAvailability(
+    SearchReservations search,
+  ) async => [];
+
   @override
   Future<ReservationOut> createReservation(Map<String, dynamic> data) async {
     throw UnimplementedError();

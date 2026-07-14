@@ -1,9 +1,13 @@
 import '../../data/models/reservation_in.dart';
 import '../../data/models/reservation_out.dart';
+import '../../data/models/reservation_availability_out.dart';
 import '../../data/models/search_reservations.dart';
 
 abstract class IReservationRepository {
   Future<List<ReservationOut>> getReservations(SearchReservations search);
+  Future<List<ReservationAvailabilityOut>> getAvailability(
+    SearchReservations search,
+  );
   Future<List<ReservationOut>> getMyReservations(SearchReservations search);
   Future<ReservationOut> getReservationById(int id);
 

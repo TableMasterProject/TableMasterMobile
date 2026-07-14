@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../models/reservation_in.dart';
+import '../models/reservation_availability_out.dart';
 import '../models/reservation_out.dart';
 import '../models/search_reservations.dart';
 
@@ -20,6 +21,28 @@ class ReservationDataSource {
       );
       final List<dynamic> data = response.data;
       return data.map((json) => ReservationOut.fromJson(json)).toList();
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  Future<List<ReservationAvailabilityOut>> getAvailability(
+    SearchReservations search,
+  ) async {
+    try {
+      final response = await apiClient.dio.get(
+        '/Reservation/availability',
+        queryParameters: search.toJson(),
+      );
+      final List<dynamic> data = response.data;
+      return data
+          .map(
+            (json) => ReservationAvailabilityOut.fromJson(
+              json as Map<String, dynamic>,
+            ),
+          )
+          .toList();
     } on DioException catch (e) {
       _handleError(e);
       rethrow;

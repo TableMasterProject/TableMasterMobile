@@ -4,6 +4,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:table_master_mobile/features/reservation/data/datasources/reservation_datasource.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_availability_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/data/repositories/reservation_repository_impl.dart';
 
@@ -43,6 +44,23 @@ void main() {
   );
 
   group('ReservationRepositoryImpl', () {
+    test('getAvailability retourne uniquement les créneaux occupés', () async {
+      final expected = [
+        ReservationAvailabilityOut(
+          tableId: 2,
+          reservationDate: DateTime(2026, 5, 20, 20),
+        ),
+      ];
+      when(
+        () => dataSource.getAvailability(any()),
+      ).thenAnswer((_) async => expected);
+
+      final result = await repository.getAvailability(SearchReservations());
+
+      expect(result.single.tableId, 2);
+      verify(() => dataSource.getAvailability(any())).called(1);
+    });
+
     test(
       'getReservations délègue au datasource et retourne la liste',
       () async {

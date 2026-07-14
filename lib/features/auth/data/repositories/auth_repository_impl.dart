@@ -65,6 +65,18 @@ class AuthRepositoryImpl implements IAuthRepository {
       );
     }
 
+    final refreshToken = await storage.read(key: 'refresh_token');
+    if (refreshToken != null) {
+      try {
+        await remoteDataSource.logout(refreshToken);
+      } catch (e) {
+        AppLogger.debug(
+          "Erreur lors de la révocation du refresh token",
+          e,
+        );
+      }
+    }
+
     // 2. Supprime les jetons et l'ID utilisateur du téléphone
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
