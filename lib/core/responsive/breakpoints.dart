@@ -35,12 +35,7 @@ extension ScreenSizeContext on BuildContext {
 
   /// Renvoie la valeur correspondant à la taille d'écran courante.
   /// `mobile` est obligatoire ; tablet/desktop/wide reprennent la précédente si absents.
-  T valueByScreen<T>({
-    required T mobile,
-    T? tablet,
-    T? desktop,
-    T? wide,
-  }) {
+  T valueByScreen<T>({required T mobile, T? tablet, T? desktop, T? wide}) {
     switch (screenSize) {
       case ScreenSize.mobile:
         return mobile;

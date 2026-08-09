@@ -89,8 +89,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     "Réinitialiser votre mot de passe",
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -114,13 +114,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     height: 52,
                     child: FilledButton.icon(
                       onPressed: _isLoading ? null : _sendResetLink,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.mail_outline_rounded),
+                      icon:
+                          _isLoading
+                              ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.mail_outline_rounded),
                       label: const Text("Envoyer le lien"),
                     ),
                   ),

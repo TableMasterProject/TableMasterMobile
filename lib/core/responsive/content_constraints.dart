@@ -46,7 +46,8 @@ class CenteredContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final effectivePadding = padding ??
+    final effectivePadding =
+        padding ??
         EdgeInsets.symmetric(
           horizontal: width < Breakpoints.mobile ? 16 : 24,
           vertical: width < Breakpoints.mobile ? 12 : 16,
@@ -56,10 +57,7 @@ class CenteredContent extends StatelessWidget {
       alignment: alignment,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(
-          padding: effectivePadding,
-          child: child,
-        ),
+        child: Padding(padding: effectivePadding, child: child),
       ),
     );
   }

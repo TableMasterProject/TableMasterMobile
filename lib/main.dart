@@ -20,7 +20,9 @@ void main() async {
   Future<void> appRunner() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     await initializeDateFormatting('fr_FR', null);
 
     setupDependencies();
@@ -40,16 +42,13 @@ void main() async {
     return;
   }
 
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = AppConfig.sentryDsn;
-      options.environment = AppConfig.isProd ? 'production' : 'development';
-      options.release = AppConfig.sentryRelease;
-      options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
-      options.sendDefaultPii = false;
-    },
-    appRunner: appRunner,
-  );
+  await SentryFlutter.init((options) {
+    options.dsn = AppConfig.sentryDsn;
+    options.environment = AppConfig.isProd ? 'production' : 'development';
+    options.release = AppConfig.sentryRelease;
+    options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
+    options.sendDefaultPii = false;
+  }, appRunner: appRunner);
 }
 
 Future<void> _initializeNotifications() async {
@@ -86,9 +85,10 @@ class MyApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       scrollBehavior: const _AppScrollBehavior(),
       navigatorKey: navigatorKey,
-      navigatorObservers: AppConfig.sentryDsn.isEmpty
-          ? const <NavigatorObserver>[]
-          : [SentryNavigatorObserver()],
+      navigatorObservers:
+          AppConfig.sentryDsn.isEmpty
+              ? const <NavigatorObserver>[]
+              : [SentryNavigatorObserver()],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -109,9 +109,9 @@ class _AppScrollBehavior extends MaterialScrollBehavior {
 
   @override
   Set<PointerDeviceKind> get dragDevices => const {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-        PointerDeviceKind.stylus,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.trackpad,
+    PointerDeviceKind.stylus,
+  };
 }

@@ -49,9 +49,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       await _authRepo.logout();
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mot de passe mis à jour")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Mot de passe mis à jour")));
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
@@ -87,18 +87,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(
-                    Icons.password_rounded,
-                    size: 64,
-                    color: colors.primary,
-                  ),
+                  Icon(Icons.password_rounded, size: 64, color: colors.primary),
                   const SizedBox(height: 24),
                   Text(
                     "Choisissez un nouveau mot de passe",
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   TextField(
@@ -126,13 +122,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     height: 52,
                     child: FilledButton.icon(
                       onPressed: _isLoading ? null : _resetPassword,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.check_rounded),
+                      icon:
+                          _isLoading
+                              ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.check_rounded),
                       label: const Text("Mettre à jour"),
                     ),
                   ),

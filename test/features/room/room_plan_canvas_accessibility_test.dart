@@ -6,55 +6,54 @@ import 'package:table_master_mobile/features/room/presentation/widgets/room_plan
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
 
 void main() {
-  testWidgets(
-    'expose chaque table et son état aux technologies d’assistance',
-    (tester) async {
-      final semanticsHandle = tester.ensureSemantics();
+  testWidgets('expose chaque table et son état aux technologies d’assistance', (
+    tester,
+  ) async {
+    final semanticsHandle = tester.ensureSemantics();
 
-      final table = TableEntityOut(
-        id: 12,
-        restaurantId: 1,
-        roomId: 2,
-        tableNumber: 4,
-        numberOfSeats: 6,
-        createdAt: DateTime(2026, 6, 30),
-      );
-      TableEntityOut? selectedTable;
+    final table = TableEntityOut(
+      id: 12,
+      restaurantId: 1,
+      roomId: 2,
+      tableNumber: 4,
+      numberOfSeats: 6,
+      createdAt: DateTime(2026, 6, 30),
+    );
+    TableEntityOut? selectedTable;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RoomPlanCanvas(
-              boundaryPoints: [
-                RoomPoint(x: 0.05, y: 0.05),
-                RoomPoint(x: 0.95, y: 0.05),
-                RoomPoint(x: 0.95, y: 0.95),
-                RoomPoint(x: 0.05, y: 0.95),
-              ],
-              tables: [table],
-              tableStatuses: const {12: 'Occupée'},
-              pendingBadgeCounts: const {12: 2},
-              validatedBadgeCounts: const {12: 1},
-              disableUnavailableTables: false,
-              onTableSelected: (value) {
-                selectedTable = value as TableEntityOut;
-              },
-            ),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: RoomPlanCanvas(
+            boundaryPoints: [
+              RoomPoint(x: 0.05, y: 0.05),
+              RoomPoint(x: 0.95, y: 0.05),
+              RoomPoint(x: 0.95, y: 0.95),
+              RoomPoint(x: 0.05, y: 0.95),
+            ],
+            tables: [table],
+            tableStatuses: const {12: 'Occupée'},
+            pendingBadgeCounts: const {12: 2},
+            validatedBadgeCounts: const {12: 1},
+            disableUnavailableTables: false,
+            onTableSelected: (value) {
+              selectedTable = value as TableEntityOut;
+            },
           ),
         ),
-      );
+      ),
+    );
 
-      final semantics = find.bySemanticsLabel(
-        'Table 4, 6 places, Occupée, 2 réservations en attente, '
-        '1 réservation validée',
-      );
-      expect(semantics, findsOneWidget);
+    final semantics = find.bySemanticsLabel(
+      'Table 4, 6 places, Occupée, 2 réservations en attente, '
+      '1 réservation validée',
+    );
+    expect(semantics, findsOneWidget);
 
-      await tester.tap(semantics);
-      expect(selectedTable, same(table));
-      semanticsHandle.dispose();
-    },
-  );
+    await tester.tap(semantics);
+    expect(selectedTable, same(table));
+    semanticsHandle.dispose();
+  });
 
   testWidgets('annonce une table indisponible sans action', (tester) async {
     final semanticsHandle = tester.ensureSemantics();

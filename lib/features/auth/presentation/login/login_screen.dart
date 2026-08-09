@@ -91,9 +91,10 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ForgotPasswordScreen(
-              initialEmail: _emailController.text.trim(),
-            ),
+            builder:
+                (context) => ForgotPasswordScreen(
+                  initialEmail: _emailController.text.trim(),
+                ),
           ),
         );
       },
@@ -102,36 +103,37 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: colors.surface,
       body: SafeArea(
-        child: showSidePanel
-            ? Row(
-                children: [
-                  Expanded(child: _SidePanel(colors: colors)),
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: Breakpoints.maxFormWidth,
-                        ),
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(24),
-                          child: form,
+        child:
+            showSidePanel
+                ? Row(
+                  children: [
+                    Expanded(child: _SidePanel(colors: colors)),
+                    Expanded(
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: Breakpoints.maxFormWidth,
+                          ),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(24),
+                            child: form,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              )
-            : Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: Breakpoints.maxFormWidth,
-                  ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: form,
+                  ],
+                )
+                : Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: Breakpoints.maxFormWidth,
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: form,
+                    ),
                   ),
                 ),
-              ),
       ),
     );
   }
@@ -205,19 +207,20 @@ class _LoginForm extends StatelessWidget {
           height: 52,
           child: FilledButton(
             onPressed: isLoading ? null : onLogin,
-            child: isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
+            child:
+                isLoading
+                    ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                    : const Text(
+                      "Se connecter",
+                      style: TextStyle(fontSize: 16),
                     ),
-                  )
-                : const Text(
-                    "Se connecter",
-                    style: TextStyle(fontSize: 16),
-                  ),
           ),
         ),
         const SizedBox(height: 12),
@@ -255,10 +258,7 @@ class _SidePanel extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            colors.primary,
-            colors.primaryContainer,
-          ],
+          colors: [colors.primary, colors.primaryContainer],
         ),
       ),
       child: Padding(

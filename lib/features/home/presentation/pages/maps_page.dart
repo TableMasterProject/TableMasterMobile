@@ -291,10 +291,7 @@ class _MapsPageState extends State<MapsPage> {
     }
 
     final mapSection = GoogleMap(
-      initialCameraPosition: CameraPosition(
-        target: _mapCenter,
-        zoom: 12,
-      ),
+      initialCameraPosition: CameraPosition(target: _mapCenter, zoom: 12),
       myLocationEnabled: _hasLocationPermission,
       myLocationButtonEnabled: _hasLocationPermission,
       onCameraMove: _onCameraMove,
@@ -310,26 +307,27 @@ class _MapsPageState extends State<MapsPage> {
         children: [
           filterSection,
           Expanded(
-            child: useSplitView
-                ? Row(
-                    children: [
-                      Expanded(flex: 3, child: mapSection),
-                      const VerticalDivider(width: 1),
-                      Expanded(
-                        flex: 2,
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 520),
-                          child: listSection,
+            child:
+                useSplitView
+                    ? Row(
+                      children: [
+                        Expanded(flex: 3, child: mapSection),
+                        const VerticalDivider(width: 1),
+                        Expanded(
+                          flex: 2,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 520),
+                            child: listSection,
+                          ),
                         ),
-                      ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      Expanded(flex: 2, child: mapSection),
-                      Expanded(flex: 3, child: listSection),
-                    ],
-                  ),
+                      ],
+                    )
+                    : Column(
+                      children: [
+                        Expanded(flex: 2, child: mapSection),
+                        Expanded(flex: 3, child: listSection),
+                      ],
+                    ),
           ),
         ],
       ),

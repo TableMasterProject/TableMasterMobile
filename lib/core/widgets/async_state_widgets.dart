@@ -24,14 +24,15 @@ class AppEmptyState extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 88, color: colors.primary.withValues(alpha: 0.7)),
+              Icon(
+                icon,
+                size: 88,
+                color: colors.primary.withValues(alpha: 0.7),
+              ),
               const SizedBox(height: 20),
               Text(
                 message,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: colors.onSurfaceVariant,
-                ),
+                style: TextStyle(fontSize: 18, color: colors.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               if (action != null) ...[const SizedBox(height: 24), action!],

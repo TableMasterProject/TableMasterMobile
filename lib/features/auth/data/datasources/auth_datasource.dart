@@ -40,10 +40,7 @@ class AuthDataSource {
 
   Future<void> forgotPassword(String email) async {
     try {
-      await apiClient.dio.post(
-        '/Auth/forgot-password',
-        data: {'email': email},
-      );
+      await apiClient.dio.post('/Auth/forgot-password', data: {'email': email});
     } on DioException catch (e) {
       _handleError(e);
       rethrow;
@@ -54,10 +51,7 @@ class AuthDataSource {
     try {
       await apiClient.dio.post(
         '/Auth/reset-password',
-        data: {
-          'token': token,
-          'newPassword': newPassword,
-        },
+        data: {'token': token, 'newPassword': newPassword},
       );
     } on DioException catch (e) {
       _handleError(e);

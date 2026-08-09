@@ -70,10 +70,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       try {
         await remoteDataSource.logout(refreshToken);
       } catch (e) {
-        AppLogger.debug(
-          "Erreur lors de la révocation du refresh token",
-          e,
-        );
+        AppLogger.debug("Erreur lors de la révocation du refresh token", e);
       }
     }
 

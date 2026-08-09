@@ -24,28 +24,35 @@ void main() {
   });
 
   UserOut buildUser({int id = 1}) => UserOut(
-        id: id,
-        email: 'lea@example.com',
-        password: '',
-        firstName: 'Léa',
-        lastName: 'Martin',
-        accountType: 0,
-        createdAt: DateTime(2026, 1, 1),
-      );
+    id: id,
+    email: 'lea@example.com',
+    password: '',
+    firstName: 'Léa',
+    lastName: 'Martin',
+    accountType: 0,
+    createdAt: DateTime(2026, 1, 1),
+  );
 
   group('UserRepositoryImpl', () {
-    test('getUserProfile renvoie l\'utilisateur depuis le datasource', () async {
-      when(() => dataSource.getUserById(7)).thenAnswer((_) async => buildUser(id: 7));
+    test(
+      'getUserProfile renvoie l\'utilisateur depuis le datasource',
+      () async {
+        when(
+          () => dataSource.getUserById(7),
+        ).thenAnswer((_) async => buildUser(id: 7));
 
-      final u = await repository.getUserProfile(7);
+        final u = await repository.getUserProfile(7);
 
-      expect(u.id, 7);
-      expect(u.firstName, 'Léa');
-      verify(() => dataSource.getUserById(7)).called(1);
-    });
+        expect(u.id, 7);
+        expect(u.firstName, 'Léa');
+        verify(() => dataSource.getUserById(7)).called(1);
+      },
+    );
 
     test('updateProfile délègue la mise à jour au datasource', () async {
-      when(() => dataSource.updateUser(any())).thenAnswer((_) async => buildUser());
+      when(
+        () => dataSource.updateUser(any()),
+      ).thenAnswer((_) async => buildUser());
 
       final u = await repository.updateProfile(_FakeUserIn());
 
@@ -54,7 +61,9 @@ void main() {
     });
 
     test('changePassword passe ancien et nouveau mot de passe', () async {
-      when(() => dataSource.updatePassword('old', 'new')).thenAnswer((_) async => true);
+      when(
+        () => dataSource.updatePassword('old', 'new'),
+      ).thenAnswer((_) async => true);
 
       final ok = await repository.changePassword('old', 'new');
 

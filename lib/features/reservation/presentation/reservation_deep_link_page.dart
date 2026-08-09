@@ -84,9 +84,7 @@ class _ReservationDeepLinkPageState extends State<ReservationDeepLinkPage> {
           );
         }
 
-        return const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        );
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );
   }

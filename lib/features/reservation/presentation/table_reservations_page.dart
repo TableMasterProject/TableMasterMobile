@@ -182,64 +182,66 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: Breakpoints.maxListWidth),
           child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: SegmentedButton<int>(
-              segments: [
-                ButtonSegment(
-                  value: 0,
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Validées'),
-                      if (todayTotal > 0)
-                        _buildCountBadge(todayTotal, Colors.blue),
-                    ],
-                  ),
-                  icon: const Icon(Icons.check_circle_outline),
-                ),
-                ButtonSegment(
-                  value: 1,
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Attente'),
-                      if (pendingTotal > 0)
-                        _buildCountBadge(pendingTotal, Colors.orange),
-                    ],
-                  ),
-                  icon: const Icon(Icons.pending_actions),
-                ),
-                const ButtonSegment(
-                  value: 2,
-                  label: Text('Historique'),
-                  icon: Icon(Icons.history),
-                ),
-              ],
-              selected: {_selectedFilter},
-              onSelectionChanged: (Set<int> newSelection) {
-                setState(() {
-                  _selectedFilter = newSelection.first;
-                });
-                _loadReservations();
-              },
-            ),
-          ),
-          Expanded(
-            child:
-                _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _error != null
-                    ? Center(child: Text('Erreur: $_error'))
-                    : _reservations.isEmpty
-                    ? const Center(child: Text('Aucune réservation trouvée'))
-                    : RefreshIndicator(
-                      onRefresh: _loadAllData,
-                      child: _buildGroupedListView(),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: SegmentedButton<int>(
+                  segments: [
+                    ButtonSegment(
+                      value: 0,
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Validées'),
+                          if (todayTotal > 0)
+                            _buildCountBadge(todayTotal, Colors.blue),
+                        ],
+                      ),
+                      icon: const Icon(Icons.check_circle_outline),
                     ),
-          ),
-        ],
+                    ButtonSegment(
+                      value: 1,
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Attente'),
+                          if (pendingTotal > 0)
+                            _buildCountBadge(pendingTotal, Colors.orange),
+                        ],
+                      ),
+                      icon: const Icon(Icons.pending_actions),
+                    ),
+                    const ButtonSegment(
+                      value: 2,
+                      label: Text('Historique'),
+                      icon: Icon(Icons.history),
+                    ),
+                  ],
+                  selected: {_selectedFilter},
+                  onSelectionChanged: (Set<int> newSelection) {
+                    setState(() {
+                      _selectedFilter = newSelection.first;
+                    });
+                    _loadReservations();
+                  },
+                ),
+              ),
+              Expanded(
+                child:
+                    _loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _error != null
+                        ? Center(child: Text('Erreur: $_error'))
+                        : _reservations.isEmpty
+                        ? const Center(
+                          child: Text('Aucune réservation trouvée'),
+                        )
+                        : RefreshIndicator(
+                          onRefresh: _loadAllData,
+                          child: _buildGroupedListView(),
+                        ),
+              ),
+            ],
           ),
         ),
       ),

@@ -17,9 +17,10 @@ class AppTheme {
       brightness: brightness,
     );
 
-    final baseText = brightness == Brightness.light
-        ? Typography.blackMountainView
-        : Typography.whiteMountainView;
+    final baseText =
+        brightness == Brightness.light
+            ? Typography.blackMountainView
+            : Typography.whiteMountainView;
 
     return ThemeData(
       useMaterial3: true,
@@ -27,21 +28,31 @@ class AppTheme {
       visualDensity: VisualDensity.adaptivePlatformDensity,
       scaffoldBackgroundColor: colorScheme.surface,
       textTheme: baseText.copyWith(
-        displayLarge: baseText.displayLarge?.copyWith(fontWeight: FontWeight.w700),
-        displayMedium: baseText.displayMedium?.copyWith(fontWeight: FontWeight.w700),
-        headlineLarge: baseText.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
-        headlineMedium: baseText.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
-        headlineSmall: baseText.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
+        displayLarge: baseText.displayLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        displayMedium: baseText.displayMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        headlineLarge: baseText.headlineLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        headlineMedium: baseText.headlineMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        headlineSmall: baseText.headlineSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
         titleLarge: baseText.titleLarge?.copyWith(fontWeight: FontWeight.w600),
-        titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+        titleMedium: baseText.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
       ),
       cardTheme: CardThemeData(
         clipBehavior: Clip.antiAlias,
         elevation: 1,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -68,10 +79,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -79,10 +87,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -90,23 +95,20 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: colorScheme.surface,
         selectedIconTheme: IconThemeData(color: colorScheme.primary),
-        unselectedIconTheme:
-            IconThemeData(color: colorScheme.onSurfaceVariant),
+        unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
         selectedLabelTextStyle: TextStyle(
           color: colorScheme.primary,
           fontWeight: FontWeight.w600,
         ),
-        unselectedLabelTextStyle:
-            TextStyle(color: colorScheme.onSurfaceVariant),
+        unselectedLabelTextStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+        ),
         indicatorColor: colorScheme.primaryContainer,
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -131,9 +133,7 @@ class AppTheme {
         thickness: 1,
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
       tooltipTheme: const TooltipThemeData(
         waitDuration: Duration(milliseconds: 400),
