@@ -44,6 +44,7 @@ void main() async {
     (options) {
       options.dsn = AppConfig.sentryDsn;
       options.environment = AppConfig.isProd ? 'production' : 'development';
+      options.release = AppConfig.sentryRelease;
       options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
       options.sendDefaultPii = false;
     },

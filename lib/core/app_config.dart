@@ -7,6 +7,10 @@ class AppConfig {
   static const bool isProd = bool.fromEnvironment('IS_PROD');
   static const String appName = String.fromEnvironment('APP_NAME');
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  static const String sentryRelease = String.fromEnvironment(
+    'SENTRY_RELEASE',
+    defaultValue: 'tablemaster-mobile@local',
+  );
   static const String _sentryTracesSampleRate = String.fromEnvironment(
     'SENTRY_TRACES_SAMPLE_RATE',
     defaultValue: '0.1',

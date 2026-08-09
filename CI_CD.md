@@ -7,18 +7,20 @@ Ce repo utilise GitHub Actions pour compiler et builder l'app Flutter automatiqu
 ### 📋 Workflow: `.github/workflows/flutter.yml`
 
 **Déclenché:**
-- ✅ Chaque `push` sur `main` ou `develop`
-- ✅ Chaque `pull_request` vers `main` ou `develop`
+- ✅ Chaque `push` sur `main`
+- ✅ Chaque `pull_request` vers `main`
 
 **Actions exécutées:**
 1. 🔧 Setup Flutter 3.38.9
 2. 📦 Restaure les dépendances (`flutter pub get`)
 3. 🔍 Analyse Dart (`flutter analyze`)
-4. 🧪 Lance les tests Flutter
-5. 🔎 Injecte `SENTRY_DSN_FLUTTER` dans les builds production
-6. 📱 Build Web Release
-7. 🤖 Build APK Release
-8. 💾 Upload les artefacts
+4. 📋 Produit le rapport `flutter pub outdated`
+5. 🧪 Lance les tests Flutter et le contrôle de format
+6. 🔎 Injecte la release et le DSN Sentry dans les builds production
+7. 📱 Build Web Release
+8. 🤖 Build APK signé avec une clé stable fournie par GitHub Secrets
+9. 🔐 Produit les sommes SHA-256
+10. 💾 Publie les artefacts et la GitHub Release versionnée
 
 **Durée:** ~5-7 minutes
 
@@ -28,7 +30,7 @@ Ce repo utilise GitHub Actions pour compiler et builder l'app Flutter automatiqu
 
 Après chaque run, les artefacts sont disponibles dans **Actions → [Run] → Artifacts:**
 
-### `flutter-web-build/`
+### `flutter-builds/`
 ```
 build/web/
 ├── index.html
@@ -49,10 +51,13 @@ python -m http.server --directory build/web/
 netlify deploy --prod --dir build/web/
 ```
 
-### `flutter-apk/`
-```
-build/app/outputs/flutter-apk/
-└── app-release.apk (58.0 MB)
+La même archive de workflow contient :
+```text
+tablemaster-prod.apk
+tablemaster-web-prod.zip
+SHA256SUMS
+CHANGELOG.md
+flutter-dependencies-report.txt
 ```
 
 **Utilisation:**
@@ -60,27 +65,8 @@ build/app/outputs/flutter-apk/
 - 📤 Télécharger sur Firebase App Distribution
 - 🏪 Beta testing avant Google Play
 
-### `flutter-aab/`
-```
-build/app/outputs/bundle/release/
-└── app-release.aab
-```
-
-**Utilisation:**
-- 🏪 Upload direct sur Google Play Console
-- ✅ Format recommandé par Google (plus petit, optimisé)
-
-### `flutter-linux-build/`
-```
-build/linux/
-└── release/
-    └── bundle/
-        ├── tablemaster_mobile
-        └── lib/
-```
-
-**Utilisation:**
-- 🐧 Desktop app pour Linux
+La release GitHub contient également les résultats JSON/log des tests afin de
+relier l'APK au run CI qui l'a validé.
 
 ---
 
@@ -190,10 +176,11 @@ Ajouter `credentials.json` dans **Settings → Secrets → Actions**
 ## 📱 Platforms Actuellement Buildés
 
 ✅ **Web** (HTML5/JavaScript)
-✅ **Android** (APK + AAB)
-✅ **Linux Desktop**
+✅ **Android** (APK distribué directement)
 
 ⚠️ **iOS** - Non buildé sur Linux (nécessite macOS)
+⚠️ **AAB / Play Store** - Non retenu pour la distribution actuelle
+⚠️ **Linux Desktop** - Non généré par la CI actuelle
 ⚠️ **Windows** - Non buildé (nécessite Windows)
 ⚠️ **macOS** - Non buildé (nécessite macOS)
 
@@ -206,11 +193,11 @@ Pour iOS/Windows/macOS, créer des workflows séparés sur macOS/Windows runners
 Pour le déploiement automatique, ajouter à **Settings → Secrets and variables → Actions:**
 
 ```
-GOOGLE_PLAY_KEY          # JSON file from Google Play Console
-FIREBASE_CREDENTIALS     # Service account JSON
-NETLIFY_AUTH_TOKEN       # Netlify personal access token
-NETLIFY_SITE_ID          # Netlify site ID
-SENTRY_DSN_FLUTTER       # DSN du projet Sentry Flutter, injecté via --dart-define
+SENTRY_DSN_FLUTTER       # DSN du projet Sentry Flutter
+ANDROID_KEYSTORE_BASE64  # Keystore stable encodé en base64
+ANDROID_KEY_ALIAS        # Alias de la clé
+ANDROID_STORE_PASSWORD   # Mot de passe du keystore
+ANDROID_KEY_PASSWORD     # Mot de passe de la clé
 ```
 
 Le DSN Sentry n'est pas stocké dans `config/prod.json` : le workflow `.github/workflows/flutter.yml` le passe à `flutter build web` et `flutter build apk` avec `--dart-define=SENTRY_DSN=...`.
