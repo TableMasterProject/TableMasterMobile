@@ -1,105 +1,84 @@
+import 'package:dio/dio.dart';
 import 'package:table_master_mobile/core/notification_service.dart';
 import 'package:table_master_mobile/core/logging/app_logger.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
+import 'package:table_master_mobile/core/session/session_service.dart';
+import 'package:table_master_mobile/core/errors/app_exception.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_datasource.dart';
 import '../models/login_user_in.dart';
 import '../models/login_token_in.dart';
 import '../models/login_user_out.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthRepositoryImpl implements IAuthRepository {
   final AuthDataSource remoteDataSource;
   final NotificationService notificationService;
   final SignalRService signalRService;
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
+  final SessionService? _session;
+  SessionService get session => _session ?? remoteDataSource.apiClient.session;
 
   AuthRepositoryImpl(
     this.remoteDataSource,
     this.notificationService,
-    this.signalRService,
-  );
+    this.signalRService, {
+    SessionService? session,
+  }) : _session = session;
 
   @override
   Future<LoginUserOut> login(LoginUserIn credentials) async {
-    // 1. Appel API via le DataSource
     final result = await remoteDataSource.login(credentials);
-
-    // 2. Sauvegarde locale des tokens et de l'ID utilisateur
-    await _saveTokens(result.accessToken, result.refreshToken);
-    await storage.write(key: 'user_id', value: result.user.id.toString());
-
-    // 3. Enregistrement du token Firebase pour les notifications
+    await session.storeSession(result);
     try {
       await notificationService.registerTokenForCurrentUser();
-    } catch (e) {
-      AppLogger.debug(
-        "Erreur lors de l'enregistrement du token de notification",
-        e,
-      );
+    } catch (error) {
+      AppLogger.debug('Erreur enregistrement des notifications', error);
     }
-
     return result;
   }
 
   @override
   Future<LoginUserOut> refresh(LoginTokenIn tokenIn) async {
-    final result = await remoteDataSource.refresh(tokenIn);
-    await _saveTokens(result.accessToken, result.refreshToken);
-    return result;
+    // La paire courante est lue au début du single flight, jamais depuis un DTO
+    // potentiellement périmé fourni par un ancien écran.
+    try {
+      return await session.refresh();
+    } on DioException catch (error) {
+      throw AppException.fromDio(error);
+    }
   }
 
   @override
-  Future<void> forgotPassword(String email) async {
-    await remoteDataSource.forgotPassword(email);
-  }
-
+  Future<void> forgotPassword(String email) =>
+      remoteDataSource.forgotPassword(email);
   @override
-  Future<void> resetPassword(String token, String newPassword) async {
-    await remoteDataSource.resetPassword(token, newPassword);
-  }
+  Future<void> resetPassword(String token, String newPassword) =>
+      remoteDataSource.resetPassword(token, newPassword);
 
   @override
   Future<void> logout() async {
-    // 1. Supprimer le token sur le serveur (API DeviceToken)
+    // Le nettoyage local invalide immédiatement tous les refresh en vol. Les
+    // appels suivants utilisent l'instantané révoqué et ne peuvent rafraîchir.
+    final previous = await session.clear();
     try {
-      await notificationService.unregisterDeviceToken();
-    } catch (e) {
-      AppLogger.debug(
-        "Erreur lors de la suppression du token de notification",
-        e,
+      await notificationService.unregisterDeviceToken(
+        deviceToken: previous.deviceToken,
+        accessToken: previous.accessToken,
       );
+    } catch (error) {
+      AppLogger.debug('Erreur suppression des notifications', error);
     }
-
-    final refreshToken = await storage.read(key: 'refresh_token');
-    if (refreshToken != null) {
+    if (previous.refreshToken != null && previous.accessToken != null) {
       try {
-        await remoteDataSource.logout(refreshToken);
-      } catch (e) {
-        AppLogger.debug("Erreur lors de la révocation du refresh token", e);
+        await remoteDataSource.logout(
+          previous.refreshToken!,
+          accessToken: previous.accessToken,
+        );
+      } catch (error) {
+        AppLogger.debug('Erreur révocation de session', error);
       }
     }
-
-    // 2. Coupe le temps réel : sans cela la connexion reste ouverte et
-    // l'utilisateur déconnecté continue de recevoir les événements de ses
-    // anciens groupes.
-    await signalRService.reset();
-
-    // 3. Supprime les jetons et l'ID utilisateur du téléphone
-    await storage.delete(key: 'access_token');
-    await storage.delete(key: 'refresh_token');
-    await storage.delete(key: 'fcm_token');
-    await storage.delete(key: 'user_id');
   }
 
   @override
-  Future<bool> isAuthenticated() async {
-    String? token = await storage.read(key: 'access_token');
-    return token != null;
-  }
-
-  Future<void> _saveTokens(String access, String refresh) async {
-    await storage.write(key: 'access_token', value: access);
-    await storage.write(key: 'refresh_token', value: refresh);
-  }
+  Future<bool> isAuthenticated() async => await session.accessToken != null;
 }

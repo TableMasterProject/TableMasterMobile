@@ -1,3 +1,5 @@
+import 'session/session_service.dart';
+import 'session/session_manager.dart';
 import 'package:get_it/get_it.dart';
 import 'package:table_master_mobile/core/deep_link_service.dart';
 import 'package:table_master_mobile/core/notification_service.dart';
@@ -38,9 +40,18 @@ import 'api_client.dart';
 final getIt = GetIt.instance;
 
 void setupDependencies() {
-  // Client HTTP unique
-  getIt.registerLazySingleton<ApiClient>(() => ApiClient());
-  getIt.registerLazySingleton<SignalRService>(() => SignalRService());
+  // La session ne dépend pas des services qui consomment ses jetons.
+  getIt.registerLazySingleton<SessionService>(() {
+    final session = SessionService();
+    session.onInvalidated.listen((_) => SessionManager.redirectToLogin());
+    return session;
+  });
+  getIt.registerLazySingleton<ApiClient>(
+    () => ApiClient(session: getIt<SessionService>()),
+  );
+  getIt.registerLazySingleton<SignalRService>(
+    () => SignalRService(session: getIt<SessionService>()),
+  );
   getIt.registerLazySingleton<SignalRLifecycleObserver>(
     () => SignalRLifecycleObserver(getIt<SignalRService>()),
   );
@@ -61,6 +72,7 @@ void setupDependencies() {
       getIt<AuthDataSource>(),
       getIt<NotificationService>(),
       getIt<SignalRService>(),
+      session: getIt<SessionService>(),
     ),
   );
   // endregion
@@ -72,7 +84,10 @@ void setupDependencies() {
   );
   // Repository User
   getIt.registerLazySingleton<IUserRepository>(
-    () => UserRepositoryImpl(getIt<UserDataSource>()),
+    () => UserRepositoryImpl(
+      getIt<UserDataSource>(),
+      session: getIt<SessionService>(),
+    ),
   );
   // endregion
 

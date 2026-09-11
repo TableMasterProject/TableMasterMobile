@@ -1,3 +1,7 @@
+import 'package:table_master_mobile/core/time/paris_time.dart';
+import 'package:table_master_mobile/core/refresh_scheduler.dart';
+import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
+import 'controllers/day_availability_controller.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +9,6 @@ import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_availability_out.dart';
-import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/room/data/models/restaurant_room_in.dart';
@@ -36,8 +39,17 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   TableEntityOut? _selectedTable;
   int _selectedRoomIndex = 0;
 
-  bool _isLoading = false;
-  List<ReservationAvailabilityOut> _dayReservations = [];
+  late final DayAvailabilityController _availability;
+  late final RefreshScheduler _refreshScheduler;
+  late RestaurantOut _restaurant;
+  bool _isSubmitting = false;
+  bool _refreshingDetails = false;
+  String? _detailsError;
+  int _detailsVersion = 0;
+  bool get _isLoading =>
+      _isSubmitting || _availability.isLoading || _refreshingDetails;
+  List<ReservationAvailabilityOut> get _dayReservations =>
+      _availability.reservations;
   List<TimeOfDay> _availableSlots = [];
   StreamSubscription? _subUpdate;
   StreamSubscription? _subDeleted;
@@ -45,6 +57,12 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   @override
   void initState() {
     super.initState();
+    _restaurant = widget.restaurant;
+    _availability = DayAvailabilityController(
+      _reservationRepo,
+      widget.restaurant.id,
+    )..addListener(_availabilityChanged);
+    _refreshScheduler = RefreshScheduler(_refreshRestaurantAndDay);
     _initSignalR();
   }
 
@@ -52,33 +70,62 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   void dispose() {
     _subUpdate?.cancel();
     _subDeleted?.cancel();
-    _signalRService.leaveRestaurantGroup(widget.restaurant.id);
+    _signalRService.leaveAvailabilityGroup(widget.restaurant.id);
+    _refreshScheduler.dispose();
+    _availability.dispose();
+    _detailsVersion++;
     _scrollController.dispose();
     _specialRequestController.dispose();
     super.dispose();
   }
 
   Future<void> _initSignalR() async {
-    // Les abonnements sont posés avant la connexion : sinon les événements
-    // reçus pendant l'établissement du lien sont perdus, et un dispose()
-    // survenant entre-temps annulerait des abonnements encore nuls, créés
-    // juste après et jamais libérés.
+    _subUpdate = _signalRService.onAvailabilityChanged.listen((restaurantId) {
+      if (restaurantId == widget.restaurant.id) _refreshScheduler.schedule();
+    });
+    _subDeleted = _signalRService.onResynchronized.listen(
+      (_) => _refreshScheduler.schedule(),
+    );
+    await _signalRService.joinAvailabilityGroup(widget.restaurant.id);
+  }
 
-    // Écoute des mises à jour de statut (validation/annulation)
-    _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
-      if (res.restaurantId == widget.restaurant.id && _selectedDate != null) {
-        if (DateUtils.isSameDay(res.reservationDate, _selectedDate)) {
-          _fetchDayReservations();
-        }
+  void _availabilityChanged() {
+    if (!mounted) return;
+    setState(() {
+      if (_availability.isReady &&
+          _selectedTable != null &&
+          _getTableStatus(_selectedTable!) != 'Disponible') {
+        _selectedTable = null;
       }
     });
+  }
 
-    _subDeleted = _signalRService.onReservationDeleted.listen((id) {
-      _fetchDayReservations();
+  Future<void> _refreshRestaurantAndDay() async {
+    if (!mounted) return;
+    final version = ++_detailsVersion;
+    setState(() {
+      _refreshingDetails = true;
+      _detailsError = null;
     });
-
-    // joinRestaurantGroup établit la connexion si nécessaire.
-    await _signalRService.joinRestaurantGroup(widget.restaurant.id);
+    try {
+      final restaurant = await getIt<IRestaurantRepository>()
+          .getRestaurantDetails(widget.restaurant.id);
+      if (!mounted || version != _detailsVersion) return;
+      _restaurant = restaurant;
+      _updateAvailableSlots(preserveSelection: true);
+      await _fetchDayReservations();
+    } catch (error) {
+      if (mounted && version == _detailsVersion) {
+        setState(() {
+          _detailsError = error.toString();
+          _selectedTable = null;
+        });
+      }
+    } finally {
+      if (mounted && version == _detailsVersion) {
+        setState(() => _refreshingDetails = false);
+      }
+    }
   }
 
   // --- Logique métier ---
@@ -89,20 +136,24 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     await _fetchDayReservations();
   }
 
-  void _updateAvailableSlots() {
+  void _updateAvailableSlots({bool preserveSelection = false}) {
     if (_selectedDate == null) return;
     final dayOfWeek = _selectedDate!.weekday;
-    final now = DateTime.now();
+    final now = ParisTime.now();
     final isToday = DateUtils.isSameDay(_selectedDate, now);
 
     final activities =
-        widget.restaurant.dailyActivitys
+        _restaurant.dailyActivitys
             ?.where((a) => a.dayOfWeek == dayOfWeek)
             .toList() ??
         [];
 
     if (activities.isEmpty || _isDayClosedException(_selectedDate!)) {
-      setState(() => _availableSlots = []);
+      setState(() {
+        _availableSlots = [];
+        _selectedTime = null;
+        _selectedTable = null;
+      });
       return;
     }
 
@@ -130,10 +181,23 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         final slot = TimeOfDay(hour: current.hour, minute: current.minute);
 
         if (isToday) {
-          if (current.isAfter(now.add(const Duration(minutes: 30)))) {
+          if (ParisTime.isValidSlot(
+                _selectedDate!,
+                current.hour,
+                current.minute,
+              ) &&
+              ParisTime.at(
+                _selectedDate!,
+                current.hour,
+                current.minute,
+              ).isAfter(now.add(const Duration(minutes: 30)))) {
             slots.add(slot);
           }
-        } else {
+        } else if (ParisTime.isValidSlot(
+          _selectedDate!,
+          current.hour,
+          current.minute,
+        )) {
           slots.add(slot);
         }
         current = current.add(const Duration(minutes: 30));
@@ -146,8 +210,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
     setState(() {
       _availableSlots = List.from(slots);
-      _selectedTime = null;
-      _selectedTable = null;
+      if (!preserveSelection || !_availableSlots.contains(_selectedTime)) {
+        _selectedTime = null;
+        _selectedTable = null;
+      }
     });
   }
 
@@ -157,7 +223,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   }
 
   bool _isDayClosedException(DateTime date) {
-    return widget.restaurant.closedDayExceptions?.any((e) {
+    return _restaurant.closedDayExceptions?.any((e) {
           final target = DateUtils.dateOnly(date);
           final begin = DateUtils.dateOnly(e.exceptionDateBegin);
           final end = DateUtils.dateOnly(e.exceptionDateEnd);
@@ -168,34 +234,19 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   }
 
   Future<void> _fetchDayReservations() async {
-    if (_selectedDate == null) return;
-    setState(() => _isLoading = true);
-    try {
-      SearchReservations searchReservations = SearchReservations();
-      searchReservations.restaurantId = widget.restaurant.id;
-      searchReservations.minDate = _selectedDate;
-      searchReservations.maxDate = _selectedDate;
-      searchReservations.statuses = [ReservationStatus.validee];
-      final res = await _reservationRepo.getAvailability(searchReservations);
-      if (mounted) {
-        setState(() {
-          _dayReservations = res;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
+    final date = _selectedDate;
+    if (date != null) await _availability.load(date);
   }
 
   String _getTableStatus(TableEntityOut table) {
+    if (!_availability.isReady || _detailsError != null || _refreshingDetails) {
+      return "Disponibilité inconnue";
+    }
     if (table.numberOfSeats < _numberOfPeople) return "Trop petite";
     if (_selectedTime == null) return "Choisir une heure";
 
-    final reqStart = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
+    final reqStart = ParisTime.at(
+      _selectedDate!,
       _selectedTime!.hour,
       _selectedTime!.minute,
     );
@@ -204,7 +255,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     bool isBusy = _dayReservations.any((res) {
       if (res.tableId != table.id) return false;
 
-      final resStart = res.reservationDate.toLocal();
+      final resStart = res.reservationDate;
       final conflictStart = resStart.subtract(safetyMargin);
       final conflictEnd = resStart.add(safetyMargin);
 
@@ -218,16 +269,14 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
 
   bool _isDaySelectable(DateTime day) {
     final hasActivity =
-        widget.restaurant.dailyActivitys?.any(
-          (a) => a.dayOfWeek == day.weekday,
-        ) ??
+        _restaurant.dailyActivitys?.any((a) => a.dayOfWeek == day.weekday) ??
         false;
     if (!hasActivity) return false;
     return !_isDayClosedException(day);
   }
 
   List<RestaurantRoomOut> _roomsForPlan() {
-    final rooms = widget.restaurant.rooms;
+    final rooms = _restaurant.rooms;
     if (rooms != null && rooms.isNotEmpty) return rooms;
 
     return [
@@ -243,7 +292,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   }
 
   DateTime _getFirstValidDate() {
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = DateUtils.dateOnly(ParisTime.now());
     for (int i = 0; i < 90; i++) {
       DateTime checkDate = today.add(Duration(days: i));
       if (_isDaySelectable(checkDate)) {
@@ -258,7 +307,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     if (_selectedRoomIndex >= rooms.length) _selectedRoomIndex = 0;
 
     final room = rooms[_selectedRoomIndex];
-    final allTables = widget.restaurant.tables ?? [];
+    final allTables = _restaurant.tables ?? [];
     final roomTables =
         allTables
             .where(
@@ -351,8 +400,8 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                         ).format(_selectedDate!),
                   ),
                   onTap: () async {
-                    if (widget.restaurant.dailyActivitys == null ||
-                        widget.restaurant.dailyActivitys!.isEmpty) {
+                    if (_restaurant.dailyActivitys == null ||
+                        _restaurant.dailyActivitys!.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -363,7 +412,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                       return;
                     }
 
-                    final now = DateTime.now();
+                    final now = ParisTime.now();
                     final firstDate = DateUtils.dateOnly(now);
                     final lastDate = firstDate.add(const Duration(days: 90));
 
@@ -371,6 +420,16 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                     if (initial.isBefore(firstDate)) initial = firstDate;
                     if (initial.isAfter(lastDate)) initial = lastDate;
 
+                    if (!_isDaySelectable(initial)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Aucune date disponible dans les 90 prochains jours.",
+                          ),
+                        ),
+                      );
+                      return;
+                    }
                     final date = await showDatePicker(
                       context: context,
                       initialDate: initial,
@@ -392,6 +451,21 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
               ),
 
               if (_selectedDate != null) ...[
+                if (_availability.error != null || _detailsError != null)
+                  Column(
+                    children: [
+                      Text(
+                        _detailsError ?? _availability.error!,
+                        style: TextStyle(color: colors.error),
+                      ),
+                      TextButton(
+                        onPressed: _isLoading ? null : _refreshRestaurantAndDay,
+                        child: const Text(
+                          'Réessayer le chargement des disponibilités',
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 20),
                 const Text(
                   "Heure de début (blocage 1h30 avant/après)",
@@ -490,7 +564,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed:
-                        (_selectedTable != null && !_isLoading)
+                        (_selectedTable != null &&
+                                !_isLoading &&
+                                _availability.isReady &&
+                                _detailsError == null)
                             ? _submitReservation
                             : null,
                     style: ElevatedButton.styleFrom(
@@ -513,16 +590,17 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   Future<void> _submitReservation() async {
     if (_selectedTable == null ||
         _selectedTime == null ||
-        _selectedDate == null) {
+        _selectedDate == null ||
+        !_availability.isReady ||
+        _detailsError != null ||
+        _isLoading) {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isSubmitting = true);
     try {
-      final reservationDateTime = DateTime(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
+      final reservationDateTime = ParisTime.at(
+        _selectedDate!,
         _selectedTime!.hour,
         _selectedTime!.minute,
       );
@@ -547,7 +625,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Erreur: $e")));

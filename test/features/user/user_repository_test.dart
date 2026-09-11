@@ -1,3 +1,5 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:table_master_mobile/core/session/session_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -11,6 +13,7 @@ class _MockUserDataSource extends Mock implements UserDataSource {}
 class _FakeUserIn extends Fake implements UserIn {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late _MockUserDataSource dataSource;
   late UserRepositoryImpl repository;
 
@@ -20,7 +23,8 @@ void main() {
 
   setUp(() {
     dataSource = _MockUserDataSource();
-    repository = UserRepositoryImpl(dataSource);
+    FlutterSecureStorage.setMockInitialValues({});
+    repository = UserRepositoryImpl(dataSource, session: SessionService());
   });
 
   UserOut buildUser({int id = 1}) => UserOut(

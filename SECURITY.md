@@ -25,9 +25,10 @@
 **Risque** : un token volé ouvre l'accès au compte ; une mauvaise vérification côté serveur autorise des accès non prévus.
 
 **Mesures :**
-- L'authentification est centralisée dans `lib/features/auth/` — un seul flow `login` / `refresh` / `logout`.
-- Le `ApiClient` (`lib/core/api_client.dart`) attache automatiquement le `Authorization: Bearer <access_token>` à chaque requête.
-- Lorsqu'un `401` est reçu, `ApiClient` déclenche le refresh via `IAuthRepository.refresh` → un seul refresh concurrent, file d'attente des requêtes en cours.
+- `SessionService` est l'unique propriétaire des tokens pour Dio, les repositories et SignalR.
+- Le `ApiClient` (`lib/core/api_client.dart`) attache automatiquement le `Authorization: Bearer <access_token>` à chaque requête privée.
+- Plusieurs `401` simultanés partagent un seul refresh. Chaque requête est rejouée au maximum une fois et un `403` ne lance aucun refresh.
+- Un refus `401` du refresh purge la session ; une panne réseau, un `429` ou un `5xx` la conserve. Une réponse tardive après logout ou changement de compte ne peut pas réinstaller les anciens tokens.
 - L'autorisation **fine** reste de la responsabilité de l'API (cf. `TableMasterApi/SECURITY.md`). L'app n'expose jamais d'écran "admin" basé uniquement sur un drapeau local.
 
 ## M2 / A02 — Stockage local sécurisé
@@ -46,7 +47,20 @@
 **Mesures :**
 - L'URL de l'API est définie via `--dart-define-from-file=config/{env}.json` et toujours en HTTPS pour `prod.json`.
 - L'app n'autorise pas les certificats invalides (paramètres Dio par défaut).
-- Le hub SignalR (`signalr_netcore`) hérite des mêmes garanties TLS.
+- Le démarrage refuse une URL API de production qui n'utilise pas HTTPS. Le hub SignalR (`signalr_netcore`) utilise alors WSS.
+- Le token SignalR transmis dans la query string imposée par le navigateur est filtré des événements et breadcrumbs Sentry.
+
+## Temps réel et rattrapage
+
+- Les écrans privés rejoignent `user_{id}` ou `restaurant_{id}` après validation serveur de leur droit.
+- L'écran client de réservation rejoint `availability_{restaurantId}`. Il ne reçoit que l'identifiant du restaurant, puis recharge les disponibilités par HTTP.
+- Après reconnexion et au retour au premier plan, les groupes actifs sont rejoints avant l'émission du signal de resynchronisation.
+- Les rafales sont regroupées et les réponses HTTP devenues obsolètes après un changement de filtre ou de date sont ignorées.
+- Une disponibilité en erreur reste explicitement inconnue ; la validation de la réservation est désactivée jusqu'à un chargement réussi.
+
+## Notifications au moins une fois
+
+Les notifications issues de l'outbox API portent un `eventId`. L'application conserve pendant sept jours un reçu dans `flutter_secure_storage`. Deux livraisons concurrentes ou une reprise après redémarrage n'affichent qu'une notification logique ; l'identifiant de notification système est déterministe.
 
 ## M4 — Gestion des identifiants
 

@@ -21,6 +21,10 @@ void main() async {
   Future<void> appRunner() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    if (AppConfig.isProd && Uri.tryParse(AppConfig.apiUrl)?.scheme != 'https') {
+      throw StateError("L'API de production doit utiliser HTTPS/WSS.");
+    }
+
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
@@ -50,8 +54,35 @@ void main() async {
     options.release = AppConfig.sentryRelease;
     options.tracesSampleRate = AppConfig.sentryTracesSampleRate;
     options.sendDefaultPii = false;
+    options.beforeSend = (event, _) {
+      final request = event.request;
+      if (request != null) {
+        request.url = _redactAccessToken(request.url);
+        request.queryString = _redactAccessToken(request.queryString);
+      }
+      return event;
+    };
+    options.beforeBreadcrumb = (breadcrumb, _) {
+      if (breadcrumb == null) return null;
+      breadcrumb.message = _redactAccessToken(breadcrumb.message);
+      final data = breadcrumb.data;
+      if (data != null) {
+        breadcrumb.data = data.map(
+          (key, value) => MapEntry(
+            key,
+            value is String ? _redactAccessToken(value) : value,
+          ),
+        );
+      }
+      return breadcrumb;
+    };
   }, appRunner: appRunner);
 }
+
+String? _redactAccessToken(String? value) => value?.replaceAll(
+  RegExp(r'([?&]|^)access_token=[^&#\s]*', caseSensitive: false),
+  r'$1access_token=[Filtered]',
+);
 
 Future<void> _initializeNotifications() async {
   try {

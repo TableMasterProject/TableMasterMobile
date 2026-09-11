@@ -1,3 +1,4 @@
+import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/table/data/models/table_entity_out.dart';
@@ -71,7 +72,7 @@ class ReservationOut {
       restaurantId: restaurantId,
       reservationDate:
           reservationDateStr != null
-              ? DateTime.parse(reservationDateStr)
+              ? ParisTime.parse(reservationDateStr)
               : DateTime.now(),
       numberOfPeople: numberOfPeople,
       status: ReservationStatus.values[statusInt],

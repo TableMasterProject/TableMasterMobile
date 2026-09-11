@@ -1,3 +1,5 @@
+import 'package:table_master_mobile/core/refresh_scheduler.dart';
+import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -50,6 +52,11 @@ class RestaurantController extends ChangeNotifier {
   int selectedFilter = 0;
   VoidCallback? onNewReservation;
 
+  late final RefreshScheduler _refreshScheduler = RefreshScheduler(refreshAll);
+  StreamSubscription? _subResynchronized;
+  int _dailyVersion = 0;
+  int _summaryVersion = 0;
+  int _menuVersion = 0;
   StreamSubscription? _subCreated;
   StreamSubscription? _subValidated;
   StreamSubscription? _subDeleted;
@@ -106,6 +113,7 @@ class RestaurantController extends ChangeNotifier {
   }
 
   Future<void> loadSummary(int restaurantId) async {
+    final version = ++_summaryVersion;
     try {
       final search =
           SearchReservations()
@@ -116,7 +124,13 @@ class RestaurantController extends ChangeNotifier {
               ReservationStatus.validee,
             ];
 
-      summaryReservations = await reservationRepository.getReservations(search);
+      final results = await reservationRepository.getReservations(search);
+      if (_disposed ||
+          version != _summaryVersion ||
+          restaurant?.id != restaurantId) {
+        return;
+      }
+      summaryReservations = results;
       _notify();
     } catch (e) {
       AppLogger.debug("Erreur chargement résumé réservations", e);
@@ -124,6 +138,7 @@ class RestaurantController extends ChangeNotifier {
   }
 
   Future<void> loadDailyReservations(int restaurantId) async {
+    final version = ++_dailyVersion;
     try {
       final search =
           SearchReservations()
@@ -133,7 +148,7 @@ class RestaurantController extends ChangeNotifier {
       if (selectedFilter == 0) {
         search
           ..statuses = [ReservationStatus.validee]
-          ..minDate = DateTime.now();
+          ..minDate = ParisTime.now();
       } else if (selectedFilter == 1) {
         search.statuses = [ReservationStatus.enAttente];
       } else {
@@ -146,6 +161,11 @@ class RestaurantController extends ChangeNotifier {
 
       final results = await reservationRepository.getReservations(search);
       results.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
+      if (_disposed ||
+          version != _dailyVersion ||
+          restaurant?.id != restaurantId) {
+        return;
+      }
       reservations = results;
       _notify();
     } catch (e) {
@@ -154,8 +174,15 @@ class RestaurantController extends ChangeNotifier {
   }
 
   Future<void> loadMenu(int restaurantId) async {
+    final version = ++_menuVersion;
     try {
-      menuItems = await menuRepository.getByRestaurant(restaurantId);
+      final results = await menuRepository.getByRestaurant(restaurantId);
+      if (_disposed ||
+          version != _menuVersion ||
+          restaurant?.id != restaurantId) {
+        return;
+      }
+      menuItems = results;
       _notify();
     } catch (e) {
       AppLogger.debug("Erreur chargement menu restaurant", e);
@@ -279,10 +306,13 @@ class RestaurantController extends ChangeNotifier {
 
     await _cancelSignalRSubscriptions();
 
+    _subResynchronized = signalRService.onResynchronized.listen(
+      (_) => _refreshScheduler.schedule(),
+    );
     _subCreated = signalRService.onReservationCreated.listen((reservation) {
       if (reservation.restaurantId == restaurantId) {
         _playSound();
-        refreshReservationData();
+        _refreshScheduler.schedule();
         onNewReservation?.call();
       }
     });
@@ -291,12 +321,12 @@ class RestaurantController extends ChangeNotifier {
       reservation,
     ) {
       if (reservation.restaurantId == restaurantId) {
-        refreshReservationData();
+        _refreshScheduler.schedule();
       }
     });
 
     _subDeleted = signalRService.onReservationDeleted.listen((_) {
-      refreshReservationData();
+      _refreshScheduler.schedule();
     });
 
     await signalRService.init();
@@ -312,6 +342,8 @@ class RestaurantController extends ChangeNotifier {
   }
 
   Future<void> _cancelSignalRSubscriptions() async {
+    await _subResynchronized?.cancel();
+    _subResynchronized = null;
     await _subCreated?.cancel();
     await _subValidated?.cancel();
     await _subDeleted?.cancel();
@@ -337,6 +369,10 @@ class RestaurantController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _refreshScheduler.dispose();
+    _dailyVersion++;
+    _summaryVersion++;
+    _menuVersion++;
     _cancelSignalRSubscriptions();
     final restaurantId = restaurant?.id;
     if (restaurantId != null) {

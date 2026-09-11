@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'api_client.dart';
 import 'logging/app_logger.dart';
+import 'notification_deduplicator.dart';
 
 const String _notificationChannelId = 'table_master_channel';
 const String _notificationChannelName = 'Table Master';
@@ -22,6 +23,9 @@ final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   await _initializeLocalNotifications();
+  // Les messages avec bloc notification sont déjà affichés par Firebase en
+  // arrière-plan. Les événements outbox sont des messages data-only.
+  if (message.notification != null) return;
   await _showLocalNotification(message);
 }
 
@@ -59,7 +63,13 @@ Future<void> _initializeLocalNotifications() async {
   }
 }
 
-Future<void> _showLocalNotification(RemoteMessage message) async {
+Future<void> _showLocalNotification(RemoteMessage message) =>
+    NotificationDeduplicator().showOnce(
+      message.data['eventId']?.toString(),
+      () => _displayLocalNotification(message),
+    );
+
+Future<void> _displayLocalNotification(RemoteMessage message) async {
   if (kIsWeb) {
     return;
   }
@@ -89,7 +99,11 @@ Future<void> _showLocalNotification(RemoteMessage message) async {
   );
 
   await _localNotificationsPlugin.show(
-    id: message.hashCode,
+    id: NotificationDeduplicator.notificationId(
+      message.data['eventId']?.toString() ??
+          message.messageId ??
+          message.hashCode.toString(),
+    ),
     title: title,
     body: body,
     notificationDetails: notificationDetails,
@@ -139,15 +153,13 @@ class NotificationService {
   }
 
   Future<void> _handleOpenedMessage(RemoteMessage message) async {
-    AppLogger.debug('Notification ouverte par l’utilisateur: ${message.data}');
+    AppLogger.debug('Notification ouverte par l’utilisateur');
   }
 
   Future<void> _handleInitialMessage() async {
     final message = await FirebaseMessaging.instance.getInitialMessage();
     if (message != null) {
-      AppLogger.debug(
-        'L’application a été ouverte depuis une notification terminée: ${message.data}',
-      );
+      AppLogger.debug('L’application a été ouverte depuis une notification');
     }
   }
 
@@ -168,51 +180,42 @@ class NotificationService {
   }
 
   Future<void> _registerTokenIfUserLoggedIn(String token) async {
-    final userId = await _storage.read(key: 'user_id');
-    final accessToken = await _storage.read(key: 'access_token');
-
-    if (userId == null || accessToken == null) {
-      await _storage.write(key: 'fcm_token', value: token);
-      return;
-    }
-
+    final epoch = _apiClient.session.generation;
+    final accessToken = await _apiClient.session.accessToken;
+    if (accessToken == null || epoch != _apiClient.session.generation) return;
     final savedToken = await _storage.read(key: 'fcm_token');
-    if (savedToken == token) {
-      return;
-    }
-
-    await _storage.write(key: 'fcm_token', value: token);
-    await _registerDeviceToken(token);
-  }
-
-  Future<void> _registerDeviceToken(String token) async {
+    if (savedToken == token) return;
     try {
       await _apiClient.dio.post(
         '/DeviceToken',
         data: {'deviceToken': token, 'devicePlatform': _devicePlatform},
       );
-    } on DioException catch (error) {
-      AppLogger.debug(
-        'Erreur enregistrement token FCM',
-        error.response?.data ?? error.message,
+      await _apiClient.session.storeDeviceToken(
+        token,
+        expectedGeneration: epoch,
       );
     } catch (error) {
-      AppLogger.debug('Erreur enregistrement token FCM', error);
+      AppLogger.debug('Erreur enregistrement des notifications', error);
     }
   }
 
-  Future<void> unregisterDeviceToken() async {
-    final token = await _storage.read(key: 'fcm_token');
-    if (token == null) return;
-
+  Future<void> unregisterDeviceToken({
+    String? deviceToken,
+    String? accessToken,
+  }) async {
+    final token = deviceToken;
+    if (token == null || accessToken == null) return;
     try {
       await _apiClient.dio.delete(
         '/DeviceToken',
         queryParameters: {'deviceToken': token},
+        options: Options(
+          extra: {ApiClient.skipSession: true},
+          headers: {'Authorization': 'Bearer $accessToken'},
+        ),
       );
-      await _storage.delete(key: 'fcm_token');
     } catch (error) {
-      AppLogger.debug('Erreur suppression token FCM', error);
+      AppLogger.debug('Erreur suppression des notifications', error);
     }
   }
 

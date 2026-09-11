@@ -53,7 +53,7 @@ class ReservationCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${dateFormat.format(r.reservationDate.toLocal())} à ${timeFormat.format(r.reservationDate.toLocal())}',
+                    '${dateFormat.format(r.reservationDate)} à ${timeFormat.format(r.reservationDate)}',
                   ),
                 ],
               ),

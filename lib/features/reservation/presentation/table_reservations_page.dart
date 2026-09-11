@@ -1,3 +1,5 @@
+import 'package:table_master_mobile/core/refresh_scheduler.dart';
+import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:table_master_mobile/core/responsive/breakpoints.dart';
@@ -35,6 +37,10 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   List<ReservationOut> _summaryReservations = []; // Pour les compteurs badges
   int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
 
+  late final RefreshScheduler _refreshScheduler;
+  StreamSubscription? _subResynchronized;
+  int _listVersion = 0;
+  int _summaryVersion = 0;
   StreamSubscription? _subCreated;
   StreamSubscription? _subUpdate;
   StreamSubscription? _subDeleted;
@@ -42,12 +48,17 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   @override
   void initState() {
     super.initState();
+    _refreshScheduler = RefreshScheduler(_loadAllData);
     _loadAllData();
     _initSignalR();
   }
 
   @override
   void dispose() {
+    _subResynchronized?.cancel();
+    _refreshScheduler.dispose();
+    _listVersion++;
+    _summaryVersion++;
     _subCreated?.cancel();
     _subUpdate?.cancel();
     _subDeleted?.cancel();
@@ -60,20 +71,23 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
     // reçus pendant l'établissement du lien sont perdus, et un dispose()
     // survenant entre-temps annulerait des abonnements encore nuls, créés
     // juste après et jamais libérés.
+    _subResynchronized = _signalRService.onResynchronized.listen(
+      (_) => _refreshScheduler.schedule(),
+    );
     _subCreated = _signalRService.onReservationCreated.listen((res) {
       if (res.tableId == widget.table.id) {
-        _loadAllData();
+        _refreshScheduler.schedule();
       }
     });
 
     _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
       if (res.tableId == widget.table.id) {
-        _loadAllData();
+        _refreshScheduler.schedule();
       }
     });
 
     _subDeleted = _signalRService.onReservationDeleted.listen((id) {
-      _loadAllData();
+      _refreshScheduler.schedule();
     });
 
     // joinRestaurantGroup établit la connexion si nécessaire.
@@ -86,6 +100,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   }
 
   Future<void> _loadSummary() async {
+    final version = ++_summaryVersion;
     try {
       SearchReservations search = SearchReservations();
       search.restaurantId = widget.restaurantId;
@@ -96,7 +111,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
         ReservationStatus.validee,
       ];
       final results = await _repo.getReservations(search);
-      if (mounted) {
+      if (mounted && version == _summaryVersion) {
         setState(() {
           _summaryReservations = results;
         });
@@ -107,7 +122,8 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   }
 
   Future<void> _loadReservations() async {
-    if (mounted) {
+    final version = ++_listVersion;
+    if (mounted && version == _listVersion) {
       setState(() {
         _loading = true;
         _error = null;
@@ -121,7 +137,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
 
       if (_selectedFilter == 0) {
         search.statuses = [ReservationStatus.validee];
-        search.minDate = DateTime.now();
+        search.minDate = ParisTime.now();
       } else if (_selectedFilter == 1) {
         search.statuses = [ReservationStatus.enAttente];
       } else {
@@ -135,15 +151,17 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
       final results = await _repo.getReservations(search);
       results.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
 
-      if (mounted) {
+      if (mounted && version == _listVersion) {
         setState(() {
           _reservations = results;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted && version == _listVersion) {
+        setState(() => _error = e.toString());
+      }
     } finally {
-      if (mounted) {
+      if (mounted && version == _listVersion) {
         setState(() {
           _loading = false;
         });
@@ -175,7 +193,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
             .where(
               (r) =>
                   r.status == ReservationStatus.validee &&
-                  DateUtils.isSameDay(r.reservationDate, DateTime.now()),
+                  DateUtils.isSameDay(r.reservationDate, ParisTime.now()),
             )
             .length;
 
@@ -274,9 +292,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
   Widget _buildGroupedListView() {
     final Map<String, List<ReservationOut>> grouped = {};
     for (var r in _reservations) {
-      final dateStr = DateFormat(
-        'yyyy-MM-dd',
-      ).format(r.reservationDate.toLocal());
+      final dateStr = DateFormat('yyyy-MM-dd').format(r.reservationDate);
       if (!grouped.containsKey(dateStr)) grouped[dateStr] = [];
       grouped[dateStr]!.add(r);
     }
@@ -326,7 +342,7 @@ class _TableReservationsPageState extends State<TableReservationsPage> {
 
   String _getDisplayDate(String dateStr) {
     final date = DateTime.parse(dateStr);
-    final now = DateTime.now();
+    final now = ParisTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
     final yesterday = today.subtract(const Duration(days: 1));

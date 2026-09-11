@@ -1,3 +1,4 @@
+import '../../../../core/errors/app_exception.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
 import '../models/login_token_in.dart';
@@ -26,15 +27,9 @@ class AuthDataSource {
 
   Future<LoginUserOut> refresh(LoginTokenIn tokenModel) async {
     try {
-      final response = await apiClient.dio.post(
-        '/Auth/refresh',
-        data: tokenModel.toJson(),
-      );
-
-      return LoginUserOut.fromJson(response.data);
+      return await apiClient.session.refresh();
     } on DioException catch (e) {
-      _handleError(e);
-      rethrow;
+      throw AppException.fromDio(e);
     }
   }
 
@@ -59,11 +54,18 @@ class AuthDataSource {
     }
   }
 
-  Future<void> logout(String refreshToken) async {
+  Future<void> logout(String refreshToken, {String? accessToken}) async {
     try {
       await apiClient.dio.post(
         '/Auth/logout',
         data: {'refreshToken': refreshToken},
+        options: Options(
+          extra: {ApiClient.skipSession: true},
+          headers:
+              accessToken == null
+                  ? null
+                  : {'Authorization': 'Bearer $accessToken'},
+        ),
       );
     } on DioException catch (e) {
       _handleError(e);
@@ -73,12 +75,6 @@ class AuthDataSource {
 
   /// Gestion des erreurs
   void _handleError(DioException e) {
-    if (e.response != null) {
-      // Si ton API renvoie une chaîne brute (ex: "Email non existant")
-      final dynamic errorData = e.response?.data;
-      throw Exception(errorData.toString());
-    } else {
-      throw Exception("Impossible de contacter le serveur");
-    }
+    throw AppException.fromDio(e);
   }
 }

@@ -97,6 +97,8 @@ flutter build web --release --dart-define-from-file=config/prod.json \
 
 Sortie : `build/web/`
 
+Le build de production échoue au démarrage si `API_URL` n'est pas en HTTPS. Ce schéma permet au client SignalR de passer automatiquement en WSS.
+
 Déploiement (servi par Nginx sur `app.tablemaster.lmpe.ovh`) :
 
 ```bash
@@ -111,6 +113,10 @@ location / {
   try_files $uri $uri/ /index.html;
 }
 ```
+
+Le serveur présenté dans le dépôt écoute en HTTP à l'intérieur du réseau de conteneurs. Le reverse proxy public doit terminer TLS. Sur la route `/reservationHub`, ses journaux ne doivent pas enregistrer la query string `access_token`.
+
+Pour une livraison coordonnée, produire et tester ce build avant de sécuriser le hub API. Déployer ensuite les migrations et l'API, puis publier immédiatement cette version Flutter ; les anciennes versions gardent les appels HTTP mais ne reçoivent pas l'invalidation publique de disponibilité.
 
 ---
 

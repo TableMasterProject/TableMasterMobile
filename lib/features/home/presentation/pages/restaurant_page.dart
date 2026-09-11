@@ -1,3 +1,4 @@
+import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'package:flutter/material.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/navigation/app_navigation.dart';
@@ -422,7 +423,7 @@ class _QuickReservationDialogState extends State<_QuickReservationDialog> {
   void initState() {
     super.initState();
     _tableId = widget.tables.first.id;
-    final now = DateTime.now().add(const Duration(minutes: 15));
+    final now = ParisTime.now().add(const Duration(minutes: 15));
     _selectedDate = DateTime(now.year, now.month, now.day);
     _selectedTime = TimeOfDay(hour: now.hour, minute: now.minute);
   }
@@ -436,7 +437,7 @@ class _QuickReservationDialogState extends State<_QuickReservationDialog> {
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final now = ParisTime.now();
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -463,13 +464,31 @@ class _QuickReservationDialogState extends State<_QuickReservationDialog> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    final date = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
+    if (!ParisTime.isValidSlot(
+      _selectedDate,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    )) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cette heure n'existe pas ou est ambiguë à Paris."),
+        ),
+      );
+      return;
+    }
+    final date = ParisTime.at(
+      _selectedDate,
       _selectedTime.hour,
       _selectedTime.minute,
     );
+    if (date.isBefore(ParisTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("La réservation ne peut pas être dans le passé."),
+        ),
+      );
+      return;
+    }
     final phone = _phoneController.text.trim();
     final note = _noteController.text.trim();
 
@@ -654,7 +673,7 @@ class _TablesViewState extends State<_TablesView> {
         name: 'Salle principale',
         sortOrder: 0,
         boundaryPoints: RestaurantRoomIn.defaultRoom().boundaryPoints,
-        createdAt: DateTime.now(),
+        createdAt: ParisTime.now(),
       ),
     ];
   }
@@ -714,7 +733,7 @@ class _TablesViewState extends State<_TablesView> {
     final colors = Theme.of(context).colorScheme;
     final tables = widget.restaurant.tables ?? <TableEntityOut>[];
     final rooms = _roomsForPlan();
-    final now = DateTime.now();
+    final now = ParisTime.now();
 
     return Align(
       alignment: Alignment.topCenter,

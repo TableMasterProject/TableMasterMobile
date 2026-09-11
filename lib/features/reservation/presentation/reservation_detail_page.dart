@@ -220,13 +220,13 @@ class _ReservationDetailPageState extends State<ReservationDetailPage> {
                             context,
                             Icons.calendar_today,
                             "Date",
-                            dateFormat.format(res.reservationDate.toLocal()),
+                            dateFormat.format(res.reservationDate),
                           ),
                           _buildInfoTile(
                             context,
                             Icons.access_time,
                             "Heure",
-                            timeFormat.format(res.reservationDate.toLocal()),
+                            timeFormat.format(res.reservationDate),
                           ),
                           _buildInfoTile(
                             context,

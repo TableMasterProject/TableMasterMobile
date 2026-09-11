@@ -1,3 +1,5 @@
+import 'package:table_master_mobile/core/time/paris_time.dart';
+
 class ReservationAvailabilityOut {
   final int tableId;
   final DateTime reservationDate;
@@ -10,7 +12,7 @@ class ReservationAvailabilityOut {
   factory ReservationAvailabilityOut.fromJson(Map<String, dynamic> json) {
     return ReservationAvailabilityOut(
       tableId: json['tableId'] as int,
-      reservationDate: DateTime.parse(json['reservationDate'] as String),
+      reservationDate: ParisTime.parse(json['reservationDate'] as String),
     );
   }
 }

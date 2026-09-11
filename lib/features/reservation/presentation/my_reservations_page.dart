@@ -1,3 +1,5 @@
+import 'package:table_master_mobile/core/refresh_scheduler.dart';
+import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -29,6 +31,10 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
   String? _error;
   int _selectedFilter = 0; // 0: Validées, 1: En attente, 2: Historique
 
+  late final RefreshScheduler _refreshScheduler;
+  StreamSubscription? _subResynchronized;
+  int _listVersion = 0;
+  int _summaryVersion = 0;
   StreamSubscription? _subCreated;
   StreamSubscription? _subUpdate;
   StreamSubscription? _subDeleted;
@@ -36,6 +42,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
   @override
   void initState() {
     super.initState();
+    _refreshScheduler = RefreshScheduler(_loadAllData);
     _repository = getIt<IReservationRepository>();
     _loadAllData();
     _initSignalR();
@@ -43,6 +50,10 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
 
   @override
   void dispose() {
+    _subResynchronized?.cancel();
+    _refreshScheduler.dispose();
+    _listVersion++;
+    _summaryVersion++;
     _subCreated?.cancel();
     _subUpdate?.cancel();
     _subDeleted?.cancel();
@@ -55,21 +66,24 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
     // reçus pendant l'établissement du lien sont perdus, et un dispose()
     // survenant entre-temps annulerait des abonnements encore nuls, créés
     // juste après et jamais libérés.
+    _subResynchronized = _signalRService.onResynchronized.listen(
+      (_) => _refreshScheduler.schedule(),
+    );
     _subCreated = _signalRService.onReservationCreated.listen((res) {
       if (res.userId == widget.userId) {
-        _loadAllData();
+        _refreshScheduler.schedule();
       }
     });
 
     _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
       if (res.userId == widget.userId) {
-        _loadAllData();
+        _refreshScheduler.schedule();
         _showStatusUpdateSnackBar(res);
       }
     });
 
     _subDeleted = _signalRService.onReservationDeleted.listen((id) {
-      _loadAllData();
+      _refreshScheduler.schedule();
     });
 
     // joinUserGroup établit la connexion si nécessaire.
@@ -115,6 +129,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
   }
 
   Future<void> _loadSummary() async {
+    final version = ++_summaryVersion;
     try {
       final search = SearchReservations(
         offset: 0,
@@ -122,7 +137,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
         statuses: [ReservationStatus.enAttente, ReservationStatus.validee],
       );
       final list = await _repository.getMyReservations(search);
-      if (mounted) {
+      if (mounted && version == _summaryVersion) {
         setState(() {
           _summaryReservations = list;
         });
@@ -133,7 +148,8 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
   }
 
   Future<void> _load() async {
-    if (mounted) {
+    final version = ++_listVersion;
+    if (mounted && version == _listVersion) {
       setState(() {
         _isLoading = true;
         _error = null;
@@ -145,7 +161,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
 
       if (_selectedFilter == 0) {
         statuses = [ReservationStatus.validee];
-        minDate = DateTime.now();
+        minDate = ParisTime.now();
       } else if (_selectedFilter == 1) {
         statuses = [ReservationStatus.enAttente];
       } else {
@@ -166,15 +182,19 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
       final list = await _repository.getMyReservations(search);
       list.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
 
-      if (mounted) {
+      if (mounted && version == _listVersion) {
         setState(() {
           _reservations = list;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted && version == _listVersion) {
+        setState(() => _error = e.toString());
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && version == _listVersion) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -191,7 +211,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
             .where(
               (r) =>
                   r.status == ReservationStatus.validee &&
-                  DateUtils.isSameDay(r.reservationDate, DateTime.now()),
+                  DateUtils.isSameDay(r.reservationDate, ParisTime.now()),
             )
             .length;
 
@@ -285,7 +305,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
   Widget _buildGroupedList(ColorScheme colors) {
     final Map<String, List<ReservationOut>> grouped = {};
     for (var r in _reservations) {
-      final key = DateFormat('yyyy-MM-dd').format(r.reservationDate.toLocal());
+      final key = DateFormat('yyyy-MM-dd').format(r.reservationDate);
       if (!grouped.containsKey(key)) grouped[key] = [];
       grouped[key]!.add(r);
     }
@@ -343,7 +363,7 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
 
   String _getDisplayDate(String dateKey) {
     final date = DateTime.parse(dateKey);
-    final now = DateTime.now();
+    final now = ParisTime.now();
     final today = DateTime(now.year, now.month, now.day);
     if (date == today) return "AUJOURD'HUI";
     return DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date).toUpperCase();

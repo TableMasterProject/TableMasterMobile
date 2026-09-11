@@ -1,3 +1,5 @@
+import 'package:table_master_mobile/core/time/paris_time.dart';
+
 enum ReservationStatus {
   enAttente, // 0
   validee, // 1
@@ -30,7 +32,7 @@ class ReservationIn {
       'UserId': userId,
       'TableId': tableId,
       'RestaurantId': restaurantId,
-      'ReservationDate': reservationDate.toIso8601String(),
+      'ReservationDate': ParisTime.serialize(reservationDate),
       'NumberOfPeople': numberOfPeople,
       'Status': status.index,
       'SpecialRequest': specialRequest,
@@ -58,7 +60,7 @@ class QuickReservationIn {
   Map<String, dynamic> toJson() {
     return {
       'TableId': tableId,
-      'ReservationDate': reservationDate.toIso8601String(),
+      'ReservationDate': ParisTime.serialize(reservationDate),
       'NumberOfPeople': numberOfPeople,
       'GuestName': guestName,
       'GuestPhone': guestPhone,

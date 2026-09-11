@@ -1,3 +1,4 @@
+import 'package:table_master_mobile/core/session/session_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/change_password_screen.dart';
@@ -311,12 +312,7 @@ class _AccountPageState extends State<AccountPage> {
                     );
                     if (!context.mounted) return;
                     if (success) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Mot de passe mis à jour !'),
-                        ),
-                      );
+                      SessionManager.redirectToLogin();
                     }
                   } catch (e) {
                     if (!context.mounted) return;

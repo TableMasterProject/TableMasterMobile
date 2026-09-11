@@ -1,3 +1,4 @@
+import '../../../../core/errors/app_exception.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
 import '../models/review_in.dart';
@@ -82,10 +83,6 @@ class ReviewDataSource {
   }
 
   void _handleError(DioException e) {
-    if (e.response != null) {
-      throw Exception(e.response?.data.toString() ?? "Erreur serveur");
-    } else {
-      throw Exception("Connexion au serveur impossible");
-    }
+    throw AppException.fromDio(e);
   }
 }

@@ -1,3 +1,4 @@
+import '../../../../core/errors/app_exception.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/api_client.dart';
 import '../../../auth/data/models/login_user_out.dart';
@@ -68,15 +69,6 @@ class UserDataSource {
   }
 
   void _handleError(DioException e) {
-    if (e.response != null) {
-      final dynamic errorData = e.response?.data;
-      // Gestion spécifique pour le code 403 (Email existe déjà dans ton API)
-      if (e.response?.statusCode == 403) {
-        throw Exception(errorData.toString());
-      }
-      throw Exception(errorData.toString());
-    } else {
-      throw Exception("Erreur de connexion au serveur");
-    }
+    throw AppException.fromDio(e);
   }
 }
