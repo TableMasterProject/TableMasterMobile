@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:table_master_mobile/core/notification_service.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/auth/data/datasources/auth_datasource.dart';
 import 'package:table_master_mobile/features/auth/data/repositories/auth_repository_impl.dart';
 
@@ -8,13 +9,19 @@ class _MockAuthDataSource extends Mock implements AuthDataSource {}
 
 class _MockNotificationService extends Mock implements NotificationService {}
 
+class _MockSignalRService extends Mock implements SignalRService {}
+
 void main() {
   late _MockAuthDataSource dataSource;
   late AuthRepositoryImpl repository;
 
   setUp(() {
     dataSource = _MockAuthDataSource();
-    repository = AuthRepositoryImpl(dataSource, _MockNotificationService());
+    repository = AuthRepositoryImpl(
+      dataSource,
+      _MockNotificationService(),
+      _MockSignalRService(),
+    );
   });
 
   group('AuthRepositoryImpl', () {

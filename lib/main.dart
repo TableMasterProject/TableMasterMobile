@@ -12,6 +12,7 @@ import 'core/app_constant.dart';
 import 'core/deep_link_service.dart';
 import 'core/injection.dart';
 import 'core/notification_service.dart';
+import 'core/signalr_lifecycle_observer.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'splash_screen.dart';
@@ -26,6 +27,7 @@ void main() async {
     await initializeDateFormatting('fr_FR', null);
 
     setupDependencies();
+    getIt<SignalRLifecycleObserver>().register();
     await getIt<DeepLinkService>().init();
     await _captureSentryStartupTestEvent();
 

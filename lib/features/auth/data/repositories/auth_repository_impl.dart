@@ -1,5 +1,6 @@
 import 'package:table_master_mobile/core/notification_service.dart';
 import 'package:table_master_mobile/core/logging/app_logger.dart';
+import 'package:table_master_mobile/core/signalr_service.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_datasource.dart';
 import '../models/login_user_in.dart';
@@ -10,9 +11,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class AuthRepositoryImpl implements IAuthRepository {
   final AuthDataSource remoteDataSource;
   final NotificationService notificationService;
+  final SignalRService signalRService;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
 
-  AuthRepositoryImpl(this.remoteDataSource, this.notificationService);
+  AuthRepositoryImpl(
+    this.remoteDataSource,
+    this.notificationService,
+    this.signalRService,
+  );
 
   @override
   Future<LoginUserOut> login(LoginUserIn credentials) async {
@@ -74,7 +80,12 @@ class AuthRepositoryImpl implements IAuthRepository {
       }
     }
 
-    // 2. Supprime les jetons et l'ID utilisateur du téléphone
+    // 2. Coupe le temps réel : sans cela la connexion reste ouverte et
+    // l'utilisateur déconnecté continue de recevoir les événements de ses
+    // anciens groupes.
+    await signalRService.reset();
+
+    // 3. Supprime les jetons et l'ID utilisateur du téléphone
     await storage.delete(key: 'access_token');
     await storage.delete(key: 'refresh_token');
     await storage.delete(key: 'fcm_token');

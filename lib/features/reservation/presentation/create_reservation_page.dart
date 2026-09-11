@@ -59,8 +59,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
   }
 
   Future<void> _initSignalR() async {
-    await _signalRService.init();
-    await _signalRService.joinRestaurantGroup(widget.restaurant.id);
+    // Les abonnements sont posés avant la connexion : sinon les événements
+    // reçus pendant l'établissement du lien sont perdus, et un dispose()
+    // survenant entre-temps annulerait des abonnements encore nuls, créés
+    // juste après et jamais libérés.
 
     // Écoute des mises à jour de statut (validation/annulation)
     _subUpdate = _signalRService.onReservationUpdateStatus.listen((res) {
@@ -74,6 +76,9 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     _subDeleted = _signalRService.onReservationDeleted.listen((id) {
       _fetchDayReservations();
     });
+
+    // joinRestaurantGroup établit la connexion si nécessaire.
+    await _signalRService.joinRestaurantGroup(widget.restaurant.id);
   }
 
   // --- Logique métier ---
