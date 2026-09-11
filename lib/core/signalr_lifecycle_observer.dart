@@ -33,7 +33,9 @@ class SignalRLifecycleObserver with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
 
-    AppLogger.debug('SignalR: retour au premier plan, contrôle de la connexion');
+    AppLogger.debug(
+      'SignalR: retour au premier plan, contrôle de la connexion',
+    );
     unawaited(_signalRService.ensureConnected());
   }
 }
