@@ -5,3 +5,10 @@ services:
     restart: unless-stopped
     ports:
       - "8081:80"
+    networks:
+      - tablemaster-proxy
+
+networks:
+  tablemaster-proxy:
+    external: true
+    name: tablemaster-proxy

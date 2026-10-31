@@ -390,7 +390,7 @@ void loginUser() {
 }
 
 // Constants: UPPER_SNAKE_CASE
-const String API_BASE_URL = "https://api.tablemaster.com";
+const String API_BASE_URL = "https://api.tablemaster.maxencecoeur.fr";
 const Duration REQUEST_TIMEOUT = Duration(seconds: 10);
 const int MAX_RETRY_COUNT = 3;
 
@@ -819,7 +819,7 @@ flutter run --dart-define-from-file=config/prod.json
 
 // config/prod.json
 {
-  "apiUrl": "https://api.tablemaster.com",
+  "apiUrl": "https://api.tablemaster.maxencecoeur.fr",
   "firebaseProjectId": "tablemaster-prod",
   "logNetworkRequests": false
 }

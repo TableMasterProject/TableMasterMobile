@@ -99,12 +99,22 @@ Sortie : `build/web/`
 
 Le build de production échoue au démarrage si `API_URL` n'est pas en HTTPS. Ce schéma permet au client SignalR de passer automatiquement en WSS.
 
-Déploiement (servi par Nginx sur `app.tablemaster.lmpe.ovh`) :
+Déploiement Web automatique sur `client.tablemaster.maxencecoeur.fr` : le
+workflow `.github/workflows/flutter.yml` copie `docker-compose.prod.yml` sur
+Oracle, puis actualise le conteneur `tablemaster-mobile-web`. Pour une
+intervention manuelle sur le serveur :
 
 ```bash
-rsync -avz --delete build/web/ deploy@app.tablemaster.lmpe.ovh:/var/www/tablemaster-app/
-ssh deploy@app.tablemaster.lmpe.ovh "sudo nginx -t && sudo systemctl reload nginx"
+cd /opt/tablemaster/prod/TableMasterMobile
+docker compose pull tablemaster-mobile-web
+docker compose up -d tablemaster-mobile-web
 ```
+
+Créer une seule fois le réseau Docker externe `tablemaster-proxy` sur Oracle.
+Le Compose de production y connecte le client ; le Compose de Nginx Proxy
+Manager doit aussi s'y connecter de manière permanente. Dans NPM, configurer
+le domaine client vers `http://tablemaster-mobile-web:80`, avec HTTPS public
+Let's Encrypt. Le port hôte `8081` reste disponible pour les checks locaux.
 
 Le `nginx.conf` doit servir `index.html` en fallback pour la SPA :
 
@@ -115,6 +125,12 @@ location / {
 ```
 
 Le serveur présenté dans le dépôt écoute en HTTP à l'intérieur du réseau de conteneurs. Le reverse proxy public doit terminer TLS. Sur la route `/reservationHub`, ses journaux ne doivent pas enregistrer la query string `access_token`.
+
+Pour les liens Android, vérifier que
+`https://client.tablemaster.maxencecoeur.fr/.well-known/assetlinks.json`
+renvoie le JSON d'association et non la page Flutter. Le domaine de
+l'entitlement iOS est mis à jour ; l'ouverture dans l'app iOS exige aussi
+un fichier d'association Apple sur ce domaine.
 
 Pour une livraison coordonnée, produire et tester ce build avant de sécuriser le hub API. Déployer ensuite les migrations et l'API, puis publier immédiatement cette version Flutter ; les anciennes versions gardent les appels HTTP mais ne reçoivent pas l'invalidation publique de disponibilité.
 
@@ -160,15 +176,20 @@ Sur Android, la prochaine version peut être promue en **rollout progressif** (5
 
 ### Cas 2 — Régression sur la version web
 
-Le web déployé est statique, on peut **rollback en 30 secondes** :
+Le web déployé est statique. Retrouver d'abord le SHA du dernier workflow
+`flutter.yml` **réussi** dans GitHub Actions : l'image correspondante est publiée
+avec ce SHA, tandis que `:prod` est mutable. Puis effectuer le rollback :
 ```bash
-ssh deploy@app.tablemaster.lmpe.ovh
-cd /var/www
-sudo cp -r tablemaster-app-backup-YYYYMMDD tablemaster-app
-sudo systemctl reload nginx
+ssh ubuntu@141.253.120.94
+cd /opt/tablemaster/prod/TableMasterMobile
+# Remplacer dans docker-compose.yml le tag :prod de la ligne image:
+# par :<sha-stable-precedent> obtenu dans GitHub Actions.
+docker compose config | grep 'tablemaster-mobile-web:'
+docker compose pull tablemaster-mobile-web
+docker compose up -d tablemaster-mobile-web
 ```
 
-(Maintenir une copie horodatée à chaque déploiement.)
+Conserver ce SHA dans le journal de déploiement pour les prochains rollbacks.
 
 ---
 
@@ -180,7 +201,7 @@ sudo systemctl reload nginx
 | --- | --- |
 | Android | Installer l'APK ou télécharger depuis Play Store → login → créer une résa → recevoir notification push |
 | iOS | TestFlight → login → réservation → push |
-| Web | https://app.tablemaster.lmpe.ovh → login → ouvrir une fiche restaurant → vérifier carte Google Maps |
+| Web | https://client.tablemaster.maxencecoeur.fr → login → ouvrir une fiche restaurant → vérifier carte Google Maps |
 | Sentry | Vérifier qu'une erreur/test remonte dans le projet Sentry Flutter |
 
 ### Smoke tests automatiques
