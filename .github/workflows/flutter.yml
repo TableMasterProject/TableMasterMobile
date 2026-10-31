@@ -299,9 +299,8 @@ jobs:
         env:
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          GHCR_OWNER: ${{ github.repository_owner }}
-          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
-          GHCR_READ_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ github.token }}
         run: |
           set -e
           REMOTE_APP_DIR="/opt/tablemaster/prod/TableMasterMobile"
@@ -309,17 +308,16 @@ jobs:
           test -n "$ORACLE_USER"
           test -n "$ORACLE_HOST"
           test -n "$GHCR_USERNAME"
-          test -n "$GHCR_READ_TOKEN"
+          test -n "$GHCR_TOKEN"
 
-          GHCR_OWNER_LOWER=$(echo "$GHCR_OWNER" | tr '[:upper:]' '[:lower:]')
+          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" \
+            "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
 
-          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" << EOF
+          ssh -i ~/.ssh/oracle_key "$ORACLE_USER@$ORACLE_HOST" \
+            "REMOTE_APP_DIR='$REMOTE_APP_DIR' bash -s" << 'EOF'
             set -e
 
             cd "$REMOTE_APP_DIR"
-            export GHCR_OWNER="$GHCR_OWNER_LOWER"
-
-            echo "$GHCR_READ_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 
             docker compose pull
             docker compose up -d
