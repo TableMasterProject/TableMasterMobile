@@ -6,15 +6,37 @@ import 'package:flutter/material.dart';
 class AppTheme {
   AppTheme._();
 
-  static const Color _seed = Color(0xFF3F51B5);
+  static const Color _seed = Color(0xFFA34832);
+  static const Color _cream = Color(0xFFFAF6F0);
+  static const Color _night = Color(0xFF211B18);
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(
+    final generatedScheme = ColorScheme.fromSeed(
       seedColor: _seed,
       brightness: brightness,
+    );
+    final colorScheme = generatedScheme.copyWith(
+      primary: brightness == Brightness.light ? _seed : const Color(0xFFE6A18D),
+      onPrimary: brightness == Brightness.light ? Colors.white : _night,
+      surface:
+          brightness == Brightness.light
+              ? Colors.white
+              : const Color(0xFF302824),
+      onSurface:
+          brightness == Brightness.light
+              ? const Color(0xFF2E2420)
+              : const Color(0xFFF8EEE8),
+      secondary:
+          brightness == Brightness.light
+              ? const Color(0xFF36745B)
+              : const Color(0xFF90D0AD),
+      tertiary:
+          brightness == Brightness.light
+              ? const Color(0xFFAA6818)
+              : const Color(0xFFF4BE6D),
     );
 
     final baseText =
@@ -26,7 +48,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      scaffoldBackgroundColor: colorScheme.surfaceContainerLow,
+      scaffoldBackgroundColor: brightness == Brightness.light ? _cream : _night,
       textTheme: baseText.copyWith(
         displayLarge: baseText.displayLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -123,7 +145,7 @@ class AppTheme {
         indicatorColor: colorScheme.primaryContainer,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surfaceContainerLow,
+        backgroundColor: brightness == Brightness.light ? _cream : _night,
         surfaceTintColor: colorScheme.surfaceTint,
         elevation: 0,
         scrolledUnderElevation: 1,
