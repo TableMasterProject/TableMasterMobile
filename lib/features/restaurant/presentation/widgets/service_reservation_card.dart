@@ -66,6 +66,7 @@ class _ServiceReservationCardState extends State<ServiceReservationCard> {
     final reservation = widget.reservation;
     final colors = Theme.of(context).colorScheme;
     final pending = reservation.status == ReservationStatus.enAttente;
+    final confirmed = reservation.status == ReservationStatus.validee;
     final name =
         reservation.guestName?.trim().isNotEmpty == true
             ? reservation.guestName!.trim()
@@ -77,7 +78,18 @@ class _ServiceReservationCardState extends State<ServiceReservationCard> {
       'fr_FR',
     ).format(reservation.reservationDate);
     final statusColor =
-        pending ? const Color(0xFF995300) : const Color(0xFF236B4B);
+        pending
+            ? const Color(0xFF995300)
+            : confirmed
+            ? const Color(0xFF236B4B)
+            : colors.onSurfaceVariant;
+    final statusLabel = switch (reservation.status) {
+      ReservationStatus.enAttente => 'À traiter',
+      ReservationStatus.validee => 'Confirmée',
+      ReservationStatus.finie => 'Terminée',
+      ReservationStatus.annuleeResto => 'Annulée par le restaurant',
+      ReservationStatus.annuleeClient => 'Annulée par le client',
+    };
 
     return Card(
       child: Padding(
@@ -103,7 +115,7 @@ class _ServiceReservationCardState extends State<ServiceReservationCard> {
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
-                    pending ? 'À traiter' : 'Confirmée',
+                    statusLabel,
                     style: TextStyle(
                       color: statusColor,
                       fontWeight: FontWeight.w700,
@@ -125,34 +137,35 @@ class _ServiceReservationCardState extends State<ServiceReservationCard> {
             ],
             const SizedBox(height: 12),
             if (_busy) const LinearProgressIndicator(),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed:
-                        _busy
-                            ? null
-                            : () => _update(
-                              pending
-                                  ? ReservationStatus.validee
-                                  : ReservationStatus.finie,
-                            ),
-                    icon: Icon(pending ? Icons.check : Icons.done_all),
-                    label: Text(pending ? 'Valider' : 'Terminer'),
+            if (pending || confirmed)
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed:
+                          _busy
+                              ? null
+                              : () => _update(
+                                pending
+                                    ? ReservationStatus.validee
+                                    : ReservationStatus.finie,
+                              ),
+                      icon: Icon(pending ? Icons.check : Icons.done_all),
+                      label: Text(pending ? 'Valider' : 'Terminer'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed:
-                        _busy
-                            ? null
-                            : () => _update(ReservationStatus.annuleeResto),
-                    child: Text(pending ? 'Refuser' : 'Annuler'),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed:
+                          _busy
+                              ? null
+                              : () => _update(ReservationStatus.annuleeResto),
+                      child: Text(pending ? 'Refuser' : 'Annuler'),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),

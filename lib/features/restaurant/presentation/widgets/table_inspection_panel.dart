@@ -12,17 +12,27 @@ class TableInspectionPanel extends StatelessWidget {
     required this.selectedDate,
     required this.pending,
     required this.confirmed,
+    this.history = const [],
     required this.onClose,
     required this.onStatusUpdate,
     this.loading = false,
     this.error,
     this.onRetry,
+    this.pendingHasMore = false,
+    this.confirmedHasMore = false,
+    this.historyHasMore = false,
+    this.onLoadMore,
   });
 
   final TableEntityOut table;
   final DateTime selectedDate;
   final List<ReservationOut> pending;
   final List<ReservationOut> confirmed;
+  final List<ReservationOut> history;
+  final bool pendingHasMore;
+  final bool confirmedHasMore;
+  final bool historyHasMore;
+  final Future<void> Function(ReservationStatus)? onLoadMore;
   final VoidCallback onClose;
   final Future<void> Function(int, ReservationStatus) onStatusUpdate;
   final bool loading;
@@ -71,6 +81,11 @@ class TableInspectionPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
         ],
+        if (pendingHasMore && onLoadMore != null)
+          TextButton(
+            onPressed: () => onLoadMore!(ReservationStatus.enAttente),
+            child: const Text('Voir plus'),
+          ),
         const SizedBox(height: 20),
         Text(
           'Confirmées · ${DateFormat('d MMM', 'fr_FR').format(selectedDate)}',
@@ -87,6 +102,32 @@ class TableInspectionPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
         ],
+        if (confirmedHasMore && onLoadMore != null)
+          TextButton(
+            onPressed: () => onLoadMore!(ReservationStatus.validee),
+            child: const Text('Voir plus'),
+          ),
+        const SizedBox(height: 20),
+        Text(
+          'Historique du jour',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 10),
+        if (history.isEmpty)
+          const Text('Aucune réservation terminée ou annulée à cette date.'),
+        for (final reservation in history) ...[
+          ServiceReservationCard(
+            key: ValueKey(reservation.id),
+            reservation: reservation,
+            onStatusUpdate: (status) => onStatusUpdate(reservation.id, status),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (historyHasMore && onLoadMore != null)
+          TextButton(
+            onPressed: () => onLoadMore!(ReservationStatus.finie),
+            child: const Text('Voir plus'),
+          ),
       ],
     );
   }

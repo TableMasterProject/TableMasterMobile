@@ -50,6 +50,7 @@ class RestaurantController extends ChangeNotifier {
   List<ReservationOut> summaryReservations = [];
   List<ReservationOut> pendingReservations = [];
   List<ReservationOut> confirmedReservations = [];
+  List<ReservationOut> serviceHistoryReservations = [];
   DateTime selectedServiceDate = DateTime(
     ParisTime.now().year,
     ParisTime.now().month,
@@ -59,11 +60,16 @@ class RestaurantController extends ChangeNotifier {
   String? serviceError;
   bool pendingHasMore = false;
   bool confirmedHasMore = false;
+  bool serviceHistoryHasMore = false;
   bool pendingLoadingMore = false;
   bool confirmedLoadingMore = false;
   TableEntityOut? selectedTable;
   List<ReservationOut> tablePendingReservations = [];
   List<ReservationOut> tableConfirmedReservations = [];
+  List<ReservationOut> tableHistoryReservations = [];
+  bool tablePendingHasMore = false;
+  bool tableConfirmedHasMore = false;
+  bool tableHistoryHasMore = false;
   bool tableLoading = false;
   String? tableError;
   List<MenuOut> menuItems = [];
@@ -180,10 +186,29 @@ class RestaurantController extends ChangeNotifier {
             maxDate: selectedServiceDate,
           ),
         ),
+        reservationRepository.getReservations(
+          SearchReservations(
+            restaurantId: restaurantId,
+            tableId: table.id,
+            pageSize: 50,
+            statuses: [
+              ReservationStatus.finie,
+              ReservationStatus.annuleeResto,
+              ReservationStatus.annuleeClient,
+            ],
+            minDate: selectedServiceDate,
+            maxDate: selectedServiceDate,
+            sortDescending: true,
+          ),
+        ),
       ]);
       if (_disposed || version != _tableVersion) return;
       tablePendingReservations = result[0];
       tableConfirmedReservations = result[1];
+      tableHistoryReservations = result[2];
+      tablePendingHasMore = result[0].length == 50;
+      tableConfirmedHasMore = result[1].length == 50;
+      tableHistoryHasMore = result[2].length == 50;
     } catch (_) {
       if (!_disposed && version == _tableVersion) {
         tableError = 'Impossible de charger cette table.';
@@ -215,6 +240,18 @@ class RestaurantController extends ChangeNotifier {
           minDate: selectedServiceDate,
           maxDate: selectedServiceDate,
         ),
+        SearchReservations(
+          restaurantId: restaurantId,
+          pageSize: 50,
+          statuses: [
+            ReservationStatus.finie,
+            ReservationStatus.annuleeResto,
+            ReservationStatus.annuleeClient,
+          ],
+          minDate: selectedServiceDate,
+          maxDate: selectedServiceDate,
+          sortDescending: true,
+        ),
       ];
       final result = await Future.wait(
         searches.map(reservationRepository.getReservations),
@@ -226,8 +263,10 @@ class RestaurantController extends ChangeNotifier {
       }
       pendingReservations = result[0];
       confirmedReservations = result[1];
+      serviceHistoryReservations = result[2];
       pendingHasMore = result[0].length == 50;
       confirmedHasMore = result[1].length == 50;
+      serviceHistoryHasMore = result[2].length == 50;
     } catch (e) {
       if (!_disposed && version == _serviceVersion) {
         serviceError = 'Impossible de charger les réservations.';
@@ -243,6 +282,111 @@ class RestaurantController extends ChangeNotifier {
   Future<void> loadMorePending() => _loadMoreService(pending: true);
 
   Future<void> loadMoreConfirmed() => _loadMoreService(pending: false);
+
+  Future<void> loadMoreServiceHistory() async {
+    final restaurantId = restaurant?.id;
+    if (restaurantId == null || serviceLoading || !serviceHistoryHasMore) {
+      return;
+    }
+    final version = _serviceVersion;
+    final current = serviceHistoryReservations;
+    try {
+      final next = await reservationRepository.getReservations(
+        SearchReservations(
+          restaurantId: restaurantId,
+          offset: current.length,
+          pageSize: 50,
+          statuses: [
+            ReservationStatus.finie,
+            ReservationStatus.annuleeResto,
+            ReservationStatus.annuleeClient,
+          ],
+          minDate: selectedServiceDate,
+          maxDate: selectedServiceDate,
+          sortDescending: true,
+        ),
+      );
+      if (_disposed || version != _serviceVersion) return;
+      final ids = current.map((item) => item.id).toSet();
+      serviceHistoryReservations = [
+        ...current,
+        ...next.where((item) => ids.add(item.id)),
+      ];
+      serviceHistoryHasMore = next.length == 50;
+      _notify();
+    } catch (_) {
+      if (!_disposed && version == _serviceVersion) {
+        serviceError = 'Impossible de charger la suite de l’historique.';
+        _notify();
+      }
+    }
+  }
+
+  Future<void> loadMoreTableReservations(ReservationStatus status) async {
+    final restaurantId = restaurant?.id;
+    final table = selectedTable;
+    if (restaurantId == null || table == null || tableLoading) return;
+    final current =
+        status == ReservationStatus.enAttente
+            ? tablePendingReservations
+            : status == ReservationStatus.validee
+            ? tableConfirmedReservations
+            : tableHistoryReservations;
+    final hasMore =
+        status == ReservationStatus.enAttente
+            ? tablePendingHasMore
+            : status == ReservationStatus.validee
+            ? tableConfirmedHasMore
+            : tableHistoryHasMore;
+    if (!hasMore) return;
+    final version = _tableVersion;
+    try {
+      final next = await reservationRepository.getReservations(
+        SearchReservations(
+          restaurantId: restaurantId,
+          tableId: table.id,
+          offset: current.length,
+          pageSize: 50,
+          statuses:
+              status == ReservationStatus.finie
+                  ? [
+                    ReservationStatus.finie,
+                    ReservationStatus.annuleeResto,
+                    ReservationStatus.annuleeClient,
+                  ]
+                  : [status],
+          minDate:
+              status == ReservationStatus.enAttente
+                  ? null
+                  : selectedServiceDate,
+          maxDate:
+              status == ReservationStatus.enAttente
+                  ? null
+                  : selectedServiceDate,
+          sortDescending: status == ReservationStatus.finie,
+        ),
+      );
+      if (_disposed || version != _tableVersion) return;
+      final ids = current.map((item) => item.id).toSet();
+      final combined = [...current, ...next.where((item) => ids.add(item.id))];
+      if (status == ReservationStatus.enAttente) {
+        tablePendingReservations = combined;
+        tablePendingHasMore = next.length == 50;
+      } else if (status == ReservationStatus.validee) {
+        tableConfirmedReservations = combined;
+        tableConfirmedHasMore = next.length == 50;
+      } else {
+        tableHistoryReservations = combined;
+        tableHistoryHasMore = next.length == 50;
+      }
+      _notify();
+    } catch (_) {
+      if (!_disposed && version == _tableVersion) {
+        tableError = 'Impossible de charger la suite.';
+        _notify();
+      }
+    }
+  }
 
   Future<void> _loadMoreService({required bool pending}) async {
     final restaurantId = restaurant?.id;

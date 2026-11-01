@@ -93,7 +93,7 @@ void main() {
 
     await controller.selectServiceDate(DateTime(2036, 7, 21));
 
-    expect(reservationRepo.searches, hasLength(2));
+    expect(reservationRepo.searches, hasLength(3));
     final pending = reservationRepo.searches.singleWhere(
       (search) => search.statuses!.contains(ReservationStatus.enAttente),
     );
@@ -104,6 +104,11 @@ void main() {
     expect(pending.maxDate, isNull);
     expect(confirmed.minDate, DateTime(2036, 7, 21));
     expect(confirmed.maxDate, DateTime(2036, 7, 21));
+    final history = reservationRepo.searches.singleWhere(
+      (search) => search.statuses!.contains(ReservationStatus.finie),
+    );
+    expect(history.sortDescending, true);
+    expect(history.minDate, DateTime(2036, 7, 21));
     controller.dispose();
   });
 
@@ -152,7 +157,7 @@ void main() {
 
       await controller.selectTable(table);
 
-      expect(reservationRepo.searches, hasLength(2));
+      expect(reservationRepo.searches, hasLength(3));
       expect(
         reservationRepo.searches.every((search) => search.tableId == 22),
         true,

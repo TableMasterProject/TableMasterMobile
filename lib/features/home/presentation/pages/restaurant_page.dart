@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'package:flutter/material.dart';
 import 'package:table_master_mobile/core/injection.dart';
@@ -52,7 +53,7 @@ class _RestaurantPageState extends State<RestaurantPage> {
   late final RestaurantController _controller;
 
   Future<void> _openTablePanel(TableEntityOut table) async {
-    await _controller.selectTable(table);
+    unawaited(_controller.selectTable(table));
     if (!mounted) return;
     Widget panel(BuildContext dialogContext) => AnimatedBuilder(
       animation: _controller,
@@ -62,6 +63,11 @@ class _RestaurantPageState extends State<RestaurantPage> {
             selectedDate: _controller.selectedServiceDate,
             pending: _controller.tablePendingReservations,
             confirmed: _controller.tableConfirmedReservations,
+            history: _controller.tableHistoryReservations,
+            pendingHasMore: _controller.tablePendingHasMore,
+            confirmedHasMore: _controller.tableConfirmedHasMore,
+            historyHasMore: _controller.tableHistoryHasMore,
+            onLoadMore: _controller.loadMoreTableReservations,
             loading: _controller.tableLoading,
             error: _controller.tableError,
             onRetry: _controller.loadSelectedTableReservations,
@@ -315,13 +321,16 @@ class _RestaurantPageState extends State<RestaurantPage> {
           1 => ServiceBoard(
             pending: _controller.pendingReservations,
             confirmed: _controller.confirmedReservations,
+            history: _controller.serviceHistoryReservations,
             selectedDate: _controller.selectedServiceDate,
             onDateChanged: _controller.selectServiceDate,
             onStatusUpdate: _controller.updateReservationStatus,
             pendingHasMore: _controller.pendingHasMore,
             confirmedHasMore: _controller.confirmedHasMore,
+            historyHasMore: _controller.serviceHistoryHasMore,
             onLoadMorePending: _controller.loadMorePending,
             onLoadMoreConfirmed: _controller.loadMoreConfirmed,
+            onLoadMoreHistory: _controller.loadMoreServiceHistory,
             loading: _controller.serviceLoading,
             error: _controller.serviceError,
             onRetry: _controller.refreshReservationData,

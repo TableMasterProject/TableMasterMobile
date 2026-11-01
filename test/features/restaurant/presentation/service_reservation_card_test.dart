@@ -58,4 +58,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(sent, ReservationStatus.annuleeResto);
   });
+
+  testWidgets('historique ne propose aucune action de statut', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ServiceReservationCard(
+            reservation: reservation(ReservationStatus.finie),
+            onStatusUpdate: (_) async {},
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Terminée'), findsOneWidget);
+    expect(find.text('Valider'), findsNothing);
+    expect(find.text('Annuler'), findsNothing);
+  });
 }

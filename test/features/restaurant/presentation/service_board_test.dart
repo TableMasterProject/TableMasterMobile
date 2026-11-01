@@ -20,7 +20,7 @@ ReservationOut booking(int id, ReservationStatus status) => ReservationOut(
 void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
 
-  for (final width in [390.0, 1600.0]) {
+  for (final width in [390.0, 1280.0, 1600.0]) {
     testWidgets('Service montre attente et confirmées à ${width.toInt()} px', (
       tester,
     ) async {
@@ -35,6 +35,7 @@ void main() {
             body: ServiceBoard(
               pending: [booking(1, ReservationStatus.enAttente)],
               confirmed: [booking(2, ReservationStatus.validee)],
+              history: [booking(3, ReservationStatus.finie)],
               selectedDate: DateTime(2036, 7, 21),
               onDateChanged: (_) async {},
               onStatusUpdate: (_, __) async {},
@@ -47,6 +48,8 @@ void main() {
       expect(find.text('Confirmées'), findsOneWidget);
       expect(find.text('Client 1'), findsOneWidget);
       expect(find.text('Client 2'), findsOneWidget);
+      expect(find.text('Historique du jour'), findsOneWidget);
+      expect(find.text('Client 3'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

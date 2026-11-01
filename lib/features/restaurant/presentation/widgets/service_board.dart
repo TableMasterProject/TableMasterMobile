@@ -9,14 +9,17 @@ class ServiceBoard extends StatelessWidget {
     super.key,
     required this.pending,
     required this.confirmed,
+    this.history = const [],
     required this.selectedDate,
     required this.onDateChanged,
     required this.onStatusUpdate,
     this.tablePlan,
     this.pendingHasMore = false,
     this.confirmedHasMore = false,
+    this.historyHasMore = false,
     this.onLoadMorePending,
     this.onLoadMoreConfirmed,
+    this.onLoadMoreHistory,
     this.loading = false,
     this.error,
     this.onRetry,
@@ -24,14 +27,17 @@ class ServiceBoard extends StatelessWidget {
 
   final List<ReservationOut> pending;
   final List<ReservationOut> confirmed;
+  final List<ReservationOut> history;
   final DateTime selectedDate;
   final Future<void> Function(DateTime) onDateChanged;
   final Future<void> Function(int, ReservationStatus) onStatusUpdate;
   final Widget? tablePlan;
   final bool pendingHasMore;
   final bool confirmedHasMore;
+  final bool historyHasMore;
   final Future<void> Function()? onLoadMorePending;
   final Future<void> Function()? onLoadMoreConfirmed;
+  final Future<void> Function()? onLoadMoreHistory;
   final bool loading;
   final String? error;
   final VoidCallback? onRetry;
@@ -112,6 +118,20 @@ class ServiceBoard extends StatelessWidget {
     ],
   );
 
+  Widget _historySection(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text('Historique du jour', style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(height: 12),
+      ..._cards(
+        history,
+        emptyText: 'Aucune réservation terminée ou annulée à cette date.',
+        hasMore: historyHasMore,
+        onLoadMore: onLoadMoreHistory,
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -152,6 +172,8 @@ class ServiceBoard extends StatelessWidget {
               _pendingSection(context),
               const SizedBox(height: 24),
               _confirmedSection(context),
+              const SizedBox(height: 24),
+              _historySection(context),
             ],
           );
         }
@@ -167,7 +189,15 @@ class ServiceBoard extends StatelessWidget {
                 ? <Widget>[
                   pane(_pendingSection(context)),
                   const VerticalDivider(width: 1),
-                  pane(_confirmedSection(context)),
+                  pane(
+                    Column(
+                      children: [
+                        _confirmedSection(context),
+                        const SizedBox(height: 24),
+                        _historySection(context),
+                      ],
+                    ),
+                  ),
                 ]
                 : <Widget>[
                   pane(
@@ -176,6 +206,8 @@ class ServiceBoard extends StatelessWidget {
                         _pendingSection(context),
                         const SizedBox(height: 24),
                         _confirmedSection(context),
+                        const SizedBox(height: 24),
+                        _historySection(context),
                       ],
                     ),
                   ),
