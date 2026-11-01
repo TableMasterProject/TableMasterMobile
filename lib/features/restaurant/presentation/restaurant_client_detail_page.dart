@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -19,25 +20,17 @@ class RestaurantClientDetailPage extends StatefulWidget {
       _RestaurantClientDetailPageState();
 }
 
-class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
-    with SingleTickerProviderStateMixin {
+class _RestaurantClientDetailPageState
+    extends State<RestaurantClientDetailPage> {
   final IRestaurantRepository _repo = getIt<IRestaurantRepository>();
   RestaurantOut? _fullRestaurant;
   bool _isLoading = true;
   bool _detailsError = false;
-  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _fetchRestaurantDetails();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _fetchRestaurantDetails() async {
@@ -109,16 +102,21 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
                       child: SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed:
-                              () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (_) => CreateReservationPage(
-                                        restaurant: _fullRestaurant!,
-                                      ),
-                                ),
-                              ),
+                          onPressed: () async {
+                            final created =
+                                await Navigator.push<ReservationOut>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => CreateReservationPage(
+                                          restaurant: _fullRestaurant!,
+                                        ),
+                                  ),
+                                );
+                            if (created != null && context.mounted) {
+                              Navigator.pop(context, created);
+                            }
+                          },
                           icon: const Icon(Icons.event_available),
                           label: const Text('Réserver une table'),
                         ),
@@ -135,104 +133,102 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
     final colors = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return NestedScrollView(
-      headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-        return <Widget>[
-          SliverAppBar(
-            expandedHeight: 500,
-            floating: false,
-            pinned: true,
-            stretch: true,
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              title: Text(
-                restaurant.restaurantName,
-                style: textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  shadows: [const Shadow(blurRadius: 4, color: Colors.black45)],
-                ),
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          expandedHeight: 280,
+          floating: false,
+          pinned: true,
+          stretch: true,
+          flexibleSpace: FlexibleSpaceBar(
+            centerTitle: true,
+            title: Text(
+              restaurant.restaurantName,
+              style: textTheme.titleLarge?.copyWith(
+                color: Colors.white,
+                shadows: [const Shadow(blurRadius: 4, color: Colors.black45)],
               ),
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (restaurant.latitude != null)
-                    GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: LatLng(
+            ),
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (restaurant.latitude != null)
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(
+                        restaurant.latitude!,
+                        restaurant.longitude!,
+                      ),
+                      zoom: 16,
+                    ),
+                    markers: {
+                      Marker(
+                        markerId: const MarkerId('res'),
+                        position: LatLng(
                           restaurant.latitude!,
                           restaurant.longitude!,
                         ),
-                        zoom: 16,
-                      ),
-                      markers: {
-                        Marker(
-                          markerId: const MarkerId('res'),
-                          position: LatLng(
-                            restaurant.latitude!,
-                            restaurant.longitude!,
-                          ),
-                          infoWindow: InfoWindow(
-                            title: restaurant.restaurantName,
-                            snippet: restaurant.addressString(),
-                          ),
+                        infoWindow: InfoWindow(
+                          title: restaurant.restaurantName,
+                          snippet: restaurant.addressString(),
                         ),
-                      },
-                      myLocationEnabled: false,
-                      myLocationButtonEnabled: false,
-                      mapToolbarEnabled: true,
-                    )
-                  else
-                    Container(
-                      color: colors.primaryContainer,
-                      child: Icon(
-                        Icons.restaurant,
-                        size: 80,
-                        color: colors.onPrimaryContainer.withValues(alpha: 0.3),
                       ),
-                    ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black38,
-                          Colors.transparent,
-                          Colors.black87,
-                        ],
-                      ),
+                    },
+                    myLocationEnabled: false,
+                    myLocationButtonEnabled: false,
+                    mapToolbarEnabled: true,
+                  )
+                else
+                  Container(
+                    color: colors.primaryContainer,
+                    child: Icon(
+                      Icons.restaurant,
+                      size: 80,
+                      color: colors.onPrimaryContainer.withValues(alpha: 0.3),
                     ),
                   ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black38,
+                        Colors.transparent,
+                        Colors.black87,
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 880),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAboutTab(context, restaurant),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: Text('Menu', style: textTheme.headlineSmall),
+                  ),
+                  _buildMenuTab(context, restaurant),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                    child: Text('Avis', style: textTheme.headlineSmall),
+                  ),
+                  _buildReviewsTab(context, restaurant),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
           ),
-          SliverPersistentHeader(
-            delegate: _SliverAppBarDelegate(
-              TabBar(
-                controller: _tabController,
-                labelColor: colors.primary,
-                unselectedLabelColor: colors.onSurfaceVariant,
-                isScrollable: false,
-                tabs: const [
-                  Tab(icon: Icon(Icons.info_outline), text: 'À propos'),
-                  Tab(icon: Icon(Icons.restaurant_menu), text: 'Menu'),
-                  Tab(icon: Icon(Icons.reviews_outlined), text: 'Avis'),
-                ],
-              ),
-            ),
-            pinned: true,
-          ),
-        ];
-      },
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildAboutTab(context, restaurant),
-          _buildMenuTab(context, restaurant),
-          _buildReviewsTab(context, restaurant),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -249,7 +245,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
       'Dimanche',
     ];
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,6 +331,8 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
     }
 
     return ListView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(8.0),
       children:
           menuByCategory.entries.map((entry) {
@@ -383,6 +381,8 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
     }
 
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(8.0),
       itemCount: restaurant.reviews!.length,
       separatorBuilder: (context, index) => const Divider(),
@@ -451,33 +451,5 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
       trailing:
           onTap != null ? const Icon(Icons.chevron_right, size: 18) : null,
     );
-  }
-}
-
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar);
-
-  final TabBar _tabBar;
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: _tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
   }
 }

@@ -2,12 +2,15 @@ import 'package:table_master_mobile/core/time/paris_time.dart';
 import 'package:table_master_mobile/core/refresh_scheduler.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'controllers/day_availability_controller.dart';
+import 'controllers/suggested_table.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import 'package:table_master_mobile/core/errors/app_exception.dart';
 import 'package:table_master_mobile/core/signalr_service.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_in.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
 import 'package:table_master_mobile/features/reservation/data/models/reservation_availability_out.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
@@ -97,7 +100,25 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
           _getTableStatus(_selectedTable!) != 'Disponible') {
         _selectedTable = null;
       }
+      _selectSuggestedTable();
     });
+  }
+
+  void _selectSuggestedTable() {
+    if (!_availability.isReady ||
+        _selectedTime == null ||
+        _selectedDate == null) {
+      return;
+    }
+    _selectedTable ??= suggestTable(
+      _restaurant.tables ?? [],
+      _numberOfPeople,
+      (table) => _getTableStatus(table) == 'Disponible',
+    );
+    final roomIndex = _roomsForPlan().indexWhere(
+      (room) => room.id == (_selectedTable?.roomId ?? 0),
+    );
+    if (roomIndex >= 0) _selectedRoomIndex = roomIndex;
   }
 
   Future<void> _refreshRestaurantAndDay() async {
@@ -123,7 +144,10 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
       }
     } finally {
       if (mounted && version == _detailsVersion) {
-        setState(() => _refreshingDetails = false);
+        setState(() {
+          _refreshingDetails = false;
+          _selectSuggestedTable();
+        });
       }
     }
   }
@@ -388,7 +412,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                               !_isLoading &&
                               _availability.isReady &&
                               _detailsError == null
-                          ? _submitReservation
+                          ? _confirmAndSubmit
                           : null,
                   icon: const Icon(Icons.check_circle_outline),
                   label: Text(
@@ -525,6 +549,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                       (val) => setState(() {
                         _selectedTime = val;
                         _selectedTable = null;
+                        _selectSuggestedTable();
                       }),
                 ),
                 const SizedBox(height: 20),
@@ -541,6 +566,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                               ? () => setState(() {
                                 _numberOfPeople--;
                                 _selectedTable = null;
+                                _selectSuggestedTable();
                               })
                               : null,
                       icon: const Icon(Icons.remove),
@@ -560,6 +586,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                           () => setState(() {
                             _numberOfPeople++;
                             _selectedTable = null;
+                            _selectSuggestedTable();
                           }),
                       icon: const Icon(Icons.add),
                     ),
@@ -571,7 +598,7 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                 if (_selectedTime != null) ...[
                   const SizedBox(height: 24),
                   const Text(
-                    "Choisir une table",
+                    "Table proposée · touchez le plan pour changer",
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -648,6 +675,36 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     );
   }
 
+  Future<void> _confirmAndSubmit() async {
+    final date = _selectedDate;
+    final time = _selectedTime;
+    final table = _selectedTable;
+    if (date == null || time == null || table == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Vérifier la réservation'),
+            content: Text(
+              '${widget.restaurant.restaurantName}\n'
+              '${DateFormat.yMMMMEEEEd('fr_FR').format(date)} à ${time.format(context)}\n'
+              '$_numberOfPeople personnes · table n°${table.tableNumber}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Modifier'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Envoyer la demande'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed == true && mounted) await _submitReservation();
+  }
+
   Future<void> _submitReservation() async {
     if (_selectedTable == null ||
         _selectedTime == null ||
@@ -676,20 +733,49 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
         specialRequest: _specialRequestController.text,
       );
 
-      await _reservationRepo.createReservation(reservation.toJson());
+      final created = await _reservationRepo.createReservation(
+        reservation.toJson(),
+      );
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Réservation réussie !")));
-        Navigator.pop(context);
+        await showDialog<void>(
+          context: context,
+          builder:
+              (dialogContext) => AlertDialog(
+                title: const Text('Demande envoyée'),
+                content: Text(
+                  '${widget.restaurant.restaurantName}\n'
+                  '${DateFormat.yMMMMEEEEd('fr_FR').format(_selectedDate!)} à ${_selectedTime!.format(dialogContext)}\n'
+                  '$_numberOfPeople personnes · table n°${_selectedTable!.tableNumber}\n\n'
+                  'Statut : ${created.status == ReservationStatus.validee ? 'Confirmée' : 'En attente'}',
+                ),
+                actions: [
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Voir mes réservations'),
+                  ),
+                ],
+              ),
+        );
+        if (!mounted) return;
+        Navigator.pop<ReservationOut>(context, created);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Erreur: $e")));
+        if (e is AppException && e.statusCode == 409) {
+          await _refreshRestaurantAndDay();
+          if (!mounted) return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is AppException && e.statusCode == 409
+                  ? 'Cette table vient d’être réservée. Choisissez la proposition mise à jour puis réessayez.'
+                  : 'Réservation impossible : $e. Réessayez.',
+            ),
+          ),
+        );
       }
     }
   }

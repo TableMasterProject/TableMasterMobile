@@ -6,7 +6,7 @@ import 'package:table_master_mobile/features/auth/presentation/login/login_scree
 import 'package:table_master_mobile/features/user/data/models/user_out.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import '../../auth/domain/repositories/auth_repository.dart';
-import '../../reservation/presentation/my_reservations_page.dart';
+import '../../reservation/presentation/client_reservations_page.dart';
 import '../../../core/injection.dart';
 import '../../../core/responsive/breakpoints.dart';
 import '../../../core/responsive/responsive_scaffold.dart';
@@ -26,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  int _reservationsEpoch = 0;
   late List<Widget?> _pages;
   late List<NavDestination> _destinations;
   late List<String> _titles;
@@ -103,8 +104,15 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_pages[index] != null) return;
 
     _pages[index] = switch (index) {
-      0 => const MapsPage(),
-      1 => MyReservationsPage(
+      0 => MapsPage(
+        onReservationCreated: (_) {
+          _reservationsEpoch++;
+          _pages[1] = null;
+          _onDestinationSelected(1);
+        },
+      ),
+      1 => ClientReservationsPage(
+        key: ValueKey(_reservationsEpoch),
         userId: widget.user.id,
         onDiscover: () => _onDestinationSelected(0),
       ),
@@ -285,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder:
             (_) => Scaffold(
               appBar: AppBar(title: const Text('Mes sorties')),
-              body: MyReservationsPage(
+              body: ClientReservationsPage(
                 userId: widget.user.id,
                 onDiscover: _openOwnerDiscover,
               ),

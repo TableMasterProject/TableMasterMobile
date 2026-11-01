@@ -14,9 +14,13 @@ import 'package:table_master_mobile/features/home/presentation/discovery_control
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:table_master_mobile/features/restaurant/presentation/restaurant_client_detail_page.dart';
+import 'package:table_master_mobile/features/reservation/data/models/reservation_out.dart';
+import 'package:table_master_mobile/features/home/presentation/widgets/discovery_mobile_view.dart';
 
 class MapsPage extends StatefulWidget {
-  const MapsPage({super.key});
+  const MapsPage({super.key, this.onReservationCreated});
+
+  final void Function(ReservationOut)? onReservationCreated;
 
   @override
   State<MapsPage> createState() => _MapsPageState();
@@ -30,6 +34,7 @@ class _MapsPageState extends State<MapsPage> {
   final _cityInput = TextEditingController();
   final _sheetController = DraggableScrollableController();
   final _desktopListController = ScrollController();
+  final _mobileListController = ScrollController();
   ScrollController? _activeListController;
   late final DiscoveryController _discovery;
   late final CitySuggestionsController _suggestions;
@@ -55,6 +60,7 @@ class _MapsPageState extends State<MapsPage> {
       ..addListener(_refresh);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      unawaited(_discovery.searchArea(center: _mapCenter));
       unawaited(_restoreCity());
       unawaited(_requestLocation());
     });
@@ -70,6 +76,7 @@ class _MapsPageState extends State<MapsPage> {
     _cityInput.dispose();
     _sheetController.dispose();
     _desktopListController.dispose();
+    _mobileListController.dispose();
     super.dispose();
   }
 
@@ -114,6 +121,7 @@ class _MapsPageState extends State<MapsPage> {
           CameraUpdate.newLatLngZoom(userPosition, 12),
         );
         _programmaticCameraMove = false;
+        if (_mapController == null) unawaited(_searchVisibleArea());
       } else {
         unawaited(_searchVisibleArea());
       }
@@ -160,7 +168,11 @@ class _MapsPageState extends State<MapsPage> {
 
   Future<void> _searchVisibleArea() async {
     final map = _mapController;
-    if (map == null || !mounted) return;
+    if (!mounted) return;
+    if (map == null) {
+      await _discovery.searchArea(center: _mapCenter);
+      return;
+    }
     try {
       final bounds = await map.getVisibleRegion();
       if (!mounted) return;
@@ -220,12 +232,13 @@ class _MapsPageState extends State<MapsPage> {
     }
   }
 
-  void _openDetail(RestaurantOut restaurant) {
-    Navigator.of(context).push(
+  Future<void> _openDetail(RestaurantOut restaurant) async {
+    final created = await Navigator.of(context).push<ReservationOut>(
       MaterialPageRoute(
         builder: (_) => RestaurantClientDetailPage(restaurant: restaurant),
       ),
     );
+    if (created != null && mounted) widget.onReservationCreated?.call(created);
   }
 
   Set<Marker> get _markers => {
@@ -558,35 +571,30 @@ class _MapsPageState extends State<MapsPage> {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 650;
         if (compact) {
-          return Stack(
-            children: [
-              Positioned.fill(child: map),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: _searchAndFilters(),
-                  ),
-                ),
-              ),
-              DraggableScrollableSheet(
-                controller: _sheetController,
-                initialChildSize: 0.28,
-                minChildSize: 0.16,
-                maxChildSize: 0.88,
-                builder:
-                    (context, scrollController) => Material(
-                      elevation: 12,
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24),
+          return DiscoveryMobileView(
+            search: _searchAndFilters(),
+            list: _results(_mobileListController, showHandle: false),
+            map: Stack(
+              children: [
+                Positioned.fill(child: map),
+                DraggableScrollableSheet(
+                  controller: _sheetController,
+                  initialChildSize: 0.28,
+                  minChildSize: 0.16,
+                  maxChildSize: 0.88,
+                  builder:
+                      (context, scrollController) => Material(
+                        elevation: 12,
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: _results(scrollController),
                       ),
-                      clipBehavior: Clip.antiAlias,
-                      child: _results(scrollController),
-                    ),
-              ),
-            ],
+                ),
+              ],
+            ),
           );
         }
         return Column(
