@@ -26,7 +26,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: colorScheme.surfaceContainerLow,
       textTheme: baseText.copyWith(
         displayLarge: baseText.displayLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -50,9 +50,13 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         clipBehavior: Clip.antiAlias,
-        elevation: 1,
+        elevation: 0,
+        color: colorScheme.surface,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: colorScheme.outlineVariant),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -76,6 +80,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -112,12 +117,13 @@ class AppTheme {
         indicatorColor: colorScheme.primaryContainer,
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 64,
+        height: 72,
+        backgroundColor: colorScheme.surface,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         indicatorColor: colorScheme.primaryContainer,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colorScheme.surfaceContainerLow,
         surfaceTintColor: colorScheme.surfaceTint,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -137,6 +143,10 @@ class AppTheme {
       ),
       tooltipTheme: const TooltipThemeData(
         waitDuration: Duration(milliseconds: 400),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

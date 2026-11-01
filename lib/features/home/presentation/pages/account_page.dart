@@ -1,5 +1,7 @@
 import 'package:table_master_mobile/core/session/session_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:table_master_mobile/core/injection.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/change_password_screen.dart';
 import 'package:table_master_mobile/features/auth/presentation/registration_tunnel/step/step1_user_info_screen.dart';
@@ -73,7 +75,7 @@ class _AccountPageState extends State<AccountPage> {
                     radius: 50,
                     backgroundColor: colors.onPrimary.withValues(alpha: 0.2),
                     child: Text(
-                      "${_currentUser.firstName[0].toUpperCase()}${_currentUser.lastName[0].toUpperCase()}",
+                      "${_currentUser.firstName.isEmpty ? '' : _currentUser.firstName[0].toUpperCase()}${_currentUser.lastName.isEmpty ? '' : _currentUser.lastName[0].toUpperCase()}",
                       style: textTheme.headlineMedium?.copyWith(
                         color: colors.onPrimary,
                         fontWeight: FontWeight.bold,
@@ -163,6 +165,43 @@ class _AccountPageState extends State<AccountPage> {
                             builder: (context) => const MyReviewsPage(),
                           ),
                         );
+                      },
+                    ),
+                  ]),
+
+                  const SizedBox(height: 24),
+                  _buildSectionTitle('Autorisations'),
+                  _buildMenuCard([
+                    _buildMenuTile(
+                      icon: Icons.location_off_outlined,
+                      title: 'Localisation et notifications',
+                      subtitle:
+                          kIsWeb
+                              ? 'Facultatives. Modifiez-les dans les réglages du navigateur.'
+                              : 'Facultatives. La carte et les réservations restent utilisables sans elles.',
+                      onTap: () async {
+                        if (kIsWeb) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Ouvrez les autorisations de ce site dans votre navigateur.',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        try {
+                          await Geolocator.openAppSettings();
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Ouvrez les réglages de cette application sur votre appareil.',
+                              ),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ]),

@@ -9,14 +9,16 @@ import 'package:table_master_mobile/features/reservation/data/models/reservation
 import 'package:table_master_mobile/features/reservation/data/models/search_reservations.dart';
 import 'package:table_master_mobile/features/reservation/domain/repositories/reservation_repository.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import '../data/models/reservation_in.dart';
 import 'reservation_detail_page.dart';
 import 'widgets/reservation_card.dart';
 
 class MyReservationsPage extends StatefulWidget {
   final int userId;
+  final VoidCallback? onDiscover;
 
-  const MyReservationsPage({super.key, required this.userId});
+  const MyReservationsPage({super.key, required this.userId, this.onDiscover});
 
   @override
   State<MyReservationsPage> createState() => _MyReservationsPageState();
@@ -269,9 +271,28 @@ class _MyReservationsPageState extends State<MyReservationsPage> {
                   _isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : _error != null
-                      ? Center(child: Text('Erreur: $_error'))
+                      ? AppErrorState(
+                        message: 'Impossible de charger vos réservations.',
+                        onRetry: () => _loadAllData(),
+                      )
                       : _reservations.isEmpty
-                      ? const Center(child: Text('Aucune réservation'))
+                      ? AppEmptyState(
+                        icon: Icons.event_available_outlined,
+                        message:
+                            _selectedFilter == 2
+                                ? 'Aucune réservation dans votre historique.'
+                                : 'Aucune réservation ici pour le moment.',
+                        action:
+                            widget.onDiscover == null
+                                ? null
+                                : FilledButton.icon(
+                                  onPressed: widget.onDiscover,
+                                  icon: const Icon(Icons.explore_outlined),
+                                  label: const Text(
+                                    'Découvrir les restaurants',
+                                  ),
+                                ),
+                      )
                       : RefreshIndicator(
                         onRefresh: _loadAllData,
                         child: _buildGroupedList(colors),

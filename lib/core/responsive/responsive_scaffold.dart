@@ -18,7 +18,7 @@ class NavDestination {
 }
 
 /// Scaffold qui adapte sa navigation principale selon la taille d'écran :
-/// - mobile : BottomNavigationBar
+/// - mobile : NavigationBar
 /// - tablet : NavigationRail compact
 /// - desktop / wide : NavigationRail étendu (labels visibles)
 ///
@@ -54,11 +54,10 @@ class ResponsiveScaffold extends StatelessWidget {
         appBar: appBar,
         body: body,
         floatingActionButton: floatingActionButton,
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: selectedIndex,
-          onTap: onDestinationSelected,
-          type: BottomNavigationBarType.fixed,
-          items:
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onDestinationSelected,
+          destinations:
               destinations.asMap().entries.map((entry) {
                 final index = entry.key;
                 final destination = entry.value;
@@ -67,7 +66,7 @@ class ResponsiveScaffold extends StatelessWidget {
                         ? destination.activeIcon ?? destination.icon
                         : destination.icon;
 
-                return BottomNavigationBarItem(
+                return NavigationDestination(
                   icon: _TutorialTarget(
                     targetKey: destination.tutorialKey,
                     child: Icon(icon),

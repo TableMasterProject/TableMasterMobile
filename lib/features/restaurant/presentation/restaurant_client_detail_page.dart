@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:table_master_mobile/core/injection.dart';
+import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import 'package:table_master_mobile/features/restaurant/data/models/restaurant_out.dart';
 import 'package:table_master_mobile/features/restaurant/domain/repositories/restaurant_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,6 +24,7 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
   final IRestaurantRepository _repo = getIt<IRestaurantRepository>();
   RestaurantOut? _fullRestaurant;
   bool _isLoading = true;
+  bool _detailsError = false;
   late TabController _tabController;
 
   @override
@@ -39,22 +41,27 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
   }
 
   Future<void> _fetchRestaurantDetails() async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _detailsError = false;
+      });
+    }
     try {
       final result = await _repo.getRestaurantDetails(widget.restaurant.id);
       if (mounted) {
         setState(() {
           _fullRestaurant = result;
           _isLoading = false;
+          _detailsError = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _detailsError = true;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load restaurant details: $e')),
-        );
       }
     }
   }
@@ -83,22 +90,43 @@ class _RestaurantClientDetailPageState extends State<RestaurantClientDetailPage>
       body:
           _isLoading
               ? const Center(child: CircularProgressIndicator())
+              : _detailsError
+              ? AppErrorState(
+                message: 'Impossible de charger la fiche du restaurant.',
+                onRetry: _fetchRestaurantDetails,
+              )
               : _buildBody(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (context) => CreateReservationPage(
-                    restaurant: _fullRestaurant ?? widget.restaurant,
+      bottomNavigationBar:
+          _isLoading || _detailsError
+              ? null
+              : SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Center(
+                    heightFactor: 1,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed:
+                              () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => CreateReservationPage(
+                                        restaurant: _fullRestaurant!,
+                                      ),
+                                ),
+                              ),
+                          icon: const Icon(Icons.event_available),
+                          label: const Text('Réserver une table'),
+                        ),
+                      ),
+                    ),
                   ),
-            ),
-          );
-        },
-        label: const Text('Faire une réservation'),
-        icon: const Icon(Icons.event_available),
-      ),
+                ),
+              ),
     );
   }
 

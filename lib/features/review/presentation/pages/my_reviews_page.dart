@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import '../../data/models/review_in.dart';
 import '../../data/models/review_out.dart';
 import '../../data/models/search_reviews.dart';
@@ -30,14 +31,15 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
     setState(() => _isLoading = true);
     try {
       final reviews = await _repository.getMyReviews(_search);
+      if (!mounted) return;
       setState(() {
         _reviews = reviews;
         _error = null;
       });
-    } catch (e) {
-      setState(() => _error = e.toString());
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Impossible de charger vos avis.');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -70,11 +72,13 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
                       );
                       _loadReviews();
                     }
-                  } catch (e) {
+                  } catch (_) {
                     if (mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Impossible de supprimer cet avis.'),
+                        ),
+                      );
                     }
                   }
                 },
@@ -172,11 +176,13 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
                       );
                       _loadReviews();
                     }
-                  } catch (e) {
+                  } catch (_) {
                     if (mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Impossible de modifier cet avis.'),
+                        ),
+                      );
                     }
                   }
                 },
@@ -195,21 +201,12 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Erreur: $_error'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadReviews,
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
-              )
+              ? AppErrorState(message: _error!, onRetry: _loadReviews)
               : _reviews.isEmpty
-              ? const Center(child: Text('Vous n\'avez pas d\'avis'))
+              ? const AppEmptyState(
+                icon: Icons.rate_review_outlined,
+                message: 'Vous n\'avez pas encore donné d\'avis.',
+              )
               : ListView.builder(
                 itemCount: _reviews.length,
                 itemBuilder: (context, index) {

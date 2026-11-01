@@ -5,6 +5,10 @@ class SearchRestaurant {
   double? longitude;
   double? currentUserLongitude;
   double? currentUserLatitude;
+  double? southLatitude;
+  double? northLatitude;
+  double? westLongitude;
+  double? eastLongitude;
   String? cuisineType;
   String? paymentMethods;
 
@@ -15,6 +19,10 @@ class SearchRestaurant {
     this.longitude,
     this.currentUserLongitude,
     this.currentUserLatitude,
+    this.southLatitude,
+    this.northLatitude,
+    this.westLongitude,
+    this.eastLongitude,
     this.cuisineType,
     this.paymentMethods,
   });
@@ -40,6 +48,10 @@ class SearchRestaurant {
     if (currentUserLatitude != null) {
       data['CurrentUserLatitude'] = currentUserLatitude;
     }
+    if (southLatitude != null) data['SouthLatitude'] = southLatitude;
+    if (northLatitude != null) data['NorthLatitude'] = northLatitude;
+    if (westLongitude != null) data['WestLongitude'] = westLongitude;
+    if (eastLongitude != null) data['EastLongitude'] = eastLongitude;
     if (cuisineType != null) {
       data['CuisineType'] = cuisineType;
     }

@@ -177,7 +177,7 @@ class _LoginForm extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          "Connectez-vous pour continuer",
+          "Découvrez des restaurants et réservez en quelques étapes",
           textAlign: TextAlign.center,
           style: TextStyle(color: colors.onSurfaceVariant),
         ),
@@ -241,6 +241,14 @@ class _LoginForm extends StatelessWidget {
               style: TextStyle(fontSize: 16),
             ),
           ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Localisation et notifications sont facultatives.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
         ),
       ],
     );

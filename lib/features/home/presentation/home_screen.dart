@@ -51,38 +51,38 @@ class _HomeScreenState extends State<HomeScreen> {
     final isRestaurant = widget.user.accountType == 1;
 
     _titles = [
-      'Mes Réservations',
-      'Trouver des Restaurants',
-      'Mon Compte',
-      if (isRestaurant) 'Mon Restaurant',
+      'Découvrir',
+      'Mes réservations',
+      if (isRestaurant) 'Gestion',
+      'Mon compte',
     ];
 
     _destinations = [
+      NavDestination(
+        icon: Icons.explore_outlined,
+        activeIcon: Icons.explore,
+        label: 'Découvrir',
+        tutorialKey: _restaurantsTutorialKey,
+      ),
       NavDestination(
         icon: Icons.event_note_outlined,
         activeIcon: Icons.event_note,
         label: 'Réservations',
         tutorialKey: _reservationsTutorialKey,
       ),
-      NavDestination(
-        icon: Icons.location_on_outlined,
-        activeIcon: Icons.location_on,
-        label: 'Restaurants',
-        tutorialKey: _restaurantsTutorialKey,
-      ),
+      if (isRestaurant)
+        NavDestination(
+          icon: Icons.storefront_outlined,
+          activeIcon: Icons.storefront,
+          label: 'Gestion',
+          tutorialKey: _restaurantTutorialKey,
+        ),
       NavDestination(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
-        label: 'Mon Compte',
+        label: 'Compte',
         tutorialKey: _accountTutorialKey,
       ),
-      if (isRestaurant)
-        NavDestination(
-          icon: Icons.restaurant_outlined,
-          activeIcon: Icons.restaurant,
-          label: 'Mon Restaurant',
-          tutorialKey: _restaurantTutorialKey,
-        ),
     ];
 
     _pages = List<Widget?>.filled(_destinations.length, null);
@@ -92,15 +92,19 @@ class _HomeScreenState extends State<HomeScreen> {
   void _ensurePageLoaded(int index) {
     if (_pages[index] != null) return;
 
+    final isRestaurant = widget.user.accountType == 1;
     _pages[index] = switch (index) {
-      0 => MyReservationsPage(userId: widget.user.id),
-      1 => const MapsPage(),
-      2 => AccountPage(
+      0 => const MapsPage(),
+      1 => MyReservationsPage(
+        userId: widget.user.id,
+        onDiscover: () => _onDestinationSelected(0),
+      ),
+      2 when isRestaurant => RestaurantPage(user: widget.user),
+      2 || 3 => AccountPage(
         user: widget.user,
         onLogout: _logout,
         onReplayTutorial: () => unawaited(_showTutorial(force: true)),
       ),
-      3 => RestaurantPage(user: widget.user),
       _ => const SizedBox.shrink(),
     };
   }
@@ -163,14 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
         context.isMobile ? ContentAlign.top : ContentAlign.right;
     final targets = <TargetFocus>[
       _buildTarget(
-        key: _reservationsTutorialKey,
-        identify: 'reservations',
-        title: 'Vos réservations',
-        message:
-            'Suivez vos réservations validées, en attente et votre historique.',
-        align: contentAlign,
-      ),
-      _buildTarget(
         key: _restaurantsTutorialKey,
         identify: 'restaurants',
         title: 'Trouver un restaurant',
@@ -179,11 +175,11 @@ class _HomeScreenState extends State<HomeScreen> {
         align: contentAlign,
       ),
       _buildTarget(
-        key: _accountTutorialKey,
-        identify: 'account',
-        title: 'Votre compte',
+        key: _reservationsTutorialKey,
+        identify: 'reservations',
+        title: 'Vos réservations',
         message:
-            'Gérez votre profil, vos avis, votre sécurité et relancez ce tutoriel.',
+            'Suivez vos réservations validées, en attente et votre historique.',
         align: contentAlign,
       ),
       if (widget.user.accountType == 1)
@@ -195,6 +191,14 @@ class _HomeScreenState extends State<HomeScreen> {
               'Administrez votre établissement, vos tables, menus et réservations restaurant.',
           align: contentAlign,
         ),
+      _buildTarget(
+        key: _accountTutorialKey,
+        identify: 'account',
+        title: 'Votre compte',
+        message:
+            'Gérez votre profil, vos avis, votre sécurité et relancez ce tutoriel.',
+        align: contentAlign,
+      ),
     ];
 
     return targets

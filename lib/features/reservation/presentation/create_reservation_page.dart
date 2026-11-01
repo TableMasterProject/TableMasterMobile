@@ -373,6 +373,35 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text("Réserver une table")),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Center(
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed:
+                      _selectedTable != null &&
+                              !_isLoading &&
+                              _availability.isReady &&
+                              _detailsError == null
+                          ? _submitReservation
+                          : null,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: Text(
+                    _selectedTable == null
+                        ? 'Choisissez une date, une heure et une table'
+                        : 'Confirmer la réservation',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       body: Scrollbar(
         controller: _scrollController,
         thumbVisibility: true,
@@ -382,6 +411,8 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildProgress(context),
+              const SizedBox(height: 20),
               Text(
                 widget.restaurant.restaurantName,
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -559,30 +590,60 @@ class _CreateReservationPageState extends State<CreateReservationPage> {
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed:
-                        (_selectedTable != null &&
-                                !_isLoading &&
-                                _availability.isReady &&
-                                _detailsError == null)
-                            ? _submitReservation
-                            : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                    ),
-                    child:
-                        _isLoading
-                            ? const CircularProgressIndicator()
-                            : const Text("Confirmer la réservation"),
-                  ),
-                ),
+                const SizedBox(height: 24),
               ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildProgress(BuildContext context) {
+    final current =
+        _selectedDate == null
+            ? 0
+            : _selectedTime == null
+            ? 1
+            : _selectedTable == null
+            ? 2
+            : 3;
+    final colors = Theme.of(context).colorScheme;
+    const labels = ['Date', 'Heure', 'Table', 'Confirmer'];
+    return Semantics(
+      label: 'Étape ${current + 1} sur 4 : ${labels[current]}',
+      child: Row(
+        children: [
+          for (var index = 0; index < labels.length; index++)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Column(
+                  children: [
+                    LinearProgressIndicator(
+                      value: index <= current ? 1 : 0,
+                      minHeight: 5,
+                      borderRadius: BorderRadius.circular(4),
+                      backgroundColor: colors.surfaceContainerHighest,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      labels[index],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color:
+                            index == current
+                                ? colors.primary
+                                : colors.onSurfaceVariant,
+                        fontWeight: index == current ? FontWeight.bold : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

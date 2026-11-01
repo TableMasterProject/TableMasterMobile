@@ -80,6 +80,12 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
     );
   }
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _nextStep({bool isError = false}) {
     if (!isError) {
       _pageController.nextPage(
@@ -310,11 +316,18 @@ class _RegistrationStepperScreenState extends State<RegistrationStepperScreen> {
         body: SafeArea(
           child: Stack(
             children: [
-              PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) => setState(() => _currentStep = index),
-                children: steps,
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: PageView(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged:
+                        (index) => setState(() => _currentStep = index),
+                    children: steps,
+                  ),
+                ),
               ),
 
               // Overlay de chargement

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:table_master_mobile/core/widgets/async_state_widgets.dart';
 import 'package:table_master_mobile/features/review/data/models/search_reviews.dart';
 import '../../data/models/review_in.dart';
 import '../../data/models/review_out.dart';
@@ -45,14 +46,15 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
         widget.restaurantId,
         _search,
       );
+      if (!mounted) return;
       setState(() {
         _reviews = reviews;
         _error = null;
       });
-    } catch (e) {
-      setState(() => _error = e.toString());
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Impossible de charger les avis.');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -102,11 +104,13 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
                       );
                       _loadUserAndReviews();
                     }
-                  } catch (e) {
+                  } catch (_) {
                     if (mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Impossible de supprimer cet avis.'),
+                        ),
+                      );
                     }
                   }
                 },
@@ -215,11 +219,13 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
                       );
                       _loadUserAndReviews();
                     }
-                  } catch (e) {
+                  } catch (_) {
                     if (mounted) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Impossible de modifier cet avis.'),
+                        ),
+                      );
                     }
                   }
                 },
@@ -238,25 +244,11 @@ class _RestaurantReviewsPageState extends State<RestaurantReviewsPage> {
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Erreur: $_error'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _loadUserAndReviews,
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
-              )
+              ? AppErrorState(message: _error!, onRetry: _loadUserAndReviews)
               : _reviews.isEmpty
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [const Text('Aucun avis pour ce restaurant')],
-                ),
+              ? const AppEmptyState(
+                icon: Icons.rate_review_outlined,
+                message: 'Aucun avis pour ce restaurant pour le moment.',
               )
               : ListView.builder(
                 itemCount: _reviews.length,

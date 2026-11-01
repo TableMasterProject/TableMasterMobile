@@ -305,14 +305,16 @@ class _RestaurantTabs extends StatelessWidget {
         child: Row(
           children: [
             _TabButton(
-              label: "Tables",
+              label: "Tables et salles",
+              icon: Icons.table_restaurant_outlined,
               index: 0,
               selectedIndex: selectedIndex,
               onChanged: onChanged,
             ),
             const SizedBox(width: 8),
             _TabButton(
-              label: "Réservations",
+              label: "Demandes",
+              icon: Icons.event_note_outlined,
               index: 1,
               selectedIndex: selectedIndex,
               badgeCount: pendingCount,
@@ -321,6 +323,7 @@ class _RestaurantTabs extends StatelessWidget {
             const SizedBox(width: 8),
             _TabButton(
               label: "Menu",
+              icon: Icons.restaurant_menu_outlined,
               index: 2,
               selectedIndex: selectedIndex,
               onChanged: onChanged,
@@ -328,6 +331,7 @@ class _RestaurantTabs extends StatelessWidget {
             const SizedBox(width: 8),
             _TabButton(
               label: "Paramètres",
+              icon: Icons.settings_outlined,
               index: 3,
               selectedIndex: selectedIndex,
               onChanged: onChanged,
@@ -341,6 +345,7 @@ class _RestaurantTabs extends StatelessWidget {
 
 class _TabButton extends StatelessWidget {
   final String label;
+  final IconData icon;
   final int index;
   final int selectedIndex;
   final int badgeCount;
@@ -348,6 +353,7 @@ class _TabButton extends StatelessWidget {
 
   const _TabButton({
     required this.label,
+    required this.icon,
     required this.index,
     required this.selectedIndex,
     required this.onChanged,
@@ -362,15 +368,16 @@ class _TabButton extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        FilledButton(
+        FilledButton.icon(
           onPressed: () => onChanged(index),
+          icon: Icon(icon, size: 18),
           style: FilledButton.styleFrom(
             backgroundColor:
                 isSelected ? colors.primary : colors.surfaceContainerHighest,
             foregroundColor:
                 isSelected ? colors.onPrimary : colors.onSurfaceVariant,
           ),
-          child: Text(label),
+          label: Text(label),
         ),
         if (badgeCount > 0)
           Positioned(
