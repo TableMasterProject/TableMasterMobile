@@ -14,12 +14,20 @@ class AccountPage extends StatefulWidget {
   final UserOut user;
   final VoidCallback onLogout;
   final VoidCallback onReplayTutorial;
+  final VoidCallback? onOpenPersonalReservations;
+  final VoidCallback? onOpenDiscover;
+  final VoidCallback? onOpenRestaurantMenu;
+  final VoidCallback? onOpenRestaurantSettings;
 
   const AccountPage({
     super.key,
     required this.user,
     required this.onLogout,
     required this.onReplayTutorial,
+    this.onOpenPersonalReservations,
+    this.onOpenDiscover,
+    this.onOpenRestaurantMenu,
+    this.onOpenRestaurantSettings,
   });
 
   @override
@@ -151,6 +159,37 @@ class _AccountPageState extends State<AccountPage> {
                     ),
                   ]),
 
+                  if (_currentUser.accountType == 1) ...[
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Mon restaurant'),
+                    _buildMenuCard([
+                      _buildMenuTile(
+                        icon: Icons.restaurant_menu_outlined,
+                        title: 'Menu du restaurant',
+                        onTap: widget.onOpenRestaurantMenu,
+                      ),
+                      _buildMenuTile(
+                        icon: Icons.settings_outlined,
+                        title: 'Paramètres du restaurant',
+                        onTap: widget.onOpenRestaurantSettings,
+                      ),
+                    ]),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Personnel'),
+                    _buildMenuCard([
+                      _buildMenuTile(
+                        icon: Icons.event_note_outlined,
+                        title: 'Mes sorties',
+                        onTap: widget.onOpenPersonalReservations,
+                      ),
+                      _buildMenuTile(
+                        icon: Icons.explore_outlined,
+                        title: 'Découvrir des restaurants',
+                        onTap: widget.onOpenDiscover,
+                      ),
+                    ]),
+                  ],
+
                   const SizedBox(height: 24),
                   _buildSectionTitle("Activités"),
                   _buildMenuCard([
@@ -268,7 +307,7 @@ class _AccountPageState extends State<AccountPage> {
     required IconData icon,
     required String title,
     String? subtitle,
-    required VoidCallback onTap,
+    VoidCallback? onTap,
     Color? titleColor,
     bool showDivider = true,
   }) {

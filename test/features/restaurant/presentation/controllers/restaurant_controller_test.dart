@@ -86,6 +86,84 @@ void main() {
     },
   );
 
+  test('Service garde toutes les demandes lorsque la date change', () async {
+    final reservationRepo = _FakeReservationRepository();
+    final controller = _buildController(reservationRepo: reservationRepo)
+      ..restaurant = _restaurant(id: 10);
+
+    await controller.selectServiceDate(DateTime(2036, 7, 21));
+
+    expect(reservationRepo.searches, hasLength(2));
+    final pending = reservationRepo.searches.singleWhere(
+      (search) => search.statuses!.contains(ReservationStatus.enAttente),
+    );
+    final confirmed = reservationRepo.searches.singleWhere(
+      (search) => search.statuses!.contains(ReservationStatus.validee),
+    );
+    expect(pending.minDate, isNull);
+    expect(pending.maxDate, isNull);
+    expect(confirmed.minDate, DateTime(2036, 7, 21));
+    expect(confirmed.maxDate, DateTime(2036, 7, 21));
+    controller.dispose();
+  });
+
+  test('Service charge la page suivante des demandes sans doublon', () async {
+    final reservationRepo =
+        _FakeReservationRepository()
+          ..responder = (search) {
+            if (search.statuses?.first != ReservationStatus.enAttente) {
+              return [];
+            }
+            if (search.offset == 0) {
+              return List.generate(
+                50,
+                (index) => _reservationAt(index + 1, DateTime(2036, 7, 21)),
+              );
+            }
+            return [_reservationAt(51, DateTime(2036, 7, 22))];
+          };
+    final controller = _buildController(reservationRepo: reservationRepo)
+      ..restaurant = _restaurant(id: 10);
+
+    await controller.loadServiceReservations(10);
+    await controller.loadMorePending();
+
+    expect(controller.pendingReservations, hasLength(51));
+    expect(controller.pendingHasMore, false);
+    expect(reservationRepo.searches.last.offset, 50);
+    controller.dispose();
+  });
+
+  test(
+    'la table sélectionnée charge attente et confirmées à la date du service',
+    () async {
+      final reservationRepo = _FakeReservationRepository();
+      final controller = _buildController(reservationRepo: reservationRepo)
+        ..restaurant = _restaurant(id: 10);
+      await controller.selectServiceDate(DateTime(2036, 7, 21));
+      reservationRepo.searches.clear();
+      final table = TableEntityOut(
+        id: 22,
+        restaurantId: 10,
+        tableNumber: 2,
+        numberOfSeats: 4,
+        createdAt: DateTime(2024),
+      );
+
+      await controller.selectTable(table);
+
+      expect(reservationRepo.searches, hasLength(2));
+      expect(
+        reservationRepo.searches.every((search) => search.tableId == 22),
+        true,
+      );
+      expect(reservationRepo.searches.first.minDate, isNull);
+      expect(reservationRepo.searches.last.minDate, DateTime(2036, 7, 21));
+      expect(controller.selectedTable?.id, 22);
+      controller.dispose();
+    },
+  );
+
   test(
     'saveRestaurantSettings met à jour le restaurant via le repository',
     () async {
@@ -324,7 +402,9 @@ class _FakeRestaurantRepository implements IRestaurantRepository {
 
 class _FakeReservationRepository implements IReservationRepository {
   SearchReservations? lastSearch;
+  final List<SearchReservations> searches = [];
   List<ReservationOut> results = [];
+  List<ReservationOut> Function(SearchReservations)? responder;
   @override
   Future<List<ReservationAvailabilityOut>> getAvailability(
     SearchReservations search,
@@ -372,7 +452,8 @@ class _FakeReservationRepository implements IReservationRepository {
     SearchReservations search,
   ) async {
     lastSearch = search;
-    return results;
+    searches.add(search);
+    return responder?.call(search) ?? results;
   }
 
   @override

@@ -13,6 +13,7 @@ import '../../../core/responsive/responsive_scaffold.dart';
 import 'pages/maps_page.dart';
 import 'pages/account_page.dart';
 import 'pages/restaurant_page.dart';
+import 'home_navigation.dart';
 
 class HomeScreen extends StatefulWidget {
   final UserOut user;
@@ -48,59 +49,66 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _initializeNavigation() {
-    final isRestaurant = widget.user.accountType == 1;
-
-    _titles = [
-      'Découvrir',
-      'Mes réservations',
-      if (isRestaurant) 'Gestion',
-      'Mon compte',
-    ];
-
-    _destinations = [
-      NavDestination(
-        icon: Icons.explore_outlined,
-        activeIcon: Icons.explore,
-        label: 'Découvrir',
-        tutorialKey: _restaurantsTutorialKey,
-      ),
-      NavDestination(
-        icon: Icons.event_note_outlined,
-        activeIcon: Icons.event_note,
-        label: 'Réservations',
-        tutorialKey: _reservationsTutorialKey,
-      ),
-      if (isRestaurant)
-        NavDestination(
-          icon: Icons.storefront_outlined,
-          activeIcon: Icons.storefront,
-          label: 'Gestion',
-          tutorialKey: _restaurantTutorialKey,
-        ),
-      NavDestination(
-        icon: Icons.person_outline,
-        activeIcon: Icons.person,
-        label: 'Compte',
-        tutorialKey: _accountTutorialKey,
-      ),
-    ];
+    final navigation = HomeNavigation.forAccountType(widget.user.accountType);
+    _selectedIndex = navigation.initialIndex;
+    _titles = navigation.labels;
+    _destinations =
+        navigation.isRestaurant
+            ? [
+              NavDestination(
+                icon: Icons.room_service_outlined,
+                activeIcon: Icons.room_service,
+                label: 'Service',
+                tutorialKey: _restaurantTutorialKey,
+              ),
+              NavDestination(
+                icon: Icons.table_restaurant_outlined,
+                activeIcon: Icons.table_restaurant,
+                label: 'Tables',
+                tutorialKey: _restaurantsTutorialKey,
+              ),
+              NavDestination(
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: 'Compte',
+                tutorialKey: _accountTutorialKey,
+              ),
+            ]
+            : [
+              NavDestination(
+                icon: Icons.explore_outlined,
+                activeIcon: Icons.explore,
+                label: 'Découvrir',
+                tutorialKey: _restaurantsTutorialKey,
+              ),
+              NavDestination(
+                icon: Icons.event_note_outlined,
+                activeIcon: Icons.event_note,
+                label: 'Réservations',
+                tutorialKey: _reservationsTutorialKey,
+              ),
+              NavDestination(
+                icon: Icons.person_outline,
+                activeIcon: Icons.person,
+                label: 'Compte',
+                tutorialKey: _accountTutorialKey,
+              ),
+            ];
 
     _pages = List<Widget?>.filled(_destinations.length, null);
-    _ensurePageLoaded(_selectedIndex);
+    if (!navigation.isRestaurant) _ensurePageLoaded(_selectedIndex);
   }
 
   void _ensurePageLoaded(int index) {
     if (_pages[index] != null) return;
 
-    final isRestaurant = widget.user.accountType == 1;
     _pages[index] = switch (index) {
       0 => const MapsPage(),
       1 => MyReservationsPage(
         userId: widget.user.id,
         onDiscover: () => _onDestinationSelected(0),
       ),
-      2 when isRestaurant => RestaurantPage(user: widget.user),
-      2 || 3 => AccountPage(
+      2 => AccountPage(
         user: widget.user,
         onLogout: _logout,
         onReplayTutorial: () => unawaited(_showTutorial(force: true)),
@@ -166,31 +174,39 @@ class _HomeScreenState extends State<HomeScreen> {
     final contentAlign =
         context.isMobile ? ContentAlign.top : ContentAlign.right;
     final targets = <TargetFocus>[
-      _buildTarget(
-        key: _restaurantsTutorialKey,
-        identify: 'restaurants',
-        title: 'Trouver un restaurant',
-        message:
-            'Explorez les restaurants sur la carte, filtrez et ouvrez les fiches détail.',
-        align: contentAlign,
-      ),
-      _buildTarget(
-        key: _reservationsTutorialKey,
-        identify: 'reservations',
-        title: 'Vos réservations',
-        message:
-            'Suivez vos réservations validées, en attente et votre historique.',
-        align: contentAlign,
-      ),
-      if (widget.user.accountType == 1)
+      if (widget.user.accountType == 1) ...[
         _buildTarget(
           key: _restaurantTutorialKey,
-          identify: 'restaurant',
-          title: 'Espace restaurateur',
+          identify: 'service',
+          title: 'Service',
           message:
-              'Administrez votre établissement, vos tables, menus et réservations restaurant.',
+              'Traitez les demandes et suivez les réservations confirmées.',
           align: contentAlign,
         ),
+        _buildTarget(
+          key: _restaurantsTutorialKey,
+          identify: 'tables',
+          title: 'Tables',
+          message: 'Touchez une table pour voir ses réservations.',
+          align: contentAlign,
+        ),
+      ] else ...[
+        _buildTarget(
+          key: _restaurantsTutorialKey,
+          identify: 'restaurants',
+          title: 'Trouver un restaurant',
+          message:
+              'Explorez les restaurants sur la carte, filtrez et ouvrez les fiches détail.',
+          align: contentAlign,
+        ),
+        _buildTarget(
+          key: _reservationsTutorialKey,
+          identify: 'reservations',
+          title: 'Vos réservations',
+          message: 'Suivez vos prochaines sorties et votre historique.',
+          align: contentAlign,
+        ),
+      ],
       _buildTarget(
         key: _accountTutorialKey,
         identify: 'account',
@@ -239,9 +255,48 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _openOwnerTool(int viewIndex, String title) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(title: Text(title)),
+              body: RestaurantPage(user: widget.user, viewIndex: viewIndex),
+            ),
+      ),
+    );
+  }
+
+  void _openOwnerDiscover() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(title: const Text('Découvrir')),
+              body: const MapsPage(),
+            ),
+      ),
+    );
+  }
+
+  void _openOwnerPersonalReservations() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder:
+            (_) => Scaffold(
+              appBar: AppBar(title: const Text('Mes sorties')),
+              body: MyReservationsPage(
+                userId: widget.user.id,
+                onDiscover: _openOwnerDiscover,
+              ),
+            ),
+      ),
+    );
+  }
+
   void _onDestinationSelected(int index) {
     setState(() {
-      _ensurePageLoaded(index);
+      if (widget.user.accountType != 1) _ensurePageLoaded(index);
       _selectedIndex = index;
     });
   }
@@ -270,13 +325,38 @@ class _HomeScreenState extends State<HomeScreen> {
         user: widget.user,
         showHeader: !showAppBar,
         accentColor: colors.primary,
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: List.generate(
-            _pages.length,
-            (index) => _pages[index] ?? const SizedBox.shrink(),
-          ),
-        ),
+        child:
+            widget.user.accountType == 1
+                ? IndexedStack(
+                  index: _selectedIndex == 2 ? 1 : 0,
+                  children: [
+                    RestaurantPage(
+                      user: widget.user,
+                      viewIndex: _selectedIndex == 1 ? 0 : 1,
+                      onOpenService: () => _onDestinationSelected(0),
+                    ),
+                    AccountPage(
+                      user: widget.user,
+                      onLogout: _logout,
+                      onReplayTutorial:
+                          () => unawaited(_showTutorial(force: true)),
+                      onOpenPersonalReservations:
+                          _openOwnerPersonalReservations,
+                      onOpenDiscover: _openOwnerDiscover,
+                      onOpenRestaurantMenu:
+                          () => _openOwnerTool(2, 'Menu du restaurant'),
+                      onOpenRestaurantSettings:
+                          () => _openOwnerTool(3, 'Paramètres du restaurant'),
+                    ),
+                  ],
+                )
+                : IndexedStack(
+                  index: _selectedIndex,
+                  children: List.generate(
+                    _pages.length,
+                    (index) => _pages[index] ?? const SizedBox.shrink(),
+                  ),
+                ),
       ),
     );
   }
