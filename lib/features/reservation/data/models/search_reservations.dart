@@ -9,6 +9,7 @@ class SearchReservations {
   DateTime? maxDate;
   int? idUser;
   int? restaurantId;
+  bool sortDescending;
 
   SearchReservations({
     this.offset = 0,
@@ -19,6 +20,7 @@ class SearchReservations {
     this.maxDate,
     this.idUser,
     this.restaurantId,
+    this.sortDescending = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -27,6 +29,7 @@ class SearchReservations {
     // Pagination
     if (offset != null) data['Offset'] = offset;
     if (pageSize != null) data['PageSize'] = pageSize;
+    if (sortDescending) data['SortDescending'] = true;
 
     // Identifiants
     if (tableId != null) data['tableId'] = tableId;
@@ -58,6 +61,7 @@ class SearchReservations {
     DateTime? maxDate,
     int? idUser,
     int? restaurantId,
+    bool? sortDescending,
   }) {
     return SearchReservations(
       offset: offset ?? this.offset,
@@ -68,6 +72,7 @@ class SearchReservations {
       maxDate: maxDate ?? this.maxDate,
       idUser: idUser ?? this.idUser,
       restaurantId: restaurantId ?? this.restaurantId,
+      sortDescending: sortDescending ?? this.sortDescending,
     );
   }
 }
