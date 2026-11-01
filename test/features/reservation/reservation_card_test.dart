@@ -128,5 +128,22 @@ void main() {
 
       expect(captured, ReservationStatus.validee);
     });
+
+    testWidgets('propose une action de validation lisible sur mobile', (
+      tester,
+    ) async {
+      ReservationStatus? captured;
+      await _pumpCard(
+        tester,
+        reservation: _buildReservation(),
+        onStatusUpdate: (status) => captured = status,
+      );
+
+      expect(find.text('Valider'), findsOneWidget);
+      expect(find.text('Refuser'), findsOneWidget);
+      await tester.tap(find.text('Valider'));
+      expect(captured, ReservationStatus.validee);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

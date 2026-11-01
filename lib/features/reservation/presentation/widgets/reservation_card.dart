@@ -32,100 +32,111 @@ class ReservationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: colors.outlineVariant.withValues(alpha: 0.5)),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: _buildStatusIcon(r.status),
-        title: Text(
-          displayName,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.all(12),
+            leading: _buildStatusIcon(r.status),
+            title: Text(
+              displayName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.calendar_today,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${dateFormat.format(r.reservationDate)} à ${timeFormat.format(r.reservationDate)}',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.people_outline,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text('${r.numberOfPeople} convives'),
-                ],
-              ),
-              if (r.guestPhone != null && r.guestPhone!.trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
+                  Row(
                     children: [
                       const Icon(
-                        Icons.phone_outlined,
+                        Icons.calendar_today,
                         size: 14,
                         color: Colors.grey,
                       ),
                       const SizedBox(width: 6),
-                      Text(r.guestPhone!.trim()),
+                      Text(
+                        '${dateFormat.format(r.reservationDate)} à ${timeFormat.format(r.reservationDate)}',
+                      ),
                     ],
                   ),
-                ),
-              if (r.specialRequest != null && r.specialRequest!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
+                  const SizedBox(height: 4),
+                  Row(
                     children: [
                       const Icon(
-                        Icons.note_outlined,
+                        Icons.people_outline,
                         size: 14,
                         color: Colors.grey,
                       ),
                       const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Demande : ${r.specialRequest}',
-                          style: TextStyle(
-                            color: colors.primary,
-                            fontStyle: FontStyle.italic,
-                            fontSize: 13,
+                      Text('${r.numberOfPeople} convives'),
+                    ],
+                  ),
+                  if (r.guestPhone != null && r.guestPhone!.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.phone_outlined,
+                            size: 14,
+                            color: Colors.grey,
                           ),
-                        ),
+                          const SizedBox(width: 6),
+                          Text(r.guestPhone!.trim()),
+                        ],
                       ),
+                    ),
+                  if (r.specialRequest != null && r.specialRequest!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.note_outlined,
+                            size: 14,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Demande : ${r.specialRequest}',
+                              style: TextStyle(
+                                color: colors.primary,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.table_restaurant_outlined,
+                        size: 14,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 6),
+                      Text('Table : ${r.table?.tableNumber ?? 'N/A'}'),
                     ],
                   ),
-                ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.table_restaurant_outlined,
-                    size: 14,
-                    color: Colors.grey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text('Table : ${r.table?.tableNumber ?? 'N/A'}'),
+                  const SizedBox(height: 8),
+                  _buildStatusChip(r.status),
                 ],
               ),
-              const SizedBox(height: 8),
-              _buildStatusChip(r.status),
-            ],
+            ),
           ),
-        ),
-        trailing: _buildActions(r, colors),
+          if (onStatusUpdate != null &&
+              (r.status == ReservationStatus.enAttente ||
+                  r.status == ReservationStatus.validee))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: _buildActions(r, colors),
+            ),
+        ],
       ),
     );
   }
@@ -135,33 +146,47 @@ class ReservationCard extends StatelessWidget {
 
     if (r.status == ReservationStatus.enAttente) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: const Icon(Icons.check_circle, color: Colors.green),
-            onPressed: () => onStatusUpdate!(ReservationStatus.validee),
-            tooltip: "Valider",
+          Expanded(
+            child: Tooltip(
+              message: 'Valider',
+              child: FilledButton.icon(
+                icon: const Icon(Icons.check),
+                label: const Text('Valider'),
+                onPressed: () => onStatusUpdate!(ReservationStatus.validee),
+              ),
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.cancel, color: colors.error),
-            onPressed: () => onStatusUpdate!(ReservationStatus.annuleeResto),
-            tooltip: "Annuler",
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: Icon(Icons.close, color: colors.error),
+              label: const Text('Refuser'),
+              onPressed: () => onStatusUpdate!(ReservationStatus.annuleeResto),
+            ),
           ),
         ],
       );
     } else if (r.status == ReservationStatus.validee) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton(
-            icon: const Icon(Icons.done_all, color: Colors.blue),
-            onPressed: () => onStatusUpdate!(ReservationStatus.finie),
-            tooltip: "Marquer comme fini",
+          Expanded(
+            child: Tooltip(
+              message: 'Marquer comme fini',
+              child: FilledButton.icon(
+                icon: const Icon(Icons.done_all),
+                label: const Text('Terminer'),
+                onPressed: () => onStatusUpdate!(ReservationStatus.finie),
+              ),
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.cancel, color: colors.error),
-            onPressed: () => onStatusUpdate!(ReservationStatus.annuleeResto),
-            tooltip: "Annuler",
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: Icon(Icons.close, color: colors.error),
+              label: const Text('Annuler'),
+              onPressed: () => onStatusUpdate!(ReservationStatus.annuleeResto),
+            ),
           ),
         ],
       );

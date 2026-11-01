@@ -46,6 +46,47 @@ void main() {
   }
 
   test(
+    'ouvre les demandes en attente comme première vue restaurateur',
+    () async {
+      final reservationRepo = _FakeReservationRepository();
+      final controller = _buildController(reservationRepo: reservationRepo)
+        ..restaurant = _restaurant(id: 10);
+
+      await controller.loadDailyReservations(10);
+
+      expect(controller.viewIndex, 1);
+      expect(controller.selectedFilter, 1);
+      expect(reservationRepo.lastSearch?.statuses, [
+        ReservationStatus.enAttente,
+      ]);
+      controller.dispose();
+    },
+  );
+
+  test(
+    'montre les réservations récentes en premier dans l’historique',
+    () async {
+      final reservationRepo =
+          _FakeReservationRepository()
+            ..results = [
+              _reservationAt(1, DateTime(2026, 1, 1)),
+              _reservationAt(2, DateTime(2026, 2, 1)),
+            ];
+      final controller = _buildController(reservationRepo: reservationRepo)
+        ..restaurant = _restaurant(id: 10);
+
+      controller.selectReservationFilter(2);
+      await controller.loadDailyReservations(10);
+
+      expect(controller.reservations.map((reservation) => reservation.id), [
+        2,
+        1,
+      ]);
+      controller.dispose();
+    },
+  );
+
+  test(
     'saveRestaurantSettings met à jour le restaurant via le repository',
     () async {
       final restaurantRepo = _FakeRestaurantRepository();
@@ -140,6 +181,17 @@ RestaurantController _buildController({
     enableRealtime: false,
   );
 }
+
+ReservationOut _reservationAt(int id, DateTime date) => ReservationOut(
+  id: id,
+  createdAt: date,
+  userId: 1,
+  tableId: 1,
+  restaurantId: 10,
+  reservationDate: date,
+  numberOfPeople: 2,
+  status: ReservationStatus.finie,
+);
 
 class _FakeRoomRepository implements IRoomRepository {
   final List<int> savedLayoutRoomIds = [];
@@ -271,6 +323,8 @@ class _FakeRestaurantRepository implements IRestaurantRepository {
 }
 
 class _FakeReservationRepository implements IReservationRepository {
+  SearchReservations? lastSearch;
+  List<ReservationOut> results = [];
   @override
   Future<List<ReservationAvailabilityOut>> getAvailability(
     SearchReservations search,
@@ -316,7 +370,10 @@ class _FakeReservationRepository implements IReservationRepository {
   @override
   Future<List<ReservationOut>> getReservations(
     SearchReservations search,
-  ) async => [];
+  ) async {
+    lastSearch = search;
+    return results;
+  }
 
   @override
   Future<ReservationOut> updateReservationStatus(

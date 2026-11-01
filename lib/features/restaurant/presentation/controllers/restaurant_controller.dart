@@ -48,8 +48,8 @@ class RestaurantController extends ChangeNotifier {
   List<ReservationOut> reservations = [];
   List<ReservationOut> summaryReservations = [];
   List<MenuOut> menuItems = [];
-  int viewIndex = 0;
-  int selectedFilter = 0;
+  int viewIndex = 1;
+  int selectedFilter = 1;
   VoidCallback? onNewReservation;
 
   late final RefreshScheduler _refreshScheduler = RefreshScheduler(refreshAll);
@@ -160,7 +160,11 @@ class RestaurantController extends ChangeNotifier {
       }
 
       final results = await reservationRepository.getReservations(search);
-      results.sort((a, b) => a.reservationDate.compareTo(b.reservationDate));
+      results.sort(
+        selectedFilter == 2
+            ? (a, b) => b.reservationDate.compareTo(a.reservationDate)
+            : (a, b) => a.reservationDate.compareTo(b.reservationDate),
+      );
       if (_disposed ||
           version != _dailyVersion ||
           restaurant?.id != restaurantId) {

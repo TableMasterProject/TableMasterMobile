@@ -305,19 +305,19 @@ class _RestaurantTabs extends StatelessWidget {
         child: Row(
           children: [
             _TabButton(
-              label: "Tables et salles",
-              icon: Icons.table_restaurant_outlined,
-              index: 0,
-              selectedIndex: selectedIndex,
-              onChanged: onChanged,
-            ),
-            const SizedBox(width: 8),
-            _TabButton(
               label: "Demandes",
               icon: Icons.event_note_outlined,
               index: 1,
               selectedIndex: selectedIndex,
               badgeCount: pendingCount,
+              onChanged: onChanged,
+            ),
+            const SizedBox(width: 8),
+            _TabButton(
+              label: "Tables et salles",
+              icon: Icons.table_restaurant_outlined,
+              index: 0,
+              selectedIndex: selectedIndex,
               onChanged: onChanged,
             ),
             const SizedBox(width: 8),
@@ -1070,28 +1070,48 @@ class _ReservationsView extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _FilterChip(
-                    label: "Validées",
-                    index: 0,
-                    selectedFilter: selectedFilter,
-                    onChanged: onFilterChanged,
+                  Text(
+                    'Réservations',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  _FilterChip(
-                    label: "En attente ($pendingTotal)",
-                    index: 1,
-                    selectedFilter: selectedFilter,
-                    onChanged: onFilterChanged,
+                  const SizedBox(height: 4),
+                  Text(
+                    pendingTotal == 0
+                        ? 'Toutes les demandes sont traitées.'
+                        : '$pendingTotal demande${pendingTotal > 1 ? 's' : ''} à traiter',
+                    style: TextStyle(color: colors.onSurfaceVariant),
                   ),
-                  _FilterChip(
-                    label: "Historique",
-                    index: 2,
-                    selectedFilter: selectedFilter,
-                    onChanged: onFilterChanged,
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _FilterChip(
+                        label: 'En attente ($pendingTotal)',
+                        icon: Icons.schedule_outlined,
+                        index: 1,
+                        selectedFilter: selectedFilter,
+                        onChanged: onFilterChanged,
+                      ),
+                      _FilterChip(
+                        label: 'Validées',
+                        icon: Icons.check_circle_outline,
+                        index: 0,
+                        selectedFilter: selectedFilter,
+                        onChanged: onFilterChanged,
+                      ),
+                      _FilterChip(
+                        label: 'Historique',
+                        icon: Icons.history,
+                        index: 2,
+                        selectedFilter: selectedFilter,
+                        onChanged: onFilterChanged,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1101,7 +1121,11 @@ class _ReservationsView extends StatelessWidget {
                   reservations.isEmpty
                       ? AppEmptyState(
                         icon: Icons.event_busy,
-                        message: "Aucune réservation",
+                        message: switch (selectedFilter) {
+                          1 => 'Aucune demande en attente',
+                          0 => 'Aucune réservation validée',
+                          _ => 'Aucun historique pour le moment',
+                        },
                         action: Text(
                           "Les réservations apparaîtront ici.",
                           style: TextStyle(color: colors.onSurfaceVariant),
@@ -1133,12 +1157,14 @@ class _ReservationsView extends StatelessWidget {
 
 class _FilterChip extends StatelessWidget {
   final String label;
+  final IconData icon;
   final int index;
   final int selectedFilter;
   final ValueChanged<int> onChanged;
 
   const _FilterChip({
     required this.label,
+    required this.icon,
     required this.index,
     required this.selectedFilter,
     required this.onChanged,
@@ -1147,6 +1173,7 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChoiceChip(
+      avatar: Icon(icon, size: 18),
       label: Text(label),
       selected: selectedFilter == index,
       onSelected: (selected) {
