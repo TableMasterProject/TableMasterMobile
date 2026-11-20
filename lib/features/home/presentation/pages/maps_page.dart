@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:table_master_mobile/core/app_constant.dart';
@@ -18,9 +16,18 @@ import 'package:table_master_mobile/features/reservation/data/models/reservation
 import 'package:table_master_mobile/features/home/presentation/widgets/discovery_mobile_view.dart';
 
 class MapsPage extends StatefulWidget {
-  const MapsPage({super.key, this.onReservationCreated});
+  const MapsPage({
+    super.key,
+    this.onReservationCreated,
+    this.restaurantSearch,
+    this.citySearch,
+    this.visibleRegion,
+  });
 
   final void Function(ReservationOut)? onReservationCreated;
+  final RestaurantSearch? restaurantSearch;
+  final Future<List<CitySuggestion>> Function(String)? citySearch;
+  final Future<LatLngBounds> Function()? visibleRegion;
 
   @override
   State<MapsPage> createState() => _MapsPageState();
@@ -28,15 +35,13 @@ class MapsPage extends StatefulWidget {
 
 class _MapsPageState extends State<MapsPage> {
   static const _france = CameraPosition(target: LatLng(46.6, 2.2), zoom: 5.4);
-  static const _cityStorageKey = 'last_discovery_city';
-
-  final _storage = const FlutterSecureStorage();
   final _cityInput = TextEditingController();
   final _sheetController = DraggableScrollableController();
   final _desktopListController = ScrollController();
   final _mobileListController = ScrollController();
   ScrollController? _activeListController;
-  late final DiscoveryController _discovery;
+  late final DiscoveryController _listDiscovery;
+  late final DiscoveryController _mapDiscovery;
   late final CitySuggestionsController _suggestions;
   GoogleMapController? _mapController;
   Timer? _cameraDebounce;
@@ -46,31 +51,36 @@ class _MapsPageState extends State<MapsPage> {
   bool _cameraInitialized = false;
   bool _programmaticCameraMove = false;
   bool _citySelected = false;
+  bool _mapOpened = false;
+  bool _mapLocationPending = false;
+  int _mapSearchVersion = 0;
+  double _radiusKm = 15;
+  LatLng? _listCenter;
   String? _selectedCuisine;
   String? _selectedPayment;
   LatLng _mapCenter = _france.target;
+  CameraPosition _mapCameraPosition = _france;
 
   @override
   void initState() {
     super.initState();
-    _discovery = DiscoveryController(
-      search: getIt<IRestaurantRepository>().getAllRestaurants,
+    final search =
+        widget.restaurantSearch ??
+        getIt<IRestaurantRepository>().getAllRestaurants;
+    _listDiscovery = DiscoveryController(search: search)..addListener(_refresh);
+    _mapDiscovery = DiscoveryController(search: search)..addListener(_refresh);
+    _suggestions = CitySuggestionsController(
+      search: widget.citySearch ?? CitySearchService().search,
     )..addListener(_refresh);
-    _suggestions = CitySuggestionsController(search: CitySearchService().search)
-      ..addListener(_refresh);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(_discovery.searchArea(center: _mapCenter));
-      unawaited(_restoreCity());
-      unawaited(_requestLocation());
-    });
   }
 
   @override
   void dispose() {
     _cameraDebounce?.cancel();
-    _discovery.removeListener(_refresh);
-    _discovery.dispose();
+    _listDiscovery.removeListener(_refresh);
+    _listDiscovery.dispose();
+    _mapDiscovery.removeListener(_refresh);
+    _mapDiscovery.dispose();
     _suggestions.removeListener(_refresh);
     _suggestions.dispose();
     _cityInput.dispose();
@@ -84,20 +94,7 @@ class _MapsPageState extends State<MapsPage> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _restoreCity() async {
-    try {
-      final saved = await _storage.read(key: _cityStorageKey);
-      if (saved == null || _cameraMoved || _citySelected || !mounted) return;
-      final city = CitySuggestion.fromJson(
-        jsonDecode(saved) as Map<String, dynamic>,
-      );
-      await _chooseCity(city, remember: false);
-    } catch (_) {
-      // Local storage is optional: the map remains usable without it.
-    }
-  }
-
-  Future<void> _requestLocation() async {
+  Future<void> _requestLocation({bool forMap = false}) async {
     try {
       final allowed = await Localisation.requestPermission();
       if (!mounted) return;
@@ -114,75 +111,105 @@ class _MapsPageState extends State<MapsPage> {
       );
       if (!mounted) return;
       final userPosition = LatLng(position.latitude, position.longitude);
-      _discovery.setUserPosition(userPosition);
+      _listDiscovery.setUserPosition(userPosition);
+      _mapDiscovery.setUserPosition(userPosition);
+      if (!forMap) {
+        _listCenter = userPosition;
+        unawaited(_searchList());
+      }
       if (!_cameraMoved && !_citySelected) {
         _programmaticCameraMove = true;
+        _mapCenter = userPosition;
+        _mapCameraPosition = CameraPosition(target: userPosition, zoom: 12);
         await _mapController?.animateCamera(
           CameraUpdate.newLatLngZoom(userPosition, 12),
         );
         _programmaticCameraMove = false;
-        if (_mapController == null) unawaited(_searchVisibleArea());
+        if (!forMap && _mapController != null) {
+          unawaited(_searchVisibleArea());
+        }
       } else {
-        unawaited(_searchVisibleArea());
+        if (!forMap && _mapController != null) {
+          unawaited(_searchVisibleArea());
+        }
       }
     } catch (_) {
       if (mounted) setState(() => _locationUnavailable = true);
     }
   }
 
-  Future<void> _chooseCity(CitySuggestion city, {bool remember = true}) async {
+  Future<void> _chooseCity(CitySuggestion city) async {
     _suggestions.clear();
     _citySelected = true;
     _cameraMoved = true;
     _mapCenter = city.center;
+    _mapCameraPosition = CameraPosition(target: city.center, zoom: 12);
+    _listCenter = city.center;
     if (!mounted) return;
     setState(() {
       _cityInput.text = city.name;
     });
     FocusScope.of(context).unfocus();
-    if (remember) {
-      try {
-        await _storage.write(
-          key: _cityStorageKey,
-          value: jsonEncode({
-            'nom': city.name,
-            'code': city.code,
-            'codeDepartement': city.department,
-            'centre': {
-              'coordinates': [city.center.longitude, city.center.latitude],
-            },
-          }),
-        );
-      } catch (_) {
-        // Saving a city is optional.
-      }
-    }
     if (!mounted) return;
     _programmaticCameraMove = true;
     await _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(city.center, 12),
     );
     _programmaticCameraMove = false;
-    unawaited(_searchVisibleArea());
+    unawaited(_searchList());
+    if (_mapController != null) unawaited(_searchVisibleArea());
+  }
+
+  Future<void> _searchList() async {
+    final center = _listCenter;
+    if (center == null) return;
+    await _listDiscovery.searchArea(center: center, radiusKm: _radiusKm);
+  }
+
+  Future<void> _openMap() async {
+    if (!_mapOpened) {
+      _mapOpened = true;
+      if (!_citySelected && _listCenter == null) {
+        _mapLocationPending = true;
+        await _requestLocation(forMap: true);
+        _mapLocationPending = false;
+      }
+    }
+    if (mounted &&
+        !_mapLocationPending &&
+        (_mapController != null || widget.visibleRegion != null)) {
+      await _searchVisibleArea();
+    }
   }
 
   Future<void> _searchVisibleArea() async {
+    final version = ++_mapSearchVersion;
     final map = _mapController;
     if (!mounted) return;
-    if (map == null) {
-      await _discovery.searchArea(center: _mapCenter);
-      return;
-    }
+    if (map == null && widget.visibleRegion == null) return;
     try {
-      final bounds = await map.getVisibleRegion();
+      final bounds =
+          await (widget.visibleRegion?.call() ?? map!.getVisibleRegion());
       if (!mounted) return;
-      await _discovery.searchArea(center: _mapCenter, bounds: bounds);
+      await _mapDiscovery.searchArea(center: _mapCenter, bounds: bounds);
+      await _loadAllMapPages(version);
     } catch (_) {
-      if (mounted) await _discovery.searchArea(center: _mapCenter);
+      // A failed viewport read must not turn into an unbounded request.
+    }
+  }
+
+  Future<void> _loadAllMapPages(int version) async {
+    while (mounted &&
+        version == _mapSearchVersion &&
+        _mapDiscovery.hasMore &&
+        !_mapDiscovery.loading &&
+        _mapDiscovery.error == null) {
+      await _mapDiscovery.loadMore();
     }
   }
 
   void _onCameraIdle() {
+    if (_mapLocationPending) return;
     _cameraDebounce?.cancel();
     _cameraDebounce = Timer(
       const Duration(milliseconds: 450),
@@ -190,8 +217,11 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 
-  void _selectRestaurant(RestaurantOut restaurant) {
-    _discovery.selectRestaurant(restaurant.id);
+  void _selectRestaurant(
+    RestaurantOut restaurant,
+    DiscoveryController discovery,
+  ) {
+    discovery.selectRestaurant(restaurant.id);
     if (restaurant.latitude != null && restaurant.longitude != null) {
       final map = _mapController;
       if (map != null) {
@@ -207,8 +237,8 @@ class _MapsPageState extends State<MapsPage> {
   }
 
   void _onMarkerTapped(RestaurantOut restaurant) {
-    _discovery.selectRestaurant(restaurant.id);
-    final index = _discovery.restaurants.indexWhere(
+    _mapDiscovery.selectRestaurant(restaurant.id);
+    final index = _mapDiscovery.restaurants.indexWhere(
       (r) => r.id == restaurant.id,
     );
     final list = _activeListController;
@@ -242,13 +272,14 @@ class _MapsPageState extends State<MapsPage> {
   }
 
   Set<Marker> get _markers => {
-    for (final restaurant in _discovery.restaurants)
+    for (final restaurant in _mapDiscovery.restaurants)
       if (restaurant.latitude != null && restaurant.longitude != null)
         Marker(
           markerId: MarkerId('${restaurant.id}'),
+          clusterManagerId: const ClusterManagerId('restaurants'),
           position: LatLng(restaurant.latitude!, restaurant.longitude!),
           icon: BitmapDescriptor.defaultMarkerWithHue(
-            _discovery.selectedRestaurantId == restaurant.id
+            _mapDiscovery.selectedRestaurantId == restaurant.id
                 ? BitmapDescriptor.hueAzure
                 : BitmapDescriptor.hueRed,
           ),
@@ -277,6 +308,11 @@ class _MapsPageState extends State<MapsPage> {
                   child: TextField(
                     controller: _cityInput,
                     onChanged: _suggestions.updateQuery,
+                    onSubmitted: (_) {
+                      if (_suggestions.cities.length == 1) {
+                        unawaited(_chooseCity(_suggestions.cities.single));
+                      }
+                    },
                     decoration: InputDecoration(
                       isDense: true,
                       prefixIcon: const Icon(Icons.search),
@@ -333,7 +369,7 @@ class _MapsPageState extends State<MapsPage> {
                   ),
                 ),
               ),
-            if (_locationUnavailable && !_discovery.hasUserPosition)
+            if (_locationUnavailable && !_listDiscovery.hasUserPosition)
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
@@ -343,6 +379,25 @@ class _MapsPageState extends State<MapsPage> {
                   ),
                 ),
               ),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<double>(
+              initialValue: _radiusKm,
+              decoration: const InputDecoration(
+                labelText: 'Rayon de recherche (liste)',
+                isDense: true,
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 5, child: Text('5 km')),
+                DropdownMenuItem(value: 15, child: Text('15 km')),
+                DropdownMenuItem(value: 30, child: Text('30 km')),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _radiusKm = value);
+                unawaited(_searchList());
+              },
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -363,7 +418,14 @@ class _MapsPageState extends State<MapsPage> {
                     onChanged: (value) {
                       setState(() => _selectedCuisine = value);
                       unawaited(
-                        _discovery.setFilters(
+                        _listDiscovery.setFilters(
+                          cuisine: value == '' ? null : value,
+                          payment:
+                              _selectedPayment == '' ? null : _selectedPayment,
+                        ),
+                      );
+                      unawaited(
+                        _updateMapFilters(
                           cuisine: value == '' ? null : value,
                           payment:
                               _selectedPayment == '' ? null : _selectedPayment,
@@ -390,7 +452,14 @@ class _MapsPageState extends State<MapsPage> {
                     onChanged: (value) {
                       setState(() => _selectedPayment = value);
                       unawaited(
-                        _discovery.setFilters(
+                        _listDiscovery.setFilters(
+                          cuisine:
+                              _selectedCuisine == '' ? null : _selectedCuisine,
+                          payment: value == '' ? null : value,
+                        ),
+                      );
+                      unawaited(
+                        _updateMapFilters(
                           cuisine:
                               _selectedCuisine == '' ? null : _selectedCuisine,
                           payment: value == '' ? null : value,
@@ -407,9 +476,19 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 
-  Widget _results(ScrollController scrollController, {bool showHandle = true}) {
+  Future<void> _updateMapFilters({String? cuisine, String? payment}) async {
+    final version = ++_mapSearchVersion;
+    await _mapDiscovery.setFilters(cuisine: cuisine, payment: payment);
+    if (_mapDiscovery.hasSearched) await _loadAllMapPages(version);
+  }
+
+  Widget _results(
+    ScrollController scrollController,
+    DiscoveryController discovery, {
+    bool showHandle = true,
+  }) {
     _activeListController = scrollController;
-    final items = _discovery.restaurants;
+    final items = discovery.restaurants;
     return CustomScrollView(
       controller: scrollController,
       slivers: [
@@ -441,17 +520,30 @@ class _MapsPageState extends State<MapsPage> {
                   ],
                 ),
               ),
-              if (_discovery.loading) const LinearProgressIndicator(),
-              if (_discovery.error != null)
+              if (discovery.loading) const LinearProgressIndicator(),
+              if (discovery.error != null)
                 ListTile(
-                  title: Text(_discovery.error!),
+                  title: Text(discovery.error!),
                   trailing: TextButton(
-                    onPressed: () => unawaited(_searchVisibleArea()),
+                    onPressed:
+                        () => unawaited(
+                          discovery == _mapDiscovery
+                              ? _searchVisibleArea()
+                              : _searchList(),
+                        ),
                     child: const Text('Réessayer'),
                   ),
                 ),
-              if (!_discovery.loading &&
-                  _discovery.error == null &&
+              if (!discovery.hasSearched)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Choisissez une ville ou utilisez « Me localiser ». ',
+                  ),
+                ),
+              if (discovery.hasSearched &&
+                  !discovery.loading &&
+                  discovery.error == null &&
                   items.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(24),
@@ -466,7 +558,7 @@ class _MapsPageState extends State<MapsPage> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final restaurant = items[index];
-            final selected = _discovery.selectedRestaurantId == restaurant.id;
+            final selected = discovery.selectedRestaurantId == restaurant.id;
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               color:
@@ -475,7 +567,7 @@ class _MapsPageState extends State<MapsPage> {
                       : null,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => _selectRestaurant(restaurant),
+                onTap: () => _selectRestaurant(restaurant, discovery),
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -490,7 +582,7 @@ class _MapsPageState extends State<MapsPage> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          if (_discovery.hasUserPosition) ...[
+                          if (discovery.hasUserPosition) ...[
                             const Icon(Icons.route, size: 16),
                             const SizedBox(width: 4),
                             Text(
@@ -513,16 +605,16 @@ class _MapsPageState extends State<MapsPage> {
             );
           },
         ),
-        if (_discovery.hasMore)
+        if (discovery.hasMore)
           SliverToBoxAdapter(
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child:
-                    _discovery.loadingMore
+                    discovery.loadingMore
                         ? const CircularProgressIndicator()
                         : TextButton(
-                          onPressed: () => unawaited(_discovery.loadMore()),
+                          onPressed: () => unawaited(discovery.loadMore()),
                           child: const Text('Voir plus de restaurants'),
                         ),
               ),
@@ -535,31 +627,38 @@ class _MapsPageState extends State<MapsPage> {
   @override
   Widget build(BuildContext context) {
     final map = GoogleMap(
-      initialCameraPosition: _france,
+      initialCameraPosition: _mapCameraPosition,
       myLocationEnabled: _hasLocationPermission,
       myLocationButtonEnabled: false,
       markers: _markers,
+      clusterManagers: {
+        ClusterManager(
+          clusterManagerId: const ClusterManagerId('restaurants'),
+          onClusterTap:
+              (cluster) => unawaited(
+                _mapController?.animateCamera(
+                  CameraUpdate.newLatLngZoom(
+                    cluster.position,
+                    (_mapCameraPosition.zoom + 2).clamp(0, 20).toDouble(),
+                  ),
+                ),
+              ),
+        ),
+      },
       onMapCreated: (controller) {
         _mapController = controller;
         _cameraInitialized = false;
-        if (_citySelected || _discovery.hasUserPosition) {
-          final target = _citySelected ? _mapCenter : _discovery.userPosition!;
-          _programmaticCameraMove = true;
-          unawaited(
-            controller
-                .animateCamera(CameraUpdate.newLatLngZoom(target, 12))
-                .catchError((Object _) {})
-                .whenComplete(() => _programmaticCameraMove = false),
-          );
-        }
-        unawaited(_searchVisibleArea());
+        unawaited(_openMap());
       },
       onCameraMoveStarted: () {
         if (_cameraInitialized && !_programmaticCameraMove) {
           _cameraMoved = true;
         }
       },
-      onCameraMove: (position) => _mapCenter = position.target,
+      onCameraMove: (position) {
+        _mapCameraPosition = position;
+        _mapCenter = position.target;
+      },
       onCameraIdle: () {
         _cameraInitialized = true;
         _programmaticCameraMove = false;
@@ -573,7 +672,17 @@ class _MapsPageState extends State<MapsPage> {
         if (compact) {
           return DiscoveryMobileView(
             search: _searchAndFilters(),
-            list: _results(_mobileListController, showHandle: false),
+            onMapSelected: () => unawaited(_openMap()),
+            onMapHidden: () {
+              _mapController = null;
+              _cameraInitialized = false;
+              _cameraDebounce?.cancel();
+            },
+            list: _results(
+              _mobileListController,
+              _listDiscovery,
+              showHandle: false,
+            ),
             map: Stack(
               children: [
                 Positioned.fill(child: map),
@@ -590,7 +699,7 @@ class _MapsPageState extends State<MapsPage> {
                           top: Radius.circular(24),
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: _results(scrollController),
+                        child: _results(scrollController, _mapDiscovery),
                       ),
                 ),
               ],
@@ -613,7 +722,11 @@ class _MapsPageState extends State<MapsPage> {
                   const VerticalDivider(width: 1),
                   Expanded(
                     flex: 2,
-                    child: _results(_desktopListController, showHandle: false),
+                    child: _results(
+                      _desktopListController,
+                      _mapDiscovery,
+                      showHandle: false,
+                    ),
                   ),
                 ],
               ),

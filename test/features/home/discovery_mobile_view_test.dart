@@ -4,6 +4,8 @@ import 'package:table_master_mobile/features/home/presentation/widgets/discovery
 
 void main() {
   testWidgets('la liste précède la carte sur téléphone', (tester) async {
+    var mapSelections = 0;
+    var mapClosures = 0;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -11,6 +13,8 @@ void main() {
             search: const Text('Recherche'),
             list: const Text('Liste des restaurants'),
             map: const Text('Carte des restaurants'),
+            onMapSelected: () => mapSelections++,
+            onMapHidden: () => mapClosures++,
           ),
         ),
       ),
@@ -20,5 +24,9 @@ void main() {
     await tester.tap(find.text('Carte'));
     await tester.pumpAndSettle();
     expect(find.text('Carte des restaurants'), findsOneWidget);
+    expect(mapSelections, 1);
+    await tester.tap(find.text('Liste').first);
+    await tester.pumpAndSettle();
+    expect(mapClosures, 1);
   });
 }

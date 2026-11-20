@@ -6,11 +6,15 @@ class DiscoveryMobileView extends StatefulWidget {
     required this.search,
     required this.list,
     required this.map,
+    required this.onMapSelected,
+    required this.onMapHidden,
   });
 
   final Widget search;
   final Widget list;
   final Widget map;
+  final VoidCallback onMapSelected;
+  final VoidCallback onMapHidden;
 
   @override
   State<DiscoveryMobileView> createState() => _DiscoveryMobileViewState();
@@ -38,8 +42,11 @@ class _DiscoveryMobileViewState extends State<DiscoveryMobileView> {
             ),
           ],
           selected: {_showMap},
-          onSelectionChanged:
-              (values) => setState(() => _showMap = values.first),
+          onSelectionChanged: (values) {
+            setState(() => _showMap = values.first);
+            if (_showMap) widget.onMapSelected();
+            if (!_showMap) widget.onMapHidden();
+          },
         ),
         const SizedBox(height: 8),
         Expanded(child: _showMap ? widget.map : widget.list),

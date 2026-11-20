@@ -14,6 +14,7 @@ class DiscoveryController extends ChangeNotifier {
 
   LatLng center = const LatLng(46.6, 2.2);
   LatLngBounds? bounds;
+  double? radiusKm;
   LatLng? userPosition;
   String? cuisineType;
   String? paymentMethods;
@@ -25,6 +26,7 @@ class DiscoveryController extends ChangeNotifier {
   bool hasMore = false;
   int _requestVersion = 0;
   bool _disposed = false;
+  bool hasSearched = false;
 
   bool get hasUserPosition => userPosition != null;
 
@@ -41,7 +43,11 @@ class DiscoveryController extends ChangeNotifier {
   Future<void> setFilters({String? cuisine, String? payment}) {
     cuisineType = cuisine;
     paymentMethods = payment;
-    return searchArea(center: center, bounds: bounds);
+    if (!hasSearched) {
+      notifyListeners();
+      return Future.value();
+    }
+    return searchArea(center: center, bounds: bounds, radiusKm: radiusKm);
   }
 
   SearchRestaurant _query(int offset) => SearchRestaurant(
@@ -55,6 +61,7 @@ class DiscoveryController extends ChangeNotifier {
     northLatitude: bounds?.northeast.latitude,
     westLongitude: bounds?.southwest.longitude,
     eastLongitude: bounds?.northeast.longitude,
+    radiusKm: radiusKm,
     cuisineType: cuisineType,
     paymentMethods: paymentMethods,
   );
@@ -62,9 +69,12 @@ class DiscoveryController extends ChangeNotifier {
   Future<void> searchArea({
     required LatLng center,
     LatLngBounds? bounds,
+    double? radiusKm,
   }) async {
+    hasSearched = true;
     this.center = center;
     this.bounds = bounds;
+    this.radiusKm = radiusKm;
     final version = ++_requestVersion;
     loading = true;
     error = null;

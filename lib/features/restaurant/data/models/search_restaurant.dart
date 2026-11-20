@@ -9,6 +9,7 @@ class SearchRestaurant {
   double? northLatitude;
   double? westLongitude;
   double? eastLongitude;
+  double? radiusKm;
   String? cuisineType;
   String? paymentMethods;
 
@@ -23,6 +24,7 @@ class SearchRestaurant {
     this.northLatitude,
     this.westLongitude,
     this.eastLongitude,
+    this.radiusKm,
     this.cuisineType,
     this.paymentMethods,
   });
@@ -52,6 +54,7 @@ class SearchRestaurant {
     if (northLatitude != null) data['NorthLatitude'] = northLatitude;
     if (westLongitude != null) data['WestLongitude'] = westLongitude;
     if (eastLongitude != null) data['EastLongitude'] = eastLongitude;
+    if (radiusKm != null) data['RadiusKm'] = radiusKm;
     if (cuisineType != null) {
       data['CuisineType'] = cuisineType;
     }

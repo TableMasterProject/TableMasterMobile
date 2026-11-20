@@ -7,6 +7,45 @@ import 'package:table_master_mobile/features/restaurant/data/models/restaurant_o
 import 'package:table_master_mobile/features/restaurant/data/models/search_restaurant.dart';
 
 void main() {
+  test('filters alone do not start a location search', () async {
+    var calls = 0;
+    final controller = DiscoveryController(
+      search: (_) async {
+        calls++;
+        return [];
+      },
+    );
+    await controller.setFilters(cuisine: 'Italien');
+    expect(calls, 0);
+    expect(controller.hasSearched, isFalse);
+    await controller.searchArea(
+      center: const LatLng(45.75, 4.83),
+      radiusKm: 15,
+    );
+    expect(calls, 1);
+    expect(controller.cuisineType, 'Italien');
+    await controller.setFilters(payment: 'Carte');
+    expect(controller.radiusKm, 15);
+    controller.dispose();
+  });
+
+  test('city radius is sent without requiring map bounds', () async {
+    SearchRestaurant? submitted;
+    final controller = DiscoveryController(
+      search: (query) async {
+        submitted = query;
+        return [];
+      },
+    );
+    await controller.searchArea(
+      center: const LatLng(45.75, 4.83),
+      radiusKm: 15,
+    );
+    expect(submitted!.toJson()['RadiusKm'], 15);
+    expect(submitted!.toJson().containsKey('SouthLatitude'), isFalse);
+    controller.dispose();
+  });
+
   test('visible map bounds are serialized without a user position', () async {
     SearchRestaurant? submitted;
     final controller = DiscoveryController(
@@ -81,6 +120,9 @@ void main() {
         ]);
       },
     );
+
+    await controller.searchArea(center: const LatLng(45.75, 4.83));
+    queries.clear();
 
     final slowFilter = controller.setFilters(cuisine: 'Italien');
     await controller.setFilters(cuisine: 'Français');
