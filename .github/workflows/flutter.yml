@@ -36,6 +36,15 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Setup Java for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Select Java for Flutter
+        run: flutter config --jdk-dir="$JAVA_HOME"
+
       - name: Show Flutter version
         run: flutter --version
 
